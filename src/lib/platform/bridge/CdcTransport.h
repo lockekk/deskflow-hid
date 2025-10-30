@@ -8,8 +8,9 @@
 #include "HidFrame.h"
 
 #include <QString>
-#include <memory>
+#include <cstdint>
 #include <string>
+#include <vector>
 
 namespace deskflow::bridge {
 
@@ -63,10 +64,10 @@ public:
   bool isOpen() const;
 
   /**
-   * @brief Query Pico for configuration (arch + screen info)
-   * @return PicoConfig if successful
+   * @brief Send HID event packet to Pico
+   * @return true if successful
    */
-  PicoConfig queryConfig();
+  bool sendHidEvent(const HidEventPacket &packet);
 
   /**
    * @brief Send HID frame to Pico
@@ -83,18 +84,19 @@ public:
   }
 
 private:
-  /**
-   * @brief Send a command and wait for response
-   */
-  bool sendCommand(const std::string &command, std::string &response);
-
-  /**
-   * @brief Read response from device with timeout
-   */
-  bool readResponse(std::string &response, int timeoutMs = 1000);
+  bool performHandshake();
+  bool sendUsbFrame(uint8_t type, uint8_t flags, const uint8_t *payload, uint16_t length);
+  bool sendUsbFrame(uint8_t type, uint8_t flags, const std::vector<uint8_t> &payload);
+  bool writeAll(const uint8_t *data, size_t length);
+  bool readFrame(uint8_t &type, uint8_t &flags, std::vector<uint8_t> &payload, int timeoutMs);
+  void resetState();
+  bool ensureOpen();
 
   QString m_devicePath;
   int m_fd = -1; // File descriptor (Unix) or HANDLE (Windows)
+  bool m_handshakeComplete = false;
+  uint32_t m_lastNonce = 0;
+  std::vector<uint8_t> m_rxBuffer;
   std::string m_lastError;
 };
 

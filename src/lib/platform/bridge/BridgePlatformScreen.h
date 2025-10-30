@@ -95,24 +95,22 @@ protected:
   void handleSystemEvent(const Event &event) override;
 
 private:
-  /**
-   * @brief Send current keyboard state as HID report
-   */
+  bool sendEvent(HidEventType type, const std::vector<uint8_t> &payload) const;
+  bool sendKeyboardEvent(HidEventType type, uint8_t modifiers, uint8_t keycode) const;
+  bool sendMouseMoveEvent(int16_t dx, int16_t dy) const;
+  bool sendMouseButtonEvent(HidEventType type, uint8_t buttonMask) const;
+  bool sendMouseScrollEvent(int8_t delta) const;
+
+  uint8_t convertModifiers(KeyModifierMask mask) const;
+  uint8_t modifierBitForKey(KeyID id) const;
+  uint8_t modifierBitForButton(KeyButton button) const;
+  uint8_t convertKeyID(KeyID id) const;
+  uint8_t convertKeyButton(KeyButton button) const;
+  uint8_t convertKey(KeyID id, KeyButton button) const;
+
   void sendKeyboardReport();
-
-  /**
-   * @brief Send mouse button/position update as HID report
-   */
   void sendMouseReport();
-
-  /**
-   * @brief Map Deskflow KeyID to HID keycode
-   */
   uint8_t mapKeyToHid(KeyID key, KeyButton button) const;
-
-  /**
-   * @brief Map Deskflow modifier mask to HID modifier bitmap
-   */
   uint8_t mapModifiersToHid(KeyModifierMask mask) const;
 
   std::shared_ptr<CdcTransport> m_transport;
@@ -122,12 +120,14 @@ private:
   int32_t m_cursorX = 0;
   int32_t m_cursorY = 0;
   uint8_t m_mouseButtons = 0; // HID button bitmap
-  uint8_t m_keyModifiers = 0; // HID modifier bitmap
-  uint8_t m_pressedKeys[6] = {0}; // Up to 6 simultaneous keys (HID boot protocol)
-  size_t m_numPressedKeys = 0;
 
+  std::set<uint8_t> m_pressedKeycodes;
   std::set<KeyButton> m_pressedButtons;
   KeyModifierMask m_activeModifiers = 0;
+
+  uint8_t m_keyModifiers = 0;
+  uint8_t m_pressedKeys[6] = {0};
+  size_t m_numPressedKeys = 0;
 
   bool m_enabled = false;
   uint32_t m_sequenceNumber = 0;

@@ -7,10 +7,12 @@
 
 #include "base/Log.h"
 
-#include <QFile>
-#include <QThread>
+#include <chrono>
+#include <random>
+#include <thread>
 
 #if defined(Q_OS_UNIX)
+#include <cerrno>
 #include <fcntl.h>
 #include <termios.h>
 #include <unistd.h>
@@ -20,8 +22,22 @@
 
 namespace deskflow::bridge {
 
+namespace {
+constexpr uint16_t kUsbLinkMagic = 0xC35A;
+constexpr uint8_t kUsbLinkVersion = 1;
+constexpr uint8_t kUsbFrameTypeHid = 0x01;
+constexpr uint8_t kUsbFrameTypeControl = 0x80;
+
+constexpr uint8_t kUsbControlHello = 0x01;
+constexpr uint8_t kUsbControlAck = 0x81;
+
+constexpr int kHandshakeTimeoutMs = 2000;
+constexpr int kReadPollIntervalMs = 10;
+} // namespace
+
 CdcTransport::CdcTransport(const QString &devicePath) : m_devicePath(devicePath)
 {
+  resetState();
 }
 
 CdcTransport::~CdcTransport()
@@ -29,10 +45,31 @@ CdcTransport::~CdcTransport()
   close();
 }
 
+void CdcTransport::resetState()
+{
+  m_handshakeComplete = false;
+  m_lastNonce = 0;
+  m_rxBuffer.clear();
+}
+
+bool CdcTransport::ensureOpen()
+{
+  if (isOpen() && m_handshakeComplete) {
+    return true;
+  }
+  if (!open()) {
+    return false;
+  }
+  return true;
+}
+
 bool CdcTransport::open()
 {
   if (isOpen()) {
-    return true;
+    if (m_handshakeComplete) {
+      return true;
+    }
+    return performHandshake();
   }
 
 #if defined(Q_OS_UNIX)
@@ -43,7 +80,6 @@ bool CdcTransport::open()
     return false;
   }
 
-  // Configure serial port settings
   struct termios tty;
   if (tcgetattr(m_fd, &tty) != 0) {
     m_lastError = "Failed to get terminal attributes";
@@ -53,14 +89,12 @@ bool CdcTransport::open()
     return false;
   }
 
-  // Set raw mode
   cfmakeraw(&tty);
-
-  // Set baud rate (115200)
   cfsetospeed(&tty, B115200);
   cfsetispeed(&tty, B115200);
+  tty.c_cc[VMIN] = 0;
+  tty.c_cc[VTIME] = 1; // 100ms read timeout
 
-  // Apply settings
   if (tcsetattr(m_fd, TCSANOW, &tty) != 0) {
     m_lastError = "Failed to set terminal attributes";
     LOG_ERR("CDC: %s", m_lastError.c_str());
@@ -68,10 +102,6 @@ bool CdcTransport::open()
     m_fd = -1;
     return false;
   }
-
-  LOG_INFO("CDC: opened device %s", m_devicePath.toUtf8().constData());
-  return true;
-
 #elif defined(Q_OS_WIN)
   HANDLE handle = CreateFileW(
       reinterpret_cast<LPCWSTR>(m_devicePath.utf16()), GENERIC_READ | GENERIC_WRITE, 0, nullptr, OPEN_EXISTING,
@@ -86,7 +116,6 @@ bool CdcTransport::open()
 
   m_fd = reinterpret_cast<int>(handle);
 
-  // Configure DCB
   DCB dcb = {0};
   dcb.DCBlength = sizeof(DCB);
 
@@ -111,10 +140,9 @@ bool CdcTransport::open()
     return false;
   }
 
-  // Set timeouts
   COMMTIMEOUTS timeouts = {0};
   timeouts.ReadIntervalTimeout = 50;
-  timeouts.ReadTotalTimeoutConstant = 1000;
+  timeouts.ReadTotalTimeoutConstant = 100;
   timeouts.ReadTotalTimeoutMultiplier = 10;
   timeouts.WriteTotalTimeoutConstant = 1000;
   timeouts.WriteTotalTimeoutMultiplier = 10;
@@ -126,14 +154,14 @@ bool CdcTransport::open()
     m_fd = -1;
     return false;
   }
-
-  LOG_INFO("CDC: opened device %s", m_devicePath.toUtf8().constData());
-  return true;
 #else
   m_lastError = "CDC transport not implemented for this platform";
-  LOG_ERR("CDC: %s", m_lastError.c_str());
   return false;
 #endif
+
+  LOG_INFO("CDC: opened device %s", m_devicePath.toUtf8().constData());
+  resetState();
+  return performHandshake();
 }
 
 void CdcTransport::close()
@@ -149,187 +177,216 @@ void CdcTransport::close()
 #endif
 
   m_fd = -1;
+  resetState();
   LOG_INFO("CDC: closed device");
 }
 
 bool CdcTransport::isOpen() const
 {
-  return m_fd >= 0;
+  return m_fd != -1;
 }
 
-PicoConfig CdcTransport::queryConfig()
+bool CdcTransport::performHandshake()
 {
-  PicoConfig config;
-
   if (!isOpen()) {
     m_lastError = "Device not open";
-    return config;
+    return false;
   }
 
-  // Query arch
-  std::string archResponse;
-  if (!sendCommand("GET_ARCH\n", archResponse)) {
-    return config;
-  }
-  config.arch = archResponse;
+  std::random_device rd;
+  std::mt19937 rng(rd());
+  std::uniform_int_distribution<uint32_t> dist;
+  m_lastNonce = dist(rng);
 
-  // Query screen info
-  std::string screenResponse;
-  if (!sendCommand("GET_SCREEN\n", screenResponse)) {
-    return config;
-  }
+  std::vector<uint8_t> payload(6);
+  payload[0] = kUsbControlHello;
+  payload[1] = kUsbLinkVersion;
+  payload[2] = static_cast<uint8_t>(m_lastNonce & 0xFF);
+  payload[3] = static_cast<uint8_t>((m_lastNonce >> 8) & 0xFF);
+  payload[4] = static_cast<uint8_t>((m_lastNonce >> 16) & 0xFF);
+  payload[5] = static_cast<uint8_t>((m_lastNonce >> 24) & 0xFF);
 
-  // Parse screen response: "width,height,rotation,physWidth,physHeight,scale"
-  if (sscanf(
-          screenResponse.c_str(), "%d,%d,%d,%f,%f,%f", &config.screenWidth, &config.screenHeight,
-          &config.screenRotation, &config.screenPhysicalWidth, &config.screenPhysicalHeight, &config.screenScaleFactor
-      ) != 6) {
-    m_lastError = "Failed to parse screen info";
-    return config;
+  if (!sendUsbFrame(kUsbFrameTypeControl, 0, payload)) {
+    return false;
   }
 
-  LOG_INFO(
-      "CDC: config arch=%s screen=%dx%d rotation=%d", config.arch.c_str(), config.screenWidth, config.screenHeight,
-      config.screenRotation
-  );
+  auto deadline = std::chrono::steady_clock::now() + std::chrono::milliseconds(kHandshakeTimeoutMs);
+  while (std::chrono::steady_clock::now() < deadline) {
+    uint8_t type = 0;
+    uint8_t flags = 0;
+    std::vector<uint8_t> framePayload;
+    if (!readFrame(type, flags, framePayload, kReadPollIntervalMs)) {
+      continue;
+    }
 
-  return config;
+    if (type != kUsbFrameTypeControl || framePayload.empty()) {
+      continue;
+    }
+
+    if (framePayload[0] == kUsbControlAck) {
+      m_handshakeComplete = true;
+      LOG_INFO("CDC: handshake completed");
+      return true;
+    }
+  }
+
+  m_lastError = "Timed out waiting for handshake ACK";
+  LOG_ERR("CDC: %s", m_lastError.c_str());
+  return false;
+}
+
+bool CdcTransport::sendHidEvent(const HidEventPacket &packet)
+{
+  if (!ensureOpen()) {
+    return false;
+  }
+
+  auto payload = packet.serialize();
+  if (payload.empty()) {
+    m_lastError = "Failed to serialize HID event";
+    return false;
+  }
+
+  return sendUsbFrame(kUsbFrameTypeHid, 0, payload);
 }
 
 bool CdcTransport::sendHidFrame(const HidFrame &frame)
 {
+  if (!ensureOpen()) {
+    return false;
+  }
+
+  return sendUsbFrame(kUsbFrameTypeHid, static_cast<uint8_t>(frame.type), frame.payload);
+}
+
+bool CdcTransport::sendUsbFrame(uint8_t type, uint8_t flags, const std::vector<uint8_t> &payload)
+{
+  return sendUsbFrame(type, flags, payload.data(), static_cast<uint16_t>(payload.size()));
+}
+
+bool CdcTransport::sendUsbFrame(uint8_t type, uint8_t flags, const uint8_t *payload, uint16_t length)
+{
   if (!isOpen()) {
     m_lastError = "Device not open";
     return false;
   }
 
-  std::vector<uint8_t> data = frame.serialize();
-  if (data.empty()) {
-    m_lastError = "Failed to serialize HID frame";
-    return false;
+  std::vector<uint8_t> frame;
+  frame.reserve(8 + length);
+
+  frame.push_back(static_cast<uint8_t>(kUsbLinkMagic & 0xFF));
+  frame.push_back(static_cast<uint8_t>((kUsbLinkMagic >> 8) & 0xFF));
+  frame.push_back(kUsbLinkVersion);
+  frame.push_back(type);
+  frame.push_back(flags);
+  frame.push_back(0); // reserved
+  frame.push_back(static_cast<uint8_t>(length & 0xFF));
+  frame.push_back(static_cast<uint8_t>((length >> 8) & 0xFF));
+
+  if (length > 0 && payload != nullptr) {
+    frame.insert(frame.end(), payload, payload + length);
   }
 
-#if defined(Q_OS_UNIX)
-  ssize_t written = ::write(m_fd, data.data(), data.size());
-  if (written < 0 || static_cast<size_t>(written) != data.size()) {
-    m_lastError = "Failed to write HID frame";
+  if (!writeAll(frame.data(), frame.size())) {
     return false;
   }
-#elif defined(Q_OS_WIN)
-  DWORD written = 0;
-  if (!WriteFile(reinterpret_cast<HANDLE>(m_fd), data.data(), data.size(), &written, nullptr) ||
-      written != data.size()) {
-    m_lastError = "Failed to write HID frame";
-    return false;
-  }
-#else
-  m_lastError = "CDC transport not implemented for this platform";
-  return false;
-#endif
 
   return true;
 }
 
-bool CdcTransport::sendCommand(const std::string &command, std::string &response)
+bool CdcTransport::writeAll(const uint8_t *data, size_t length)
 {
-  if (!isOpen()) {
-    m_lastError = "Device not open";
-    return false;
-  }
-
+  size_t offset = 0;
+  while (offset < length) {
 #if defined(Q_OS_UNIX)
-  ssize_t written = ::write(m_fd, command.c_str(), command.size());
-  if (written < 0 || static_cast<size_t>(written) != command.size()) {
-    m_lastError = "Failed to write command";
-    return false;
-  }
-#elif defined(Q_OS_WIN)
-  DWORD written = 0;
-  if (!WriteFile(
-          reinterpret_cast<HANDLE>(m_fd), command.c_str(), command.size(), &written, nullptr
-      ) ||
-      written != command.size()) {
-    m_lastError = "Failed to write command";
-    return false;
-  }
-#else
-  m_lastError = "CDC transport not implemented for this platform";
-  return false;
-#endif
-
-  return readResponse(response);
-}
-
-bool CdcTransport::readResponse(std::string &response, int timeoutMs)
-{
-  response.clear();
-
-  char buffer[256];
-  int elapsed = 0;
-
-#if defined(Q_OS_UNIX)
-  while (elapsed < timeoutMs) {
-    ssize_t bytesRead = ::read(m_fd, buffer, sizeof(buffer) - 1);
-
-    if (bytesRead > 0) {
-      buffer[bytesRead] = '\0';
-      response += buffer;
-
-      // Check for newline (end of response)
-      if (response.find('\n') != std::string::npos) {
-        // Remove trailing newline
-        if (!response.empty() && response.back() == '\n') {
-          response.pop_back();
-        }
-        if (!response.empty() && response.back() == '\r') {
-          response.pop_back();
-        }
-        return true;
+    ssize_t written = ::write(m_fd, data + offset, length - offset);
+    if (written < 0) {
+      if (errno == EAGAIN || errno == EWOULDBLOCK) {
+        std::this_thread::sleep_for(std::chrono::milliseconds(kReadPollIntervalMs));
+        continue;
       }
-    } else if (bytesRead < 0 && errno != EAGAIN && errno != EWOULDBLOCK) {
-      m_lastError = "Read error";
+      m_lastError = "Failed to write to device: " + std::string(strerror(errno));
       return false;
     }
-
-    // Wait a bit before next read
-    QThread::msleep(10);
-    elapsed += 10;
-  }
-
-  m_lastError = "Timeout waiting for response";
-  return false;
-
+    offset += static_cast<size_t>(written);
 #elif defined(Q_OS_WIN)
-  DWORD bytesRead = 0;
-  while (elapsed < timeoutMs) {
-    if (ReadFile(reinterpret_cast<HANDLE>(m_fd), buffer, sizeof(buffer) - 1, &bytesRead, nullptr) &&
-        bytesRead > 0) {
-      buffer[bytesRead] = '\0';
-      response += buffer;
+    DWORD written = 0;
+    if (!WriteFile(reinterpret_cast<HANDLE>(m_fd), data + offset, static_cast<DWORD>(length - offset), &written, nullptr)) {
+      m_lastError = "Failed to write to device";
+      return false;
+    }
+    offset += static_cast<size_t>(written);
+#else
+    m_lastError = "CDC transport not implemented for this platform";
+    return false;
+#endif
+  }
+  return true;
+}
 
-      // Check for newline
-      if (response.find('\n') != std::string::npos) {
-        if (!response.empty() && response.back() == '\n') {
-          response.pop_back();
+bool CdcTransport::readFrame(uint8_t &type, uint8_t &flags, std::vector<uint8_t> &payload, int timeoutMs)
+{
+  auto deadline = std::chrono::steady_clock::now() + std::chrono::milliseconds(timeoutMs);
+
+  while (std::chrono::steady_clock::now() < deadline) {
+    if (m_rxBuffer.size() >= 8) {
+      uint16_t magic = static_cast<uint16_t>(m_rxBuffer[0]) | (static_cast<uint16_t>(m_rxBuffer[1]) << 8);
+      if (magic != kUsbLinkMagic) {
+        m_rxBuffer.erase(m_rxBuffer.begin());
+        continue;
+      }
+
+      uint8_t version = m_rxBuffer[2];
+      uint8_t frameType = m_rxBuffer[3];
+      uint8_t frameFlags = m_rxBuffer[4];
+      uint16_t length = static_cast<uint16_t>(m_rxBuffer[6]) | (static_cast<uint16_t>(m_rxBuffer[7]) << 8);
+
+      const size_t frameSize = 8 + length;
+      if (m_rxBuffer.size() < frameSize) {
+        // Need more data
+      } else {
+        // Complete frame
+        payload.assign(m_rxBuffer.begin() + 8, m_rxBuffer.begin() + 8 + length);
+        m_rxBuffer.erase(m_rxBuffer.begin(), m_rxBuffer.begin() + frameSize);
+
+        if (version != kUsbLinkVersion) {
+          continue;
         }
-        if (!response.empty() && response.back() == '\r') {
-          response.pop_back();
-        }
+
+        type = frameType;
+        flags = frameFlags;
         return true;
       }
     }
 
-    QThread::msleep(10);
-    elapsed += 10;
+    uint8_t buffer[128];
+#if defined(Q_OS_UNIX)
+    ssize_t bytesRead = ::read(m_fd, buffer, sizeof(buffer));
+    if (bytesRead > 0) {
+      m_rxBuffer.insert(m_rxBuffer.end(), buffer, buffer + bytesRead);
+    } else if (bytesRead == 0) {
+      std::this_thread::sleep_for(std::chrono::milliseconds(kReadPollIntervalMs));
+    } else if (errno == EAGAIN || errno == EWOULDBLOCK) {
+      std::this_thread::sleep_for(std::chrono::milliseconds(kReadPollIntervalMs));
+    } else {
+      m_lastError = "Failed to read from device: " + std::string(strerror(errno));
+      return false;
+    }
+#elif defined(Q_OS_WIN)
+    DWORD bytesRead = 0;
+    if (ReadFile(reinterpret_cast<HANDLE>(m_fd), buffer, sizeof(buffer), &bytesRead, nullptr) && bytesRead > 0) {
+      m_rxBuffer.insert(m_rxBuffer.end(), buffer, buffer + bytesRead);
+    } else {
+      std::this_thread::sleep_for(std::chrono::milliseconds(kReadPollIntervalMs));
+    }
+#else
+    (void)buffer;
+    m_lastError = "CDC transport not implemented for this platform";
+    return false;
+#endif
   }
 
-  m_lastError = "Timeout waiting for response";
   return false;
-
-#else
-  m_lastError = "CDC transport not implemented for this platform";
-  return false;
-#endif
 }
 
 } // namespace deskflow::bridge

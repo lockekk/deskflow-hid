@@ -10,83 +10,80 @@
 
 namespace deskflow::bridge {
 
-/**
- * @brief HID report types for bridge communication
- */
+enum class HidEventType : uint8_t {
+  KeyboardPress = 0x01,
+  KeyboardRelease = 0x02,
+  MouseMove = 0x03,
+  MouseButtonPress = 0x04,
+  MouseButtonRelease = 0x05,
+  MouseScroll = 0x06,
+};
+
 enum class HidReportType : uint8_t {
   Keyboard = 0x01,
   Mouse = 0x02,
   MouseWheel = 0x03,
-  ConsumerControl = 0x04
 };
 
 /**
- * @brief HID frame structure for USB CDC transport
- *
- * Frame format:
- * - Magic byte (0xAA)
- * - Report type (1 byte)
- * - Payload length (1 byte)
- * - Payload data (variable)
- * - Checksum (1 byte, simple XOR of all preceding bytes)
- */
-struct HidFrame {
-  static constexpr uint8_t MAGIC_BYTE = 0xAA;
-  static constexpr size_t MAX_PAYLOAD_SIZE = 64;
-
-  HidReportType type;
-  std::vector<uint8_t> payload;
-
-  /**
-   * @brief Serialize frame to byte vector for transmission
-   */
-  std::vector<uint8_t> serialize() const;
-
-  /**
-   * @brief Deserialize frame from byte vector
-   * @return true if frame is valid, false otherwise
-   */
-  static bool deserialize(const std::vector<uint8_t> &data, HidFrame &frame);
-
-  /**
-   * @brief Calculate checksum for frame data
-   */
-  static uint8_t calculateChecksum(const uint8_t *data, size_t length);
-};
-
-/**
- * @brief Keyboard HID report structure (Boot Protocol)
+ * @brief HID Keyboard Report
  */
 struct KeyboardReport {
-  uint8_t modifiers;  // Modifier keys bitmap
-  uint8_t reserved;   // Reserved byte (usually 0)
-  uint8_t keycodes[6]; // Up to 6 simultaneous key presses
+  uint8_t modifiers = 0;
+  uint8_t reserved = 0;
+  uint8_t keycodes[6] = {0};
 
-  std::vector<uint8_t> toPayload() const;
-  static KeyboardReport fromPayload(const std::vector<uint8_t> &payload);
+  std::vector<uint8_t> toPayload() const {
+    return std::vector<uint8_t>{modifiers, reserved, keycodes[0], keycodes[1], keycodes[2], keycodes[3], keycodes[4], keycodes[5]};
+  }
 };
 
 /**
- * @brief Mouse HID report structure (Boot Protocol)
+ * @brief HID Mouse Report
  */
 struct MouseReport {
-  uint8_t buttons;    // Button state bitmap
-  int8_t x;           // X movement delta
-  int8_t y;           // Y movement delta
+  uint8_t buttons = 0;
+  int8_t x = 0;
+  int8_t y = 0;
 
-  std::vector<uint8_t> toPayload() const;
-  static MouseReport fromPayload(const std::vector<uint8_t> &payload);
+  std::vector<uint8_t> toPayload() const {
+    return std::vector<uint8_t>{buttons, static_cast<uint8_t>(x), static_cast<uint8_t>(y)};
+  }
 };
 
 /**
- * @brief Mouse wheel HID report structure
+ * @brief HID Mouse Wheel Report
  */
 struct MouseWheelReport {
-  int8_t wheel;       // Vertical wheel delta
-  int8_t hwheel;      // Horizontal wheel delta (optional)
+  int8_t wheel = 0;
+  int8_t hwheel = 0;
 
-  std::vector<uint8_t> toPayload() const;
-  static MouseWheelReport fromPayload(const std::vector<uint8_t> &payload);
+  std::vector<uint8_t> toPayload() const {
+    return std::vector<uint8_t>{static_cast<uint8_t>(wheel), static_cast<uint8_t>(hwheel)};
+  }
+};
+
+/**
+ * @brief HID Frame
+ */
+struct HidFrame {
+  HidReportType type;
+  std::vector<uint8_t> payload;
+};
+
+/**
+ * @brief HID protocol packet wrapper
+ *
+ * Format (little endian):
+ *   header (0xAA55) | type (1 byte) | length (1 byte) | payload (N bytes)
+ */
+struct HidEventPacket {
+  static constexpr uint16_t MAGIC = 0xAA55;
+
+  HidEventType type;
+  std::vector<uint8_t> payload;
+
+  std::vector<uint8_t> serialize() const;
 };
 
 } // namespace deskflow::bridge
