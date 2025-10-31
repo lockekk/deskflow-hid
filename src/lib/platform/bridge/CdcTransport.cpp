@@ -8,6 +8,7 @@
 #include "base/Log.h"
 
 #include <algorithm>
+#include <array>
 #include <chrono>
 #include <iomanip>
 #include <random>
@@ -29,6 +30,7 @@ namespace {
 constexpr uint16_t kUsbLinkMagic = 0xC35A;
 constexpr uint8_t kUsbLinkVersion = 1;
 constexpr uint8_t kUsbFrameTypeHid = 0x01;
+constexpr uint8_t kUsbFrameTypeHidMouseCompact = 0x02;
 constexpr uint8_t kUsbFrameTypeControl = 0x80;
 
 constexpr uint8_t kUsbControlHello = 0x01;
@@ -274,6 +276,44 @@ bool CdcTransport::sendHidEvent(const HidEventPacket &packet)
   }
 
   return sendUsbFrame(kUsbFrameTypeHid, 0, payload);
+}
+
+bool CdcTransport::sendMouseMoveCompact(int16_t dx, int16_t dy)
+{
+  if (!ensureOpen()) {
+    return false;
+  }
+
+  constexpr int32_t kDeltaMin = -127;
+  constexpr int32_t kDeltaMax = 127;
+
+  const int32_t clampedDx = std::clamp(static_cast<int32_t>(dx), kDeltaMin, kDeltaMax);
+  const int32_t clampedDy = std::clamp(static_cast<int32_t>(dy), kDeltaMin, kDeltaMax);
+
+  const uint8_t packedDx = static_cast<uint8_t>(static_cast<int8_t>(clampedDx));
+  const uint8_t packedDy = static_cast<uint8_t>(static_cast<int8_t>(clampedDy));
+
+  std::array<uint8_t, 8> frame = {
+      static_cast<uint8_t>(kUsbLinkMagic & 0xFF),
+      static_cast<uint8_t>((kUsbLinkMagic >> 8) & 0xFF),
+      kUsbLinkVersion,
+      kUsbFrameTypeHidMouseCompact,
+      packedDx,
+      packedDy,
+      0x00,
+      0x00,
+  };
+
+  const std::string frameHex = hexDump(frame.data(), frame.size(), 32);
+  LOG_DEBUG(
+      "CDC: TX compact mouse frame type=0x%02x dx=%d dy=%d bytes=%s",
+      kUsbFrameTypeHidMouseCompact,
+      clampedDx,
+      clampedDy,
+      frameHex.c_str()
+  );
+
+  return writeAll(frame.data(), frame.size());
 }
 
 bool CdcTransport::sendUsbFrame(uint8_t type, uint8_t flags, const std::vector<uint8_t> &payload)

@@ -70,6 +70,14 @@ public:
   bool sendHidEvent(const HidEventPacket &packet);
 
   /**
+   * @brief Send a compact mouse movement frame
+   *
+   * Encodes the deltas directly in the USB link header so the on-wire
+   * frame is exactly eight bytes (header only, no payload).
+   */
+  bool sendMouseMoveCompact(int16_t dx, int16_t dy);
+
+  /**
    * @brief Get last error message
    */
   std::string lastError() const
