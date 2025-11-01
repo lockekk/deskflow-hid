@@ -6,9 +6,11 @@
 #include "BridgePlatformScreen.h"
 
 #include "HidFrame.h"
+#include "base/Event.h"
 #include "base/Log.h"
 
 #include <algorithm>
+#include <chrono>
 #include <iomanip>
 #include <cstring>
 #include <sstream>
@@ -18,10 +20,14 @@
 namespace deskflow::bridge {
 
 namespace {
-constexpr int kMinMouseDelta = std::numeric_limits<int16_t>::min();
-constexpr int kMaxMouseDelta = std::numeric_limits<int16_t>::max();
+constexpr int kMinMouseDelta = -127;
+constexpr int kMaxMouseDelta = 127;
 constexpr int kDebugScreenWidth = 1920;
 constexpr int kDebugScreenHeight = 1080;
+constexpr auto kMouseThrottleInterval = std::chrono::milliseconds(120);
+constexpr double kMouseThrottleIntervalSeconds =
+    std::chrono::duration_cast<std::chrono::duration<double>>(kMouseThrottleInterval).count();
+constexpr int64_t kPendingDeltaLimit = std::numeric_limits<int32_t>::max();
 
 std::string hexDump(const uint8_t *data, size_t length, size_t maxBytes = 32)
 {
@@ -52,7 +58,8 @@ BridgePlatformScreen::BridgePlatformScreen(
 ) :
     PlatformScreen(events, false), // invertScrollDirection = false by default
     m_transport(std::move(transport)),
-    m_config(config)
+    m_config(config),
+    m_events(events)
 {
   LOG_INFO(
       "BridgeScreen: initialized for arch=%s screen=%dx%d (debug override active)",
@@ -60,9 +67,21 @@ BridgePlatformScreen::BridgePlatformScreen(
       kDebugScreenWidth,
       kDebugScreenHeight
   );
+
+  if (m_events != nullptr) {
+    m_events->addHandler(deskflow::EventTypes::Timer, this, [this](const Event &event) {
+      handleMouseFlushTimer(event);
+    });
+  }
 }
 
-BridgePlatformScreen::~BridgePlatformScreen() = default;
+BridgePlatformScreen::~BridgePlatformScreen()
+{
+  if (m_events != nullptr) {
+    cancelMouseFlushTimer();
+    m_events->removeHandler(deskflow::EventTypes::Timer, this);
+  }
+}
 
 void *BridgePlatformScreen::getEventTarget() const
 {
@@ -198,12 +217,18 @@ void BridgePlatformScreen::fakeMouseRelativeMove(int32_t dx, int32_t dy) const
     return;
   }
 
-  dx = std::clamp(dx, static_cast<int32_t>(kMinMouseDelta), static_cast<int32_t>(kMaxMouseDelta));
-  dy = std::clamp(dy, static_cast<int32_t>(kMinMouseDelta), static_cast<int32_t>(kMaxMouseDelta));
+  m_pendingDx = std::clamp(
+      m_pendingDx + static_cast<int64_t>(dx),
+      -kPendingDeltaLimit,
+      kPendingDeltaLimit
+  );
+  m_pendingDy = std::clamp(
+      m_pendingDy + static_cast<int64_t>(dy),
+      -kPendingDeltaLimit,
+      kPendingDeltaLimit
+  );
 
-  if (!sendMouseMoveEvent(static_cast<int16_t>(dx), static_cast<int16_t>(dy))) {
-    LOG_ERR("BridgeScreen: failed to send mouse move");
-  }
+  scheduleMouseFlush(std::chrono::steady_clock::now());
 }
 
 void BridgePlatformScreen::fakeMouseWheel(int32_t, int32_t yDelta) const
@@ -218,6 +243,93 @@ void BridgePlatformScreen::fakeMouseWheel(int32_t, int32_t yDelta) const
   if (!sendMouseScrollEvent(static_cast<int8_t>(yDelta))) {
     LOG_ERR("BridgeScreen: failed to send scroll event");
   }
+}
+
+void BridgePlatformScreen::handleMouseFlushTimer(const Event &event) const
+{
+  if (event.getTarget() != this) {
+    return;
+  }
+
+  const auto *timerEvent = static_cast<IEventQueue::TimerEvent *>(event.getData());
+  if (timerEvent == nullptr || timerEvent->m_timer != m_mouseFlushTimer) {
+    return;
+  }
+
+  scheduleMouseFlush(std::chrono::steady_clock::now());
+}
+
+bool BridgePlatformScreen::flushPendingMouse(std::chrono::steady_clock::time_point now) const
+{
+  if (m_pendingDx == 0 && m_pendingDy == 0) {
+    m_lastMouseFlush = now;
+    return false;
+  }
+
+  const int64_t stepDx = std::clamp(
+      m_pendingDx, static_cast<int64_t>(kMinMouseDelta), static_cast<int64_t>(kMaxMouseDelta)
+  );
+  const int64_t stepDy = std::clamp(
+      m_pendingDy, static_cast<int64_t>(kMinMouseDelta), static_cast<int64_t>(kMaxMouseDelta)
+  );
+
+  if (!sendMouseMoveEvent(static_cast<int16_t>(stepDx), static_cast<int16_t>(stepDy))) {
+    LOG_ERR("BridgeScreen: failed to send mouse move");
+  }
+
+  m_pendingDx -= stepDx;
+  m_pendingDy -= stepDy;
+  m_lastMouseFlush = now;
+  return (m_pendingDx != 0 || m_pendingDy != 0);
+}
+
+void BridgePlatformScreen::scheduleMouseFlush(std::chrono::steady_clock::time_point now) const
+{
+  if (m_pendingDx == 0 && m_pendingDy == 0) {
+    cancelMouseFlushTimer();
+    m_lastMouseFlush = now;
+    return;
+  }
+
+  const bool shouldFlushImmediately =
+      (m_lastMouseFlush == std::chrono::steady_clock::time_point::min()) ||
+      (now - m_lastMouseFlush >= kMouseThrottleInterval);
+
+  if (shouldFlushImmediately) {
+    const bool hasRemainder = flushPendingMouse(now);
+    if (hasRemainder) {
+      armMouseFlushTimer();
+    } else {
+      cancelMouseFlushTimer();
+    }
+  } else {
+    armMouseFlushTimer();
+  }
+}
+
+void BridgePlatformScreen::cancelMouseFlushTimer() const
+{
+  if (m_events != nullptr && m_mouseFlushTimer != nullptr) {
+    m_events->deleteTimer(m_mouseFlushTimer);
+    m_mouseFlushTimer = nullptr;
+  }
+}
+
+void BridgePlatformScreen::armMouseFlushTimer() const
+{
+  if (m_events != nullptr && m_mouseFlushTimer == nullptr) {
+    m_mouseFlushTimer = m_events->newTimer(
+        kMouseThrottleIntervalSeconds, const_cast<BridgePlatformScreen *>(this)
+    );
+  }
+}
+
+void BridgePlatformScreen::resetMouseAccumulator() const
+{
+  m_pendingDx = 0;
+  m_pendingDy = 0;
+  m_lastMouseFlush = std::chrono::steady_clock::time_point::min();
+  cancelMouseFlushTimer();
 }
 
 void BridgePlatformScreen::fakeKeyDown(KeyID id, KeyModifierMask mask, KeyButton button, const std::string &)
@@ -346,17 +458,20 @@ void BridgePlatformScreen::enable()
 {
   LOG_INFO("BridgeScreen: enabled");
   m_enabled = true;
+  resetMouseAccumulator();
 }
 
 void BridgePlatformScreen::disable()
 {
   LOG_INFO("BridgeScreen: disabled");
   m_enabled = false;
+  resetMouseAccumulator();
 }
 
 void BridgePlatformScreen::enter()
 {
   LOG_DEBUG("BridgeScreen: enter");
+  resetMouseAccumulator();
   if (m_transport != nullptr && !m_transport->open()) {
     LOG_WARN("BridgeScreen: failed to open transport on enter (%s)", m_transport->lastError().c_str());
   }
