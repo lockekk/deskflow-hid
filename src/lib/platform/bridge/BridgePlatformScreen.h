@@ -8,12 +8,8 @@
 #include "CdcTransport.h"
 #include "deskflow/PlatformScreen.h"
 
-#include <chrono>
 #include <set>
-#include <cstdint>
 #include <memory>
-
-class Event;
 
 namespace deskflow::bridge {
 
@@ -112,14 +108,9 @@ private:
   uint8_t convertKeyButton(KeyButton button) const;
   uint8_t convertKey(KeyID id, KeyButton button) const;
   uint8_t convertButtonID(ButtonID id) const;
-  void handleMouseFlushTimer(const Event &event) const;
-  void flushPendingMouse(uint32_t repeatCount) const;
-  void stopMouseFlushTimer() const;
-  void resetMouseAccumulator() const;
 
   std::shared_ptr<CdcTransport> m_transport;
   PicoConfig m_config;
-  IEventQueue *m_events = nullptr;
 
   // Screen state
   int32_t m_cursorX = 0;
@@ -132,11 +123,6 @@ private:
 
   bool m_enabled = false;
   uint32_t m_sequenceNumber = 0;
-  mutable EventQueueTimer *m_mouseFlushTimer = nullptr;
-  mutable int64_t m_pendingDx = 0;
-  mutable int64_t m_pendingDy = 0;
-  std::chrono::steady_clock::time_point m_mouseSuppressedUntil =
-      std::chrono::steady_clock::time_point::min();
 };
 
 } // namespace deskflow::bridge
