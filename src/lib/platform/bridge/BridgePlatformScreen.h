@@ -8,6 +8,7 @@
 #include "CdcTransport.h"
 #include "deskflow/PlatformScreen.h"
 
+#include <chrono>
 #include <set>
 #include <cstdint>
 #include <memory>
@@ -134,6 +135,8 @@ private:
   mutable EventQueueTimer *m_mouseFlushTimer = nullptr;
   mutable int64_t m_pendingDx = 0;
   mutable int64_t m_pendingDy = 0;
+  std::chrono::steady_clock::time_point m_mouseSuppressedUntil =
+      std::chrono::steady_clock::time_point::min();
 };
 
 } // namespace deskflow::bridge

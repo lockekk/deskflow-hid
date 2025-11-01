@@ -10,6 +10,7 @@
 #include "base/Log.h"
 
 #include <algorithm>
+#include <chrono>
 #include <iomanip>
 #include <cstring>
 #include <sstream>
@@ -24,6 +25,7 @@ constexpr int kDebugScreenWidth = 1920;
 constexpr int kDebugScreenHeight = 1080;
 constexpr double kMouseFlushIntervalSeconds = 1.0 / 100.0;
 constexpr int kMaxAccumulatedDelta = kMaxMouseDelta * 100; // Roughly 1 second of buffered motion
+constexpr std::chrono::seconds kMouseSuppressionDuration{1};
 
 std::string hexDump(const uint8_t *data, size_t length, size_t maxBytes = 32)
 {
@@ -209,6 +211,10 @@ void BridgePlatformScreen::fakeMouseMove(int32_t x, int32_t y)
 void BridgePlatformScreen::fakeMouseRelativeMove(int32_t dx, int32_t dy) const
 {
   LOG_DEBUG2("BridgeScreen: mouse relative move %d,%d", dx, dy);
+
+  if (std::chrono::steady_clock::now() < m_mouseSuppressedUntil) {
+    return;
+  }
 
   if (dx == 0 && dy == 0) {
     return;
@@ -443,6 +449,11 @@ void BridgePlatformScreen::disable()
 void BridgePlatformScreen::enter()
 {
   LOG_DEBUG("BridgeScreen: enter");
+  resetMouseAccumulator();
+  m_mouseSuppressedUntil = std::chrono::steady_clock::now() + kMouseSuppressionDuration;
+  if (m_transport != nullptr && !m_transport->open()) {
+    LOG_WARN("BridgeScreen: failed to open transport on enter (%s)", m_transport->lastError().c_str());
+  }
 }
 
 bool BridgePlatformScreen::canLeave()
