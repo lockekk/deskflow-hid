@@ -29,6 +29,8 @@
 #include "gui/OSXHelpers.h"
 #endif
 
+#include "gui/devices/UsbDeviceMonitor.h"
+
 class QAction;
 class QMenu;
 class QLabel;
@@ -165,6 +167,9 @@ private:
 
   void serverClientsChanged(const QStringList &clients);
 
+  void usbDeviceConnected(const deskflow::gui::UsbDeviceInfo &device);
+  void usbDeviceDisconnected(const deskflow::gui::UsbDeviceInfo &device);
+
   inline static const auto m_guiSocketName = QStringLiteral("deskflow-gui");
   inline static const auto m_nameRegEx = QRegularExpression(QStringLiteral("^[\\w\\-_\\.]{0,255}$"));
 
@@ -183,6 +188,7 @@ private:
   QSystemTrayIcon *m_trayIcon = nullptr;
   QLocalServer *m_guiDupeChecker = nullptr;
   deskflow::gui::ipc::DaemonIpcClient *m_daemonIpcClient = nullptr;
+  deskflow::gui::UsbDeviceMonitor *m_usbDeviceMonitor = nullptr;
 
   LogDock *m_logDock;
   QLabel *m_lblSecurityStatus = nullptr;

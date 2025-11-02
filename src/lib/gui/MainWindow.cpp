@@ -31,6 +31,7 @@
 
 #if defined(Q_OS_LINUX)
 #include "Config.h"
+#include "devices/LinuxUdevMonitor.h"
 #endif
 
 #include <QCloseEvent>
@@ -141,6 +142,33 @@ MainWindow::MainWindow()
   connectSlots();
 
   setupTrayIcon();
+
+  // Setup USB device monitoring (Linux only for now)
+#if defined(Q_OS_LINUX)
+  m_usbDeviceMonitor = new LinuxUdevMonitor(this);
+  // Filter for Raspberry Pi Pico vendor ID (0x2e8a)
+  m_usbDeviceMonitor->setVendorIdFilter(QStringLiteral("2e8a"));
+  // Connect signals
+  connect(m_usbDeviceMonitor, &UsbDeviceMonitor::deviceConnected,
+          this, &MainWindow::usbDeviceConnected);
+  connect(m_usbDeviceMonitor, &UsbDeviceMonitor::deviceDisconnected,
+          this, &MainWindow::usbDeviceDisconnected);
+  // Start monitoring
+  if (m_usbDeviceMonitor->startMonitoring()) {
+    qDebug() << "USB device monitoring started successfully";
+    // Enumerate existing devices and handle them as if they were just connected
+    const auto devices = m_usbDeviceMonitor->enumerateDevices();
+    qDebug() << "Found" << devices.size() << "existing USB device(s)";
+
+    // Emit connection events for already-connected devices
+    for (const auto &device : devices) {
+      qDebug() << "Processing already-connected device:" << device.devicePath;
+      usbDeviceConnected(device);
+    }
+  } else {
+    qWarning() << "Failed to start USB device monitoring";
+  }
+#endif
 
   updateScreenName();
   applyConfig();
@@ -1235,4 +1263,31 @@ void MainWindow::remoteHostChanged(const QString &newRemoteHost)
   if (newRemoteHost.isEmpty()) {
     Settings::setValue(Settings::Client::RemoteHost, QVariant());
   }
+}
+
+void MainWindow::usbDeviceConnected(const UsbDeviceInfo &device)
+{
+  qDebug() << "USB device connected:"
+           << "path:" << device.devicePath
+           << "vendor:" << device.vendorId
+           << "product:" << device.productId
+           << "serial:" << device.serialNumber;
+
+  // TODO: Open Pico configuration window and spawn bridge client
+  // For now, just log the event
+  QString message = tr("Pico 2 W device connected: %1").arg(device.devicePath);
+  setStatus(message);
+}
+
+void MainWindow::usbDeviceDisconnected(const UsbDeviceInfo &device)
+{
+  qDebug() << "USB device disconnected:"
+           << "path:" << device.devicePath
+           << "vendor:" << device.vendorId
+           << "product:" << device.productId;
+
+  // TODO: Kill corresponding bridge client process
+  // For now, just log the event
+  QString message = tr("Pico 2 W device disconnected: %1").arg(device.devicePath);
+  setStatus(message);
 }

@@ -13,12 +13,22 @@ if(APPLE)
   )
 endif()
 
+if(UNIX AND NOT APPLE)
+  set (device_sources
+    devices/LinuxUdevMonitor.cpp
+    devices/LinuxUdevMonitor.h
+  )
+endif()
+
 add_library(${target} STATIC
   ${platform_sources}
+  ${device_sources}
   Action.cpp
   Action.h
   DataDownloader.cpp
   DataDownloader.h
+  devices/UsbDeviceMonitor.cpp
+  devices/UsbDeviceMonitor.h
   Diagnostic.cpp
   Diagnostic.h
   DotEnv.cpp
@@ -143,4 +153,15 @@ if(WIN32)
     arch
     net
   )
+endif()
+
+if(UNIX AND NOT APPLE)
+  # Find libudev for USB device monitoring
+  find_library(UDEV_LIBRARY udev)
+  if(UDEV_LIBRARY)
+    target_link_libraries(${target} ${UDEV_LIBRARY})
+    message(STATUS "Found libudev: ${UDEV_LIBRARY}")
+  else()
+    message(WARNING "libudev not found - USB device monitoring will not be available")
+  endif()
 endif()
