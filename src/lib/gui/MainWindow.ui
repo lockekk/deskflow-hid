@@ -173,8 +173,11 @@
           </item>
           <item>
            <widget class="QRadioButton" name="rbModeClient">
+            <property name="enabled">
+             <bool>false</bool>
+            </property>
             <property name="text">
-             <string>Use another computer’s mouse and keyboard
+             <string>Use another computer's mouse and keyboard
 (make this computer the client)</string>
             </property>
            </widget>
