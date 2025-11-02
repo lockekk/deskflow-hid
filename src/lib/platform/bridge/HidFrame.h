@@ -17,6 +17,8 @@ enum class HidEventType : uint8_t {
   MouseButtonPress = 0x04,
   MouseButtonRelease = 0x05,
   MouseScroll = 0x06,
+  ConsumerControlPress = 0x07,
+  ConsumerControlRelease = 0x08,
 };
 
 /**

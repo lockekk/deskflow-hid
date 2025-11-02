@@ -22,7 +22,7 @@ namespace deskflow::bridge {
 namespace {
 constexpr int kMinMouseDelta = -127;
 constexpr int kMaxMouseDelta = 127;
-constexpr auto kMouseThrottleInterval = std::chrono::milliseconds(120);
+constexpr auto kMouseThrottleInterval = std::chrono::milliseconds(90);
 constexpr double kMouseThrottleIntervalSeconds =
     std::chrono::duration_cast<std::chrono::duration<double>>(kMouseThrottleInterval).count();
 constexpr int64_t kPendingDeltaLimit = std::numeric_limits<int32_t>::max();
@@ -335,6 +335,19 @@ void BridgePlatformScreen::fakeKeyDown(KeyID id, KeyModifierMask mask, KeyButton
 {
   LOG_DEBUG("BridgeScreen: key down id=0x%04x button=%d", id, button);
 
+  // Check if this is a media key (consumer control)
+  const uint16_t consumerCode = convertMediaKeyToConsumerControl(id);
+  if (consumerCode != 0) {
+    LOG_DEBUG("BridgeScreen: media key press, consumer code=0x%04x", consumerCode);
+    m_pressedButtons.insert(button);
+    m_pressedConsumerControls[button] = consumerCode; // Track for release
+    if (!sendConsumerControlEvent(HidEventType::ConsumerControlPress, consumerCode)) {
+      LOG_ERR("BridgeScreen: failed to send consumer control press");
+    }
+    return;
+  }
+
+  // Regular keyboard key
   const uint8_t hidKey = convertKey(id, button);
   uint8_t hidModifiers = convertModifiers(mask);
 
@@ -373,13 +386,32 @@ bool BridgePlatformScreen::fakeKeyUp(KeyButton button)
 {
   LOG_DEBUG("BridgeScreen: key up button=%d", button);
 
+  // Check if this is a consumer control key
+  auto it = m_pressedConsumerControls.find(button);
+  if (it != m_pressedConsumerControls.end()) {
+    const uint16_t consumerCode = it->second;
+    LOG_DEBUG("BridgeScreen: media key release, consumer code=0x%04x", consumerCode);
+    m_pressedButtons.erase(button);
+    m_pressedConsumerControls.erase(it);
+    if (!sendConsumerControlEvent(HidEventType::ConsumerControlRelease, consumerCode)) {
+      LOG_ERR("BridgeScreen: failed to send consumer control release");
+    }
+    return true;
+  }
+
+  // Regular keyboard key
   const uint8_t hidKey = convertKey(0, button);
-  const uint8_t hidModifiers = convertModifiers(m_activeModifiers);
+  uint8_t hidModifiers = 0;
 
   m_pressedKeycodes.erase(hidKey);
   m_pressedButtons.erase(button);
   if (m_pressedButtons.empty()) {
     m_activeModifiers = 0;
+  }
+
+  // Only compute modifiers if we have a valid key to send
+  if (hidKey != 0) {
+    hidModifiers = convertModifiers(m_activeModifiers);
   }
 
   if (hidKey == 0 && hidModifiers == 0) {
@@ -396,12 +428,21 @@ void BridgePlatformScreen::fakeAllKeysUp()
 {
   LOG_DEBUG("BridgeScreen: all keys up");
 
+  // Release all consumer control keys
+  for (const auto &[button, consumerCode] : m_pressedConsumerControls) {
+    if (!sendConsumerControlEvent(HidEventType::ConsumerControlRelease, consumerCode)) {
+      LOG_ERR("BridgeScreen: failed to send consumer control release for 0x%04x", consumerCode);
+    }
+  }
+
+  // Release all keyboard keys
   for (uint8_t hidKey : m_pressedKeycodes) {
     if (!sendKeyboardEvent(HidEventType::KeyboardRelease, 0, hidKey)) {
       LOG_ERR("BridgeScreen: failed to send key release for %u", hidKey);
     }
   }
 
+  m_pressedConsumerControls.clear();
   m_pressedKeycodes.clear();
   m_pressedButtons.clear();
   m_activeModifiers = 0;
@@ -637,6 +678,19 @@ bool BridgePlatformScreen::sendMouseScrollEvent(int8_t delta) const
   return true;
 }
 
+bool BridgePlatformScreen::sendConsumerControlEvent(HidEventType type, uint16_t usageCode) const
+{
+  // Consumer control usage codes are 16-bit, sent as little-endian
+  const uint8_t lowByte = static_cast<uint8_t>(usageCode & 0xFF);
+  const uint8_t highByte = static_cast<uint8_t>((usageCode >> 8) & 0xFF);
+
+  if (!sendEvent(type, {lowByte, highByte})) {
+    LOG_ERR("BridgeScreen: failed to send consumer control event");
+    return false;
+  }
+  return true;
+}
+
 uint8_t BridgePlatformScreen::convertModifiers(KeyModifierMask mask) const
 {
   uint8_t hidMods = 0;
@@ -709,6 +763,55 @@ uint8_t BridgePlatformScreen::modifierBitForButton(KeyButton button) const
     return 0x08;
   case 134:
     return 0x80;
+  default:
+    return 0;
+  }
+}
+
+uint16_t BridgePlatformScreen::convertMediaKeyToConsumerControl(KeyID id) const
+{
+  // Media keys use HID Consumer Control usage IDs (16-bit values)
+  switch (id) {
+  // Audio controls
+  case 0xE0AD: // kKeyAudioMute
+    return 0x00E2;
+  case 0xE0AE: // kKeyAudioDown
+    return 0x00EA;
+  case 0xE0AF: // kKeyAudioUp
+    return 0x00E9;
+  case 0xE0B0: // kKeyAudioNext
+    return 0x00B5;
+  case 0xE0B1: // kKeyAudioPrev
+    return 0x00B6;
+  case 0xE0B2: // kKeyAudioStop
+    return 0x00B7;
+  case 0xE0B3: // kKeyAudioPlay
+    return 0x00CD;
+  // Display brightness
+  case 0xE0B8: // kKeyBrightnessDown
+    return 0x0070;
+  case 0xE0B9: // kKeyBrightnessUp
+    return 0x006F;
+  // Browser controls
+  case 0xE0A6: // kKeyWWWBack
+    return 0x0224;
+  case 0xE0A7: // kKeyWWWForward
+    return 0x0225;
+  case 0xE0A8: // kKeyWWWRefresh
+    return 0x0227;
+  case 0xE0A9: // kKeyWWWStop
+    return 0x0226;
+  case 0xE0AA: // kKeyWWWSearch
+    return 0x0221;
+  case 0xE0AB: // kKeyWWWFavorites
+    return 0x022A;
+  case 0xE0AC: // kKeyWWWHome
+    return 0x0223;
+  // Application launchers
+  case 0xE0B4: // kKeyAppMail
+    return 0x018A;
+  case 0xE0B5: // kKeyAppMedia
+    return 0x0183;
   default:
     return 0;
   }

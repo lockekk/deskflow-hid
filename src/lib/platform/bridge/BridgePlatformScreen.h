@@ -10,6 +10,7 @@
 
 #include <chrono>
 #include <set>
+#include <map>
 #include <cstdint>
 #include <memory>
 
@@ -104,10 +105,12 @@ private:
   bool sendMouseMoveEvent(int16_t dx, int16_t dy) const;
   bool sendMouseButtonEvent(HidEventType type, uint8_t buttonMask) const;
   bool sendMouseScrollEvent(int8_t delta) const;
+  bool sendConsumerControlEvent(HidEventType type, uint16_t usageCode) const;
 
   uint8_t convertModifiers(KeyModifierMask mask) const;
   uint8_t modifierBitForKey(KeyID id) const;
   uint8_t modifierBitForButton(KeyButton button) const;
+  uint16_t convertMediaKeyToConsumerControl(KeyID id) const;
   uint8_t convertKeyID(KeyID id) const;
   uint8_t convertKeyButton(KeyButton button) const;
   uint8_t convertKey(KeyID id, KeyButton button) const;
@@ -130,6 +133,7 @@ private:
 
   std::set<uint8_t> m_pressedKeycodes;
   std::set<KeyButton> m_pressedButtons;
+  std::map<KeyButton, uint16_t> m_pressedConsumerControls; // button -> consumer code
   KeyModifierMask m_activeModifiers = 0;
 
   bool m_enabled = false;
