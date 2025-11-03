@@ -17,6 +17,8 @@ if(UNIX AND NOT APPLE)
   set (device_sources
     devices/LinuxUdevMonitor.cpp
     devices/LinuxUdevMonitor.h
+    devices/UsbDeviceHelper.cpp
+    devices/UsbDeviceHelper.h
   )
 endif()
 
@@ -61,6 +63,8 @@ add_library(${target} STATIC
   config/ScreenList.h
   config/ServerConfig.cpp
   config/ServerConfig.h
+  core/BridgeClientConfigManager.cpp
+  core/BridgeClientConfigManager.h
   core/ClientConnection.cpp
   core/ClientConnection.h
   core/CommandProcess.cpp
@@ -122,6 +126,8 @@ add_library(${target} STATIC
   validators/ValidationError.h
   validators/IpAddressValidator.cpp
   validators/IpAddressValidator.h
+  widgets/BridgeClientWidget.cpp
+  widgets/BridgeClientWidget.h
   widgets/FingerprintPreview.cpp
   widgets/FingerprintPreview.h
   widgets/KeySequenceWidget.cpp

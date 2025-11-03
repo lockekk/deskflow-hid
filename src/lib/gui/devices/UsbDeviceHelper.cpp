@@ -1,0 +1,79 @@
+/*
+ * Deskflow -- mouse and keyboard sharing utility
+ * SPDX-FileCopyrightText: (C) 2025 Symless Ltd.
+ * SPDX-License-Identifier: GPL-2.0-only WITH LicenseRef-OpenSSL-Exception
+ */
+
+#include "UsbDeviceHelper.h"
+
+#include <QDebug>
+#include <QDir>
+#include <QFile>
+#include <QFileInfo>
+#include <QTextStream>
+#include <QStringList>
+
+namespace deskflow::gui {
+
+QString UsbDeviceHelper::readSerialNumber(const QString &devicePath)
+{
+#ifdef Q_OS_LINUX
+  // Extract tty device name from path (e.g., /dev/ttyACM0 -> ttyACM0)
+  QFileInfo deviceInfo(devicePath);
+  QString ttyName = deviceInfo.fileName();
+
+  const QString ttyBasePath = QStringLiteral("/sys/class/tty/%1").arg(ttyName);
+  QFileInfo ttyLink(ttyBasePath);
+  if (!ttyLink.exists()) {
+    qWarning() << "TTY entry does not exist for" << devicePath << ":" << ttyBasePath;
+    return QString();
+  }
+
+  QFileInfo deviceLink(ttyBasePath + QStringLiteral("/device"));
+  QStringList attemptedPaths;
+
+  auto tryReadSerial = [&](const QString &candidatePath) -> QString {
+    attemptedPaths << candidatePath;
+    QFile serialFile(candidatePath);
+    if (!serialFile.open(QIODevice::ReadOnly | QIODevice::Text)) {
+      return QString();
+    }
+    QTextStream in(&serialFile);
+    QString serialNumber = in.readLine().trimmed();
+    serialFile.close();
+    return serialNumber;
+  };
+
+  // Some kernels expose the serial directly on the tty node (rare, but fast to check).
+  const QString directSerial = tryReadSerial(ttyBasePath + QStringLiteral("/serial"));
+  if (!directSerial.isEmpty()) {
+    qDebug() << "Read serial number for" << devicePath << ":" << directSerial;
+    return directSerial;
+  }
+
+  // Resolve the tty device symlink and search upwards for a "serial" attribute on the USB node.
+  QString canonicalDevicePath = deviceLink.canonicalFilePath();
+  if (!canonicalDevicePath.isEmpty()) {
+    QDir currentDir(canonicalDevicePath);
+    constexpr int kMaxTraversal = 6; // Enough to reach the USB device without looping over root
+    for (int depth = 0; depth < kMaxTraversal; ++depth) {
+      const QString candidate = currentDir.absoluteFilePath(QStringLiteral("serial"));
+      const QString serial = tryReadSerial(candidate);
+      if (!serial.isEmpty()) {
+        qDebug() << "Read serial number for" << devicePath << ":" << serial;
+        return serial;
+      }
+      if (!currentDir.cdUp()) {
+        break;
+      }
+    }
+  }
+
+  qWarning() << "Failed to read serial number for" << devicePath << "after checking"
+             << attemptedPaths;
+#endif
+
+  return QString();
+}
+
+} // namespace deskflow::gui

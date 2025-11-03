@@ -23,8 +23,11 @@
 #include "common/UrlConstants.h"
 #include "gui/Messages.h"
 #include "gui/Styles.h"
+#include "gui/core/BridgeClientConfigManager.h"
 #include "gui/core/CoreProcess.h"
+#include "gui/devices/UsbDeviceHelper.h"
 #include "gui/ipc/DaemonIpcClient.h"
+#include "gui/widgets/BridgeClientWidget.h"
 #include "gui/widgets/LogDock.h"
 #include "net/FingerprintDatabase.h"
 #include "platform/Wayland.h"
@@ -1273,32 +1276,64 @@ void MainWindow::usbDeviceConnected(const UsbDeviceInfo &device)
            << "product:" << device.productId
            << "serial:" << device.serialNumber;
 
-  // Create button for this client
-  QPushButton *button = new QPushButton(device.devicePath, this);
-  button->setCheckable(true);
-  button->setChecked(true); // Default enabled
-  button->setMinimumSize(120, 32);
-  button->setMaximumSize(200, 32);
-
-  // Connect toggle signal
-  connect(button, &QPushButton::toggled, this, [this, devicePath = device.devicePath](bool checked) {
-    clientButtonToggled(devicePath, checked);
-  });
-
-  // Add to grid layout (3 columns per row)
-  QGridLayout *gridLayout = ui->widgetBridgeClients->findChild<QGridLayout*>("gridLayoutBridgeClients");
-  if (gridLayout) {
-    int count = m_clientButtons.size();
-    int row = count / 3;
-    int col = count % 3;
-    gridLayout->addWidget(button, row, col);
+  // Step 1: Read serial number from CDC device
+  QString serialNumber = UsbDeviceHelper::readSerialNumber(device.devicePath);
+  if (serialNumber.isEmpty()) {
+    qWarning() << "Failed to read serial number for device:" << device.devicePath;
+    setStatus(tr("Failed to read serial number from device: %1").arg(device.devicePath));
+    return;
   }
 
-  // Track button and state
-  m_clientButtons[device.devicePath] = button;
-  m_clientStates[device.devicePath] = true;
+  qDebug() << "Read serial number:" << serialNumber;
 
-  QString message = tr("Pico 2 W device connected: %1").arg(device.devicePath);
+  // Step 2: Find matching config file(s) by serial number
+  QStringList matchingConfigs = BridgeClientConfigManager::findConfigsBySerialNumber(serialNumber);
+
+  QString configPath;
+  if (matchingConfigs.isEmpty()) {
+    // No config found - create default config
+    qDebug() << "No config found for serial number" << serialNumber << ", creating default config";
+    configPath = BridgeClientConfigManager::createDefaultConfig(serialNumber, device.devicePath);
+  } else if (matchingConfigs.size() == 1) {
+    // Single match - use it
+    configPath = matchingConfigs.first();
+    qDebug() << "Found matching config:" << configPath;
+  } else {
+    // Multiple matches - use first one (TODO: handle this case better later)
+    configPath = matchingConfigs.first();
+    qWarning() << "Multiple configs found for serial number" << serialNumber << ", using:" << configPath;
+  }
+
+  // Step 3: Read screen name from config
+  QString screenName = BridgeClientConfigManager::readScreenName(configPath);
+  if (screenName.isEmpty()) {
+    screenName = tr("Unknown Device");
+  }
+
+  // Step 4: Create BridgeClientWidget
+  auto *widget = new BridgeClientWidget(screenName, device.devicePath, configPath, this);
+
+  // Connect signals
+  connect(
+      widget, &BridgeClientWidget::connectToggled, this, &MainWindow::bridgeClientConnectToggled
+  );
+  connect(
+      widget, &BridgeClientWidget::configureClicked, this, &MainWindow::bridgeClientConfigureClicked
+  );
+
+  // Step 5: Add to grid layout (3 columns per row)
+  QGridLayout *gridLayout = ui->widgetBridgeClients->findChild<QGridLayout*>("gridLayoutBridgeClients");
+  if (gridLayout) {
+    int count = m_bridgeClientWidgets.size();
+    int row = count / 3;
+    int col = count % 3;
+    gridLayout->addWidget(widget, row, col);
+  }
+
+  // Track widget
+  m_bridgeClientWidgets[device.devicePath] = widget;
+
+  QString message = tr("Pico 2 W device connected: %1 (%2)").arg(screenName, device.devicePath);
   setStatus(message);
 }
 
@@ -1309,54 +1344,54 @@ void MainWindow::usbDeviceDisconnected(const UsbDeviceInfo &device)
            << "vendor:" << device.vendorId
            << "product:" << device.productId;
 
-  // Find and remove the button for this device
-  if (m_clientButtons.contains(device.devicePath)) {
-    QPushButton *button = m_clientButtons[device.devicePath];
+  // Find and remove the widget for this device
+  if (m_bridgeClientWidgets.contains(device.devicePath)) {
+    BridgeClientWidget *widget = m_bridgeClientWidgets[device.devicePath];
+    QString screenName = widget->screenName();
 
     // Remove from grid layout
     QGridLayout *gridLayout = ui->widgetBridgeClients->findChild<QGridLayout*>("gridLayoutBridgeClients");
     if (gridLayout) {
-      gridLayout->removeWidget(button);
+      gridLayout->removeWidget(widget);
     }
 
-    // Delete button widget
-    button->deleteLater();
+    // Delete widget
+    widget->deleteLater();
 
-    // Remove from tracking maps
-    m_clientButtons.remove(device.devicePath);
-    m_clientStates.remove(device.devicePath);
+    // Remove from tracking map
+    m_bridgeClientWidgets.remove(device.devicePath);
 
     // TODO: Kill corresponding bridge client process if running
-  }
 
-  QString message = tr("Pico 2 W device disconnected: %1").arg(device.devicePath);
-  setStatus(message);
+    QString message = tr("Pico 2 W device disconnected: %1 (%2)").arg(screenName, device.devicePath);
+    setStatus(message);
+  }
 }
 
-void MainWindow::clientButtonToggled(const QString &devicePath, bool enabled)
+void MainWindow::bridgeClientConnectToggled(const QString &devicePath, bool connect)
 {
-  qDebug() << "Bridge client button toggled:"
+  qDebug() << "Bridge client connect toggled:"
            << "device:" << devicePath
-           << "enabled:" << enabled;
+           << "connect:" << connect;
 
-  // Update state tracking
-  m_clientStates[devicePath] = enabled;
-
-  // Update button appearance (use stylesheet for grayed out effect when disabled)
-  if (m_clientButtons.contains(devicePath)) {
-    QPushButton *button = m_clientButtons[devicePath];
-    if (!enabled) {
-      // Grayed out when disabled (not checked)
-      button->setStyleSheet("QPushButton { color: gray; }");
-    } else {
-      // Normal appearance when enabled (checked)
-      button->setStyleSheet("");
-    }
+  if (connect) {
+    // TODO: Start bridge client process
+    qDebug() << "TODO: Start bridge client for device:" << devicePath;
+    setStatus(tr("Connecting bridge client: %1").arg(devicePath));
+  } else {
+    // TODO: Stop bridge client process
+    qDebug() << "TODO: Stop bridge client for device:" << devicePath;
+    setStatus(tr("Disconnecting bridge client: %1").arg(devicePath));
   }
+}
 
-  // TODO: Start/stop the bridge client process based on enabled state
-  QString message = enabled
-                        ? tr("Bridge client enabled: %1").arg(devicePath)
-                        : tr("Bridge client disabled: %1").arg(devicePath);
-  setStatus(message);
+void MainWindow::bridgeClientConfigureClicked(const QString &devicePath, const QString &configPath)
+{
+  qDebug() << "Bridge client configure clicked:"
+           << "device:" << devicePath
+           << "config:" << configPath;
+
+  // TODO: Open configuration dialog
+  qDebug() << "TODO: Open bridge client configuration dialog";
+  setStatus(tr("Opening configuration for: %1").arg(devicePath));
 }
