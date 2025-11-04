@@ -130,8 +130,15 @@ QVariant Settings::defaultValue(const QString &key)
   if (key == Gui::WindowGeometry)
     return QRect();
 
-  if (key == Security::Certificate)
+  if (key == Security::Certificate) {
+    // Bridge clients (in bridge-clients subdirectory) share the server's certificates
+    auto currentPath = instance()->settingsPath();
+    if (currentPath.contains("bridge-clients")) {
+      auto mainTlsDir = QStringLiteral("%1/%2").arg(UserDir, kTlsDirName);
+      return QStringLiteral("%1/%2").arg(mainTlsDir, kTlsCertificateFilename);
+    }
     return QStringLiteral("%1/%2").arg(Settings::tlsDir(), kTlsCertificateFilename);
+  }
 
   if (key == Security::KeySize)
     return 2048;
@@ -246,6 +253,12 @@ QString Settings::tlsLocalDb()
 
 QString Settings::tlsTrustedServersDb()
 {
+  // Bridge clients (in bridge-clients subdirectory) share the server's trusted fingerprints
+  auto currentPath = instance()->settingsPath();
+  if (currentPath.contains("bridge-clients")) {
+    auto mainTlsDir = QStringLiteral("%1/%2").arg(UserDir, kTlsDirName);
+    return QStringLiteral("%1/%2").arg(mainTlsDir, kTlsFingerprintTrustedServersFilename);
+  }
   return QStringLiteral("%1/%2").arg(instance()->tlsDir(), kTlsFingerprintTrustedServersFilename);
 }
 

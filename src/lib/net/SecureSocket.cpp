@@ -646,6 +646,19 @@ bool SecureSocket::verifyCertFingerprint(const QString &FingerprintDatabasePath)
   const bool emptyDB = db.fingerprints().empty();
 
   const auto &path = FingerprintDatabasePath;
+
+  // Trust On First Use (TOFU): if database doesn't exist, auto-trust and save
+  if (!file.exists() && emptyDB) {
+    LOG_INFO("trusted fingerprints file does not exist, using TOFU (trust on first use)");
+    db.addTrusted(sha256);
+    if (!db.write(FingerprintDatabasePath)) {
+      LOG_ERR("failed to write trusted fingerprint to: %s", qPrintable(path));
+      return false;
+    }
+    LOG_INFO("saved server fingerprint to: %s", qPrintable(path));
+    return true;
+  }
+
   if (file.exists() && emptyDB) {
     LOG_ERR("failed to open trusted fingerprints file: %s", qPrintable(path));
     return false;
