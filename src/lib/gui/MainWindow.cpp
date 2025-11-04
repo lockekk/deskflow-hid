@@ -39,6 +39,7 @@
 #endif
 
 #include <QCloseEvent>
+#include <QCoreApplication>
 #include <QDesktopServices>
 #include <QFileDialog>
 #include <QLocalServer>
@@ -53,6 +54,7 @@
 #include <QRegularExpressionValidator>
 #include <QScreen>
 #include <QScrollBar>
+#include <QTimer>
 #include <QToolButton>
 
 #include <memory>
@@ -1383,13 +1385,17 @@ void MainWindow::usbDeviceDisconnected(const UsbDeviceInfo &device)
     }
 
     if (matches && widget->isDeviceAvailable()) {
+      QString screenName = widget->screenName();
+      qDebug() << "Device disconnected for widget:" << device.devicePath << "screenName:" << screenName;
+
+      // Kill corresponding bridge client process if running
+      if (m_bridgeClientProcesses.contains(device.devicePath)) {
+        qWarning() << "Bridge client process still running after device disconnect, terminating:" << screenName;
+        stopBridgeClient(device.devicePath);
+      }
+
       // Disable the widget (gray it out)
       widget->setDeviceAvailable(QString(), false);
-
-      QString screenName = widget->screenName();
-      qDebug() << "Disabled widget for device:" << device.devicePath << "screenName:" << screenName;
-
-      // TODO: Kill corresponding bridge client process if running
 
       QString message = tr("Bridge client device disconnected: %1 (%2)").arg(screenName, device.devicePath);
       setStatus(message);
@@ -1405,13 +1411,13 @@ void MainWindow::usbDeviceDisconnected(const UsbDeviceInfo &device)
   m_devicePathToSerialNumber.remove(device.devicePath);
 }
 
-void MainWindow::bridgeClientConnectToggled(const QString &devicePath, bool connect)
+void MainWindow::bridgeClientConnectToggled(const QString &devicePath, bool shouldConnect)
 {
   qDebug() << "Bridge client connect toggled:"
            << "device:" << devicePath
-           << "connect:" << connect;
+           << "connect:" << shouldConnect;
 
-  if (connect) {
+  if (shouldConnect) {
     // Find the config file for this device path
     QString configPath;
     for (auto it = m_bridgeClientWidgets.begin(); it != m_bridgeClientWidgets.end(); ++it) {
@@ -1470,14 +1476,63 @@ void MainWindow::bridgeClientConnectToggled(const QString &devicePath, bool conn
     qInfo().noquote() << commandString;
 
     // Show in status and also log it
-    setStatus(tr("Command: %1").arg(commandString));
+    setStatus(tr("Starting bridge client: %1").arg(screenName));
 
-    // TODO: Actually execute the command
-    qDebug() << "TODO: Execute bridge client process with command:" << commandString;
+    // Create and start the bridge client process
+    QProcess *process = new QProcess(this);
+    process->setProgram(QStringLiteral("%1/%2").arg(QCoreApplication::applicationDirPath(), kCoreBinName));
+
+    // Remove "deskflow-core" from command arguments
+    QStringList args = command;
+    args.removeFirst();
+    process->setArguments(args);
+
+    // Connect process signals using lambdas to pass devicePath
+    connect(process, &QProcess::readyReadStandardOutput, this, [this, devicePath]() {
+      bridgeClientProcessReadyRead(devicePath);
+    });
+    connect(process, &QProcess::readyReadStandardError, this, [this, devicePath]() {
+      bridgeClientProcessReadyRead(devicePath);
+    });
+    connect(process, QOverload<int, QProcess::ExitStatus>::of(&QProcess::finished), this,
+            [this, devicePath](int exitCode, QProcess::ExitStatus exitStatus) {
+              bridgeClientProcessFinished(devicePath, exitCode, exitStatus);
+            });
+
+    // Store the process
+    m_bridgeClientProcesses[devicePath] = process;
+
+    // Start the process
+    process->start();
+    if (!process->waitForStarted(3000)) {
+      qWarning() << "Failed to start bridge client process for device:" << devicePath;
+      setStatus(tr("Failed to start bridge client: %1").arg(screenName));
+
+      // Clean up
+      m_bridgeClientProcesses.remove(devicePath);
+      process->deleteLater();
+
+      // Reset the button state
+      if (auto *widget = m_bridgeClientWidgets.value(configPath)) {
+        widget->setConnected(false);
+      }
+      return;
+    }
+
+    qInfo() << "Bridge client process started for device:" << devicePath << "PID:" << process->processId();
+
+    // Start connection timeout timer (5 seconds)
+    QTimer *timer = new QTimer(this);
+    timer->setSingleShot(true);
+    connect(timer, &QTimer::timeout, this, [this, devicePath]() {
+      bridgeClientConnectionTimeout(devicePath);
+    });
+    m_bridgeClientConnectionTimers[devicePath] = timer;
+    timer->start(5000);
+
   } else {
-    // TODO: Stop bridge client process
-    qDebug() << "TODO: Stop bridge client for device:" << devicePath;
-    setStatus(tr("Disconnecting bridge client: %1").arg(devicePath));
+    // Stop bridge client process
+    stopBridgeClient(devicePath);
   }
 }
 
@@ -1599,4 +1654,161 @@ void MainWindow::updateBridgeClientDeviceStates()
       qDebug() << "Device NOT available for config:" << configPath;
     }
   }
+}
+
+void MainWindow::bridgeClientProcessReadyRead(const QString &devicePath)
+{
+  QProcess *process = m_bridgeClientProcesses.value(devicePath);
+  if (!process) {
+    return;
+  }
+
+  // Read all available output
+  QString output = process->readAllStandardOutput();
+  output += process->readAllStandardError();
+
+  // Log the output
+  if (!output.isEmpty()) {
+    for (const QString &line : output.split('\n', Qt::SkipEmptyParts)) {
+      qInfo() << "[Bridge" << devicePath << "]" << line;
+    }
+  }
+
+  // Check for connection success indicators
+  static const QRegularExpression connectedRegex("connected to server|connection established", QRegularExpression::CaseInsensitiveOption);
+  if (connectedRegex.match(output).hasMatch()) {
+    qInfo() << "Bridge client connected successfully:" << devicePath;
+
+    // Stop the connection timeout timer
+    if (QTimer *timer = m_bridgeClientConnectionTimers.value(devicePath)) {
+      timer->stop();
+      timer->deleteLater();
+      m_bridgeClientConnectionTimers.remove(devicePath);
+    }
+
+    // Find the widget and update status
+    for (auto it = m_bridgeClientWidgets.begin(); it != m_bridgeClientWidgets.end(); ++it) {
+      BridgeClientWidget *widget = it.value();
+      if (widget->devicePath() == devicePath) {
+        QString screenName = widget->screenName();
+        setStatus(tr("Bridge client connected: %1").arg(screenName));
+        break;
+      }
+    }
+  }
+}
+
+void MainWindow::bridgeClientProcessFinished(const QString &devicePath, int exitCode, QProcess::ExitStatus exitStatus)
+{
+  qInfo() << "Bridge client process finished:"
+          << "device:" << devicePath
+          << "exitCode:" << exitCode
+          << "exitStatus:" << (exitStatus == QProcess::NormalExit ? "normal" : "crashed");
+
+  // Stop and clean up the connection timeout timer
+  if (QTimer *timer = m_bridgeClientConnectionTimers.value(devicePath)) {
+    timer->stop();
+    timer->deleteLater();
+    m_bridgeClientConnectionTimers.remove(devicePath);
+  }
+
+  // Clean up the process
+  QProcess *process = m_bridgeClientProcesses.value(devicePath);
+  if (process) {
+    m_bridgeClientProcesses.remove(devicePath);
+    process->deleteLater();
+  }
+
+  // Find the widget and reset connection state
+  for (auto it = m_bridgeClientWidgets.begin(); it != m_bridgeClientWidgets.end(); ++it) {
+    BridgeClientWidget *widget = it.value();
+    if (widget->devicePath() == devicePath) {
+      widget->setConnected(false);
+      QString screenName = widget->screenName();
+
+      if (exitStatus == QProcess::CrashExit) {
+        setStatus(tr("Bridge client crashed: %1").arg(screenName));
+      } else if (exitCode != 0) {
+        setStatus(tr("Bridge client exited with error: %1 (code %2)").arg(screenName).arg(exitCode));
+      } else {
+        setStatus(tr("Bridge client disconnected: %1").arg(screenName));
+      }
+      break;
+    }
+  }
+}
+
+void MainWindow::bridgeClientConnectionTimeout(const QString &devicePath)
+{
+  qWarning() << "Bridge client connection timeout:" << devicePath;
+
+  // Clean up the timer
+  if (QTimer *timer = m_bridgeClientConnectionTimers.value(devicePath)) {
+    m_bridgeClientConnectionTimers.remove(devicePath);
+    timer->deleteLater();
+  }
+
+  // Find the widget and show timeout message
+  for (auto it = m_bridgeClientWidgets.begin(); it != m_bridgeClientWidgets.end(); ++it) {
+    BridgeClientWidget *widget = it.value();
+    if (widget->devicePath() == devicePath) {
+      QString screenName = widget->screenName();
+      setStatus(tr("Bridge client connection timeout: %1").arg(screenName));
+      qWarning() << "Failed to connect to server within 5 seconds for:" << screenName;
+      break;
+    }
+  }
+
+  // Note: We don't kill the process here - let it keep trying to connect
+  // The user can manually disconnect if they want to stop it
+}
+
+void MainWindow::stopBridgeClient(const QString &devicePath)
+{
+  qInfo() << "Stopping bridge client for device:" << devicePath;
+
+  // Stop the connection timeout timer if still running
+  if (QTimer *timer = m_bridgeClientConnectionTimers.value(devicePath)) {
+    timer->stop();
+    timer->deleteLater();
+    m_bridgeClientConnectionTimers.remove(devicePath);
+  }
+
+  // Get the process
+  QProcess *process = m_bridgeClientProcesses.value(devicePath);
+  if (!process) {
+    qDebug() << "No bridge client process found for device:" << devicePath;
+    return;
+  }
+
+  // Find the widget to get screen name for logging
+  QString screenName;
+  for (auto it = m_bridgeClientWidgets.begin(); it != m_bridgeClientWidgets.end(); ++it) {
+    BridgeClientWidget *widget = it.value();
+    if (widget->devicePath() == devicePath) {
+      screenName = widget->screenName();
+      break;
+    }
+  }
+
+  qInfo() << "Gracefully terminating bridge client:" << screenName << "device:" << devicePath;
+  setStatus(tr("Disconnecting bridge client: %1").arg(screenName));
+
+  // First, try graceful termination
+  // This sends SIGTERM on Unix, which allows the process to clean up
+  // and properly release the CDC device
+  process->terminate();
+
+  // Wait up to 3 seconds for graceful shutdown
+  if (!process->waitForFinished(3000)) {
+    qWarning() << "Bridge client did not terminate gracefully, forcing kill:" << devicePath;
+    // If it doesn't terminate gracefully, force kill it
+    process->kill();
+    // Wait for it to actually be killed
+    process->waitForFinished(1000);
+  } else {
+    qInfo() << "Bridge client terminated gracefully:" << devicePath;
+  }
+
+  // The process cleanup will be handled in bridgeClientProcessFinished()
 }

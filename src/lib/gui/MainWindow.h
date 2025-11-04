@@ -175,8 +175,12 @@ private:
   void updateBridgeClientDeviceStates();
   void usbDeviceConnected(const deskflow::gui::UsbDeviceInfo &device);
   void usbDeviceDisconnected(const deskflow::gui::UsbDeviceInfo &device);
-  void bridgeClientConnectToggled(const QString &devicePath, bool connect);
+  void bridgeClientConnectToggled(const QString &devicePath, bool shouldConnect);
   void bridgeClientConfigureClicked(const QString &devicePath, const QString &configPath);
+  void bridgeClientProcessReadyRead(const QString &devicePath);
+  void bridgeClientProcessFinished(const QString &devicePath, int exitCode, QProcess::ExitStatus exitStatus);
+  void bridgeClientConnectionTimeout(const QString &devicePath);
+  void stopBridgeClient(const QString &devicePath);
 
   inline static const auto m_guiSocketName = QStringLiteral("deskflow-gui");
   inline static const auto m_nameRegEx = QRegularExpression(QStringLiteral("^[\\w\\-_\\.]{0,255}$"));
@@ -204,6 +208,12 @@ private:
   // Track device path -> serial number mapping when devices connect
   // (needed because sysfs disappears when device disconnects)
   QMap<QString, QString> m_devicePathToSerialNumber;
+
+  // Bridge client process management: device path -> QProcess*
+  QMap<QString, QProcess*> m_bridgeClientProcesses;
+
+  // Bridge client connection timeout timers: device path -> QTimer*
+  QMap<QString, QTimer*> m_bridgeClientConnectionTimers;
 
   LogDock *m_logDock;
   QLabel *m_lblSecurityStatus = nullptr;

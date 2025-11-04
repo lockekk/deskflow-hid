@@ -61,17 +61,78 @@ Compatibility requirements:
 - Windows: `WM_DEVICECHANGE` (already used in MSWindowsScreen.cpp)
 - macOS: IOKit notifications (IOKit already imported in platform code)
 
-#### Planned Behavior
-- On matched vendor USB CDC device plug:
-  - Open Pico configuration window (fetch/configure arch, screen info)
-  - GUI directly communicates with Pico via USB CDC
-  - Configuration stored in Pico's flash memory
-  - After config window closed, spawn `deskflow-core client --name <unique-name> --link <usb cdc device-path> localhost:<port>`
-- On matched vendor USB CDC device unplug:
-  - Kill corresponding bridge client process
-- Reason: Automatically create/destroy clients based on physical device presence
+#### Implementation Status (✓ Complete)
 
-Note: Pico configuration is a GUI feature (not part of deskflow-core), bridge client only reads existing config from Pico on startup
+**Bridge Client Configuration System**:
+- Bridge client configs stored in `~/.config/deskflow/bridge-clients/<name>.conf`
+- GUI loads all existing configs on startup
+- Config contains: serial number, screen dimensions, orientation, screen name, log level
+- Serial number used to match USB devices to config files
+- Widgets created for each config (grayed out if device not plugged in)
+- Configuration dialog allows editing settings and renaming config files
+
+**Bridge Client Widget Management**:
+- Widget tracking: `QMap<QString, BridgeClientWidget*>` keyed by config path
+- Device availability: Widgets enable/disable based on USB device presence
+- Serial number matching: Devices matched to configs via serial number from sysfs
+- Dynamic state: Widgets gray out when device unplugged, enable when plugged in
+- Connect/Disconnect buttons: Toggle to start/stop bridge client processes
+- Configure button: Always enabled, opens configuration dialog
+
+**Process Management (✓ Complete)**:
+- Process tracking: `QMap<QString, QProcess*>` keyed by device path
+- Connection timeout: 5-second timer tracks connection success
+- Connection detection: Monitors stdout/stderr for "connected to server" messages
+- Graceful shutdown: Uses `terminate()` (SIGTERM) first, waits 3 seconds for clean CDC device release
+- Forced shutdown: Uses `kill()` (SIGKILL) if graceful shutdown fails after 1 second
+- Device disconnect handling: Automatically terminates running process when USB device unplugged
+- Process cleanup: Removes from tracking maps, deallocates QProcess and QTimer objects
+
+**Command Line Arguments**:
+- Generated command includes:
+  - `--name <screenName>` - from config file
+  - `--link <devicePath>` - USB CDC device path (e.g., /dev/ttyACM0)
+  - `--remoteHost <host>:<port>` - server address and port
+  - `--secure <true|false>` - follows server's TLS setting automatically
+  - `--log-level <level>` - from config file (e.g., INFO, DEBUG)
+  - `--screen-width <width>` - from config file
+  - `--screen-height <height>` - from config file
+  - `--screen-orientation <orientation>` - from config file (landscape/portrait)
+
+**Device Event Handling**:
+- On USB device plug:
+  1. Read serial number from sysfs (`/sys/class/tty/ttyACMx/.../serial`)
+  2. Find matching config file by serial number
+  3. Create config if none exists (default 1920x1080 landscape)
+  4. Enable corresponding widget
+  5. Store device path → serial number mapping for disconnect handling
+- On USB device unplug:
+  1. Retrieve serial number from stored mapping (sysfs gone after unplug)
+  2. Find matching widget by serial number
+  3. Terminate running bridge client process gracefully
+  4. Gray out widget to indicate device unavailable
+  5. Clean up serial number mapping
+
+**Files Modified**:
+- `src/lib/gui/MainWindow.h` - Added process/timer tracking maps, new slot declarations
+- `src/lib/gui/MainWindow.cpp` - Implemented process lifecycle management
+- `src/lib/gui/widgets/BridgeClientWidget.h/cpp` - Widget state management
+- `src/lib/gui/devices/UsbDeviceHelper.h/cpp` - Serial number reading, device enumeration
+- `src/lib/gui/core/BridgeClientConfigManager.h/cpp` - Config file management
+- `src/lib/gui/dialogs/BridgeClientConfigDialog.h/cpp` - Configuration dialog
+
+**CDC Device Release Strategy**:
+When disconnecting a bridge client, the GUI:
+1. Calls `QProcess::terminate()` which sends SIGTERM on Unix
+2. This allows deskflow-core bridge client to receive the signal and cleanly:
+   - Close the serial port file descriptor
+   - Release any file locks on `/dev/ttyACMx`
+   - Flush pending I/O operations
+3. Waits up to 3 seconds for graceful exit
+4. If still running, sends SIGKILL and waits 1 second for forced termination
+5. Cleans up QProcess and QTimer objects
+
+This ensures the USB CDC device is properly released and available for reconnection without requiring a physical replug.
 
 ### 3. deskflow-core - Multiple Instance Support
 - Allow multiple instances based on role + name
