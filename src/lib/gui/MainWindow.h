@@ -177,6 +177,7 @@ private:
   void usbDeviceDisconnected(const deskflow::gui::UsbDeviceInfo &device);
   void bridgeClientConnectToggled(const QString &devicePath, bool shouldConnect);
   void bridgeClientConfigureClicked(const QString &devicePath, const QString &configPath);
+  Q_INVOKABLE void bridgeClientDeletedFromServerConfig(const QString &configPath);
   void bridgeClientProcessReadyRead(const QString &devicePath);
   void bridgeClientProcessFinished(const QString &devicePath, int exitCode, QProcess::ExitStatus exitStatus);
   void bridgeClientConnectionTimeout(const QString &devicePath);

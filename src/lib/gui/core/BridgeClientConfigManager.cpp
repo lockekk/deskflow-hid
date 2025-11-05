@@ -10,6 +10,7 @@
 
 #include <QDebug>
 #include <QDir>
+#include <QFile>
 #include <QFileInfo>
 #include <QRegularExpression>
 #include <QSettings>
@@ -163,6 +164,55 @@ QString BridgeClientConfigManager::generateUniqueConfigPath(const QString &baseN
     }
     counter++;
   }
+}
+
+bool BridgeClientConfigManager::deleteConfig(const QString &configPath)
+{
+  if (configPath.isEmpty()) {
+    qWarning() << "Cannot delete config: empty path provided";
+    return false;
+  }
+
+  QFileInfo fileInfo(configPath);
+  if (!fileInfo.exists()) {
+    qWarning() << "Config file does not exist:" << configPath;
+    return false;
+  }
+
+  // Verify the file is in the bridge-clients directory for safety
+  QString expectedDir = bridgeClientsDir();
+  if (!configPath.startsWith(expectedDir)) {
+    qWarning() << "Refusing to delete config outside bridge-clients directory:" << configPath;
+    return false;
+  }
+
+  QFile file(configPath);
+  if (!file.remove()) {
+    qWarning() << "Failed to delete config file:" << configPath << "Error:" << file.errorString();
+    return false;
+  }
+
+  qDebug() << "Successfully deleted bridge client config:" << configPath;
+  return true;
+}
+
+QString BridgeClientConfigManager::findConfigByScreenName(const QString &screenName)
+{
+  if (screenName.isEmpty()) {
+    return QString();
+  }
+
+  QStringList configFiles = getAllConfigFiles();
+
+  for (const QString &configPath : configFiles) {
+    QString configScreenName = readScreenName(configPath);
+    if (configScreenName == screenName) {
+      qDebug() << "Found bridge client config for screen name" << screenName << ":" << configPath;
+      return configPath;
+    }
+  }
+
+  return QString();
 }
 
 } // namespace deskflow::gui

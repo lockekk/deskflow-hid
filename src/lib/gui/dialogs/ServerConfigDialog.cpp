@@ -14,9 +14,12 @@
 #include "dialogs/ActionDialog.h"
 #include "dialogs/HotkeyDialog.h"
 #include "dialogs/ScreenSettingsDialog.h"
+#include "gui/core/BridgeClientConfigManager.h"
 
 #include <QFileDialog>
+#include <QMainWindow>
 #include <QMessageBox>
+#include <QMetaObject>
 
 using enum ScreenConfig::SwitchCorner;
 using enum NetworkProtocol;
@@ -148,6 +151,9 @@ ServerConfigDialog::ServerConfigDialog(QWidget *parent, ServerConfig &config)
     ui->listHotkeys->addItem(hotkey.text());
 
   ui->screenSetupView->setModel(&m_screenSetupModel);
+
+  // Connect to screenDeleted signal to handle bridge client cleanup
+  connect(ui->screenSetupView, &ScreenSetupView::screenDeleted, this, &ServerConfigDialog::onScreenDeleted);
 
   auto &screens = serverConfig().screens();
   auto server = std::ranges::find_if(screens, [this](const Screen &screen) {
@@ -447,6 +453,67 @@ void ServerConfigDialog::onScreenRemoved()
 {
   ui->lblNewScreen->setEnabled(true);
   onChange();
+}
+
+void ServerConfigDialog::onScreenDeleted(const QString &screenName)
+{
+  using namespace deskflow::gui;
+
+  qDebug() << "Screen deleted from server config:" << screenName;
+
+  // Check if this screen name matches a bridge client configuration
+  QString configPath = BridgeClientConfigManager::findConfigByScreenName(screenName);
+
+  if (configPath.isEmpty()) {
+    qDebug() << "Deleted screen is not a bridge client:" << screenName;
+    return;
+  }
+
+  qInfo() << "Deleted screen is a bridge client:" << screenName << "config:" << configPath;
+
+  // Ask user if they want to delete the bridge client configuration as well
+  QMessageBox::StandardButton reply = QMessageBox::question(
+      this,
+      tr("Delete Bridge Client Configuration"),
+      tr("The screen '%1' is a bridge client.\n\nDo you want to delete its configuration file as well?\n\n"
+         "If you choose 'Yes', the bridge client widget will be removed from the main window.\n"
+         "If you choose 'No', the bridge client configuration will be kept and can still be used.").arg(screenName),
+      QMessageBox::Yes | QMessageBox::No,
+      QMessageBox::No
+  );
+
+  if (reply != QMessageBox::Yes) {
+    qDebug() << "User chose to keep bridge client configuration for:" << screenName;
+    return;
+  }
+
+  // Delete the bridge client configuration
+  if (BridgeClientConfigManager::deleteConfig(configPath)) {
+    qInfo() << "Successfully deleted bridge client configuration for:" << screenName;
+
+    // Emit a signal to MainWindow to remove the widget
+    // We'll use a custom event or find the MainWindow parent
+    QWidget *mainWindow = parentWidget();
+    while (mainWindow && !qobject_cast<QMainWindow*>(mainWindow)) {
+      mainWindow = mainWindow->parentWidget();
+    }
+
+    if (mainWindow) {
+      // Use QMetaObject to invoke the deletion handler on MainWindow
+      QMetaObject::invokeMethod(
+          mainWindow,
+          "bridgeClientDeletedFromServerConfig",
+          Qt::QueuedConnection,
+          Q_ARG(QString, configPath)
+      );
+    }
+  } else {
+    QMessageBox::warning(
+        this,
+        tr("Deletion Failed"),
+        tr("Failed to delete bridge client configuration file for '%1'.").arg(screenName)
+    );
+  }
 }
 
 void ServerConfigDialog::toggleExternalConfig(bool checked)

@@ -27,6 +27,9 @@ public:
   void setModel(QAbstractItemModel *model) override;
   ScreenSetupModel *model() const;
 
+Q_SIGNALS:
+  void screenDeleted(const QString &screenName);
+
 private:
   void showScreenConfig(int col, int row);
 

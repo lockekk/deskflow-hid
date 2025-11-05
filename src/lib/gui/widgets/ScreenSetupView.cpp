@@ -136,8 +136,14 @@ void ScreenSetupView::startDrag(Qt::DropActions)
 
     // make sure to only delete the drag source if screens weren't swapped
     // see ScreenSetupModel::dropMimeData
-    if (!model()->screen(indexes[0]).swapped())
+    if (!model()->screen(indexes[0]).swapped()) {
+      // Emit signal before deleting the screen so we can check if it's a bridge client
+      QString deletedScreenName = model()->screen(indexes[0]).name();
+      if (!deletedScreenName.isEmpty()) {
+        Q_EMIT screenDeleted(deletedScreenName);
+      }
       model()->screen(indexes[0]) = Screen();
+    }
     else
       model()->screen(indexes[0]).setSwapped(false);
 

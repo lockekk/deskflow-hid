@@ -50,6 +50,9 @@ void BridgeClientWidget::setConnected(bool connected)
   m_isConnected = connected;
   m_btnConnect->setChecked(connected);
   m_btnConnect->setText(connected ? tr("Disconnect") : tr("Connect"));
+
+  // Disable Configure button when connected
+  m_btnConfigure->setEnabled(!connected);
 }
 
 void BridgeClientWidget::updateConfig(const QString &screenName, const QString &configPath)
@@ -67,8 +70,11 @@ void BridgeClientWidget::setDeviceAvailable(const QString &devicePath, bool avai
   // Enable/disable the connect button based on device availability
   m_btnConnect->setEnabled(available);
 
-  // Configure button is always enabled (can configure even if device not plugged in)
-  // But update tooltip to indicate device status
+  // Configure button is enabled when device is not connected
+  // (can configure even if device not plugged in, but not while connected)
+  m_btnConfigure->setEnabled(!m_isConnected);
+
+  // Update tooltip to indicate device status
   if (!available) {
     m_btnConnect->setToolTip(tr("Device not connected"));
     setStyleSheet("QGroupBox { color: gray; }");
@@ -82,6 +88,10 @@ void BridgeClientWidget::onConnectToggled(bool checked)
 {
   m_isConnected = checked;
   m_btnConnect->setText(checked ? tr("Disconnect") : tr("Connect"));
+
+  // Disable Configure button when connected
+  m_btnConfigure->setEnabled(!checked);
+
   Q_EMIT connectToggled(m_devicePath, checked);
 }
 

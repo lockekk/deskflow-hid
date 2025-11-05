@@ -68,6 +68,20 @@ public:
    */
   static QString bridgeClientsDir();
 
+  /**
+   * @brief Delete a bridge client config file
+   * @param configPath Path to config file to delete
+   * @return true if deletion was successful, false otherwise
+   */
+  static bool deleteConfig(const QString &configPath);
+
+  /**
+   * @brief Find config file path by screen name
+   * @param screenName Screen name to search for
+   * @return Config file path if found, empty string otherwise
+   */
+  static QString findConfigByScreenName(const QString &screenName);
+
 private:
   /**
    * @brief Generate unique config file name

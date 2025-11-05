@@ -165,12 +165,12 @@ MainWindow::MainWindow()
   // Start monitoring
   if (m_usbDeviceMonitor->startMonitoring()) {
     qDebug() << "USB device monitoring started successfully";
-
-    // Update device availability states for all widgets based on plugged-in devices
-    updateBridgeClientDeviceStates();
   } else {
     qWarning() << "Failed to start USB device monitoring";
   }
+
+  // Always update device states on startup to detect already-connected devices
+  updateBridgeClientDeviceStates();
 #endif
 
   updateScreenName();
@@ -1585,9 +1585,9 @@ void MainWindow::bridgeClientConfigureClicked(const QString &devicePath, const Q
   BridgeClientConfigDialog dialog(configPath, this);
 
   // Connect signal to handle config file rename
-  connect(&dialog, &BridgeClientConfigDialog::configChanged, this, [this, devicePath](const QString &oldConfigPath, const QString &newConfigPath) {
-    // Find the widget for this device
-    auto it = m_bridgeClientWidgets.find(devicePath);
+  connect(&dialog, &BridgeClientConfigDialog::configChanged, this, [this](const QString &oldConfigPath, const QString &newConfigPath) {
+    // Find the widget by old config path
+    auto it = m_bridgeClientWidgets.find(oldConfigPath);
     if (it != m_bridgeClientWidgets.end()) {
       BridgeClientWidget *widget = it.value();
 
@@ -1597,15 +1597,75 @@ void MainWindow::bridgeClientConfigureClicked(const QString &devicePath, const Q
       // Update the widget with new screen name and config path
       widget->updateConfig(newScreenName, newConfigPath);
 
+      // Update the map: remove old entry and add new entry
+      m_bridgeClientWidgets.remove(oldConfigPath);
+      m_bridgeClientWidgets[newConfigPath] = widget;
+
       qDebug() << "Bridge client config updated:"
-               << "device:" << devicePath
-               << "newScreenName:" << newScreenName
-               << "newConfigPath:" << newConfigPath;
+               << "oldConfigPath:" << oldConfigPath
+               << "newConfigPath:" << newConfigPath
+               << "newScreenName:" << newScreenName;
+    } else {
+      qWarning() << "Widget not found for old config path:" << oldConfigPath;
     }
   });
 
   if (dialog.exec() == QDialog::Accepted) {
     setStatus(tr("Configuration saved for: %1").arg(dialog.screenName()));
+  }
+}
+
+void MainWindow::bridgeClientDeletedFromServerConfig(const QString &configPath)
+{
+  qDebug() << "Bridge client deleted from server config, cleaning up widget:" << configPath;
+
+  // Find the widget for this config
+  auto it = m_bridgeClientWidgets.find(configPath);
+  if (it == m_bridgeClientWidgets.end()) {
+    qWarning() << "Widget not found for config path:" << configPath;
+    return;
+  }
+
+  BridgeClientWidget *widget = it.value();
+  QString screenName = widget->screenName();
+  QString devicePath = widget->devicePath();
+
+  qInfo() << "Removing bridge client widget for:" << screenName;
+
+  // Stop the bridge client process if it's running
+  if (!devicePath.isEmpty() && m_bridgeClientProcesses.contains(devicePath)) {
+    qDebug() << "Stopping bridge client process:" << devicePath;
+    stopBridgeClient(devicePath);
+  }
+
+  // Remove widget from UI
+  QGridLayout *gridLayout = ui->widgetBridgeClients->findChild<QGridLayout*>("gridLayoutBridgeClients");
+  if (gridLayout) {
+    gridLayout->removeWidget(widget);
+  }
+  widget->hide();  // Hide the widget immediately
+  widget->deleteLater();
+
+  // Remove from tracking map
+  m_bridgeClientWidgets.remove(configPath);
+
+  // Clean up device path mapping if exists
+  if (!devicePath.isEmpty()) {
+    m_devicePathToSerialNumber.remove(devicePath);
+  }
+
+  setStatus(tr("Removed bridge client: %1").arg(screenName));
+  qInfo() << "Successfully removed bridge client widget for:" << screenName;
+
+  // Reorganize the remaining widgets in the grid
+  if (gridLayout) {
+    int index = 0;
+    for (auto widgetIt = m_bridgeClientWidgets.begin(); widgetIt != m_bridgeClientWidgets.end(); ++widgetIt) {
+      int row = index / 3;
+      int col = index % 3;
+      gridLayout->addWidget(widgetIt.value(), row, col);
+      index++;
+    }
   }
 }
 
@@ -1634,6 +1694,9 @@ void MainWindow::loadBridgeClientConfigs()
 
     // Create widget (device path is empty initially, will be set when device is detected)
     auto *widget = new BridgeClientWidget(screenName, QString(), configPath, this);
+
+    // Set initial state to unavailable (will be updated by updateBridgeClientDeviceStates)
+    widget->setDeviceAvailable(QString(), false);
 
     // Connect signals
     connect(widget, &BridgeClientWidget::connectToggled, this, &MainWindow::bridgeClientConnectToggled);
@@ -1689,6 +1752,8 @@ void MainWindow::updateBridgeClientDeviceStates()
     widget->setDeviceAvailable(devicePath, found);
 
     if (found) {
+      // Store device path -> serial number mapping for later use
+      m_devicePathToSerialNumber[devicePath] = configSerialNumber;
       qDebug() << "Device available for config:" << configPath << "device:" << devicePath;
     } else {
       qDebug() << "Device NOT available for config:" << configPath;

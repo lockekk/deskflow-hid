@@ -38,6 +38,7 @@ public Q_SLOTS:
 
 protected Q_SLOTS:
   void onScreenRemoved();
+  void onScreenDeleted(const QString &screenName);
 
 protected:
   void addClient();
