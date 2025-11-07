@@ -10,8 +10,10 @@
 #include <QDir>
 #include <QFile>
 #include <QFileInfo>
-#include <QTextStream>
 #include <QStringList>
+#include <QTextStream>
+
+#include "platform/bridge/CdcTransport.h"
 
 namespace deskflow::gui {
 
@@ -151,10 +153,15 @@ bool UsbDeviceHelper::isSupportedBridgeDevice(const QString &devicePath)
 #ifdef Q_OS_LINUX
   const QString canonicalPath = canonicalUsbDevicePath(devicePath);
   const QString vendorId = readUsbAttribute(canonicalPath, QStringLiteral("idVendor")).toLower();
+  const QString productId = readUsbAttribute(canonicalPath, QStringLiteral("idProduct")).toLower();
   if (vendorId.isEmpty())
     return false;
 
-  if (vendorId == kPicoVendorId) {
+  if (vendorId == kEspressifVendorId) {
+    if (productId.isEmpty() || productId == kEspressifProductId) {
+      return true;
+    }
+    qDebug() << "Device" << devicePath << "has Espressif vendor id but unexpected product id" << productId;
     return true;
   }
 
@@ -162,6 +169,37 @@ bool UsbDeviceHelper::isSupportedBridgeDevice(const QString &devicePath)
   return false;
 #else
   Q_UNUSED(devicePath);
+  return false;
+#endif
+}
+
+bool UsbDeviceHelper::verifyBridgeHandshake(const QString &devicePath, int timeoutMs)
+{
+#ifdef Q_OS_LINUX
+  Q_UNUSED(timeoutMs);
+
+  deskflow::bridge::CdcTransport transport(devicePath);
+  if (!transport.open()) {
+    qWarning() << "Bridge handshake failed for" << devicePath
+               << ":" << QString::fromStdString(transport.lastError());
+    return false;
+  }
+
+  if (transport.hasDeviceConfig()) {
+    const auto &cfg = transport.deviceConfig();
+    qInfo() << "Bridge handshake successful with" << devicePath
+            << "arch:" << QString::fromStdString(cfg.arch)
+            << "resolution:" << cfg.screenWidth << "x" << cfg.screenHeight
+            << "rotation:" << cfg.screenRotation;
+  } else {
+    qInfo() << "Bridge handshake successful with" << devicePath << "(no config payload)";
+  }
+
+  transport.close();
+  return true;
+#else
+  Q_UNUSED(devicePath)
+  Q_UNUSED(timeoutMs)
   return false;
 #endif
 }

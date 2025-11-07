@@ -39,7 +39,14 @@ public:
    */
   static bool isSupportedBridgeDevice(const QString &devicePath);
 
-  inline static const QString kPicoVendorId = QStringLiteral("2e8a");
+  /**
+   * @brief Perform a USB HELLO/ACK handshake with an ESP32 bridge to verify firmware presence.
+   * @return true if the device responded with a valid ACK before the timeout expires.
+   */
+  static bool verifyBridgeHandshake(const QString &devicePath, int timeoutMs = 1500);
+
+  inline static const QString kEspressifVendorId = QStringLiteral("303a");
+  inline static const QString kEspressifProductId = QStringLiteral("1001");
 };
 
 } // namespace deskflow::gui

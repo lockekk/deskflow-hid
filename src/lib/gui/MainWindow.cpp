@@ -155,8 +155,8 @@ MainWindow::MainWindow()
   // Setup USB device monitoring (Linux only for now)
 #if defined(Q_OS_LINUX)
   m_usbDeviceMonitor = new LinuxUdevMonitor(this);
-  // Filter for Raspberry Pi Pico vendor ID (0x2e8a)
-  m_usbDeviceMonitor->setVendorIdFilter(QStringLiteral("2e8a"));
+  // Filter for Espressif vendor ID (0x303a)
+  m_usbDeviceMonitor->setVendorIdFilter(UsbDeviceHelper::kEspressifVendorId);
   // Connect signals
   connect(m_usbDeviceMonitor, &UsbDeviceMonitor::deviceConnected,
           this, &MainWindow::usbDeviceConnected);
@@ -1325,11 +1325,20 @@ void MainWindow::usbDeviceConnected(const UsbDeviceInfo &device)
 
   qDebug() << "Read serial number:" << serialNumber;
 
-  // Store the mapping of device path -> serial number for later use on disconnect
-  m_devicePathToSerialNumber[device.devicePath] = serialNumber;
-
   // Find matching config file(s) by serial number
   QStringList matchingConfigs = BridgeClientConfigManager::findConfigsBySerialNumber(serialNumber);
+
+  if (matchingConfigs.isEmpty()) {
+    qInfo() << "Performing bridge handshake for new device" << device.devicePath;
+    if (!UsbDeviceHelper::verifyBridgeHandshake(device.devicePath)) {
+      qWarning() << "Bridge handshake failed or timed out for" << device.devicePath << "- ignoring device";
+      setStatus(tr("Ignoring USB device %1 (handshake failed)").arg(device.devicePath));
+      return;
+    }
+  }
+
+  // Store the mapping of device path -> serial number for later use on disconnect
+  m_devicePathToSerialNumber[device.devicePath] = serialNumber;
 
   QString configPath;
   if (matchingConfigs.isEmpty()) {
