@@ -33,8 +33,13 @@ deskflow::Screen *BridgeClientApp::createScreen()
   LOG_INFO("BridgeClientApp: creating BridgePlatformScreen");
 
   // Create BridgePlatformScreen instead of platform-specific screen
-  auto *platformScreen =
-      new deskflow::bridge::BridgePlatformScreen(getEvents(), m_transport, m_screenWidth, m_screenHeight);
+  auto *platformScreen = new deskflow::bridge::BridgePlatformScreen(
+      getEvents(),
+      m_transport,
+      m_screenWidth,
+      m_screenHeight,
+      m_config.bleIntervalMs
+  );
 
   // Wrap in deskflow::Screen
   return new deskflow::Screen(platformScreen, getEvents());

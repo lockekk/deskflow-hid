@@ -22,9 +22,7 @@ namespace deskflow::bridge {
 namespace {
 constexpr int kMinMouseDelta = -127;
 constexpr int kMaxMouseDelta = 127;
-constexpr auto kMouseThrottleInterval = std::chrono::milliseconds(90);
-constexpr double kMouseThrottleIntervalSeconds =
-    std::chrono::duration_cast<std::chrono::duration<double>>(kMouseThrottleInterval).count();
+constexpr int kDefaultMouseThrottleIntervalMs = 50;
 constexpr int64_t kPendingDeltaLimit = std::numeric_limits<int32_t>::max();
 
 std::string hexDump(const uint8_t *data, size_t length, size_t maxBytes = 32)
@@ -52,18 +50,32 @@ std::string hexDump(const uint8_t *data, size_t length, size_t maxBytes = 32)
 }
 
 BridgePlatformScreen::BridgePlatformScreen(
-    IEventQueue *events, std::shared_ptr<CdcTransport> transport, int32_t screenWidth, int32_t screenHeight
+    IEventQueue *events,
+    std::shared_ptr<CdcTransport> transport,
+    int32_t screenWidth,
+    int32_t screenHeight,
+    uint8_t bleIntervalMs
 ) :
     PlatformScreen(events, false), // invertScrollDirection = false by default
     m_transport(std::move(transport)),
     m_screenWidth(screenWidth),
     m_screenHeight(screenHeight),
+    m_mouseThrottleInterval(
+        std::chrono::milliseconds(
+            bleIntervalMs > 0 ? static_cast<int>(bleIntervalMs) : kDefaultMouseThrottleIntervalMs
+        )
+    ),
+    m_mouseThrottleIntervalSeconds(
+        std::chrono::duration_cast<std::chrono::duration<double>>(m_mouseThrottleInterval).count()
+    ),
     m_events(events)
 {
   LOG_INFO(
-      "BridgeScreen: initialized screen=%dx%d",
+      "BridgeScreen: initialized screen=%dx%d mouseThrottle=%ums (bleInterval=%u)",
       m_screenWidth,
-      m_screenHeight
+      m_screenHeight,
+      static_cast<unsigned>(std::chrono::duration_cast<std::chrono::milliseconds>(m_mouseThrottleInterval).count()),
+      static_cast<unsigned>(bleIntervalMs)
   );
 
   if (m_events != nullptr) {
@@ -291,7 +303,7 @@ void BridgePlatformScreen::scheduleMouseFlush(std::chrono::steady_clock::time_po
 
   const bool shouldFlushImmediately =
       (m_lastMouseFlush == std::chrono::steady_clock::time_point::min()) ||
-      (now - m_lastMouseFlush >= kMouseThrottleInterval);
+      (now - m_lastMouseFlush >= m_mouseThrottleInterval);
 
   if (shouldFlushImmediately) {
     const bool hasRemainder = flushPendingMouse(now);
@@ -317,7 +329,7 @@ void BridgePlatformScreen::armMouseFlushTimer() const
 {
   if (m_events != nullptr && m_mouseFlushTimer == nullptr) {
     m_mouseFlushTimer = m_events->newTimer(
-        kMouseThrottleIntervalSeconds, const_cast<BridgePlatformScreen *>(this)
+        m_mouseThrottleIntervalSeconds, const_cast<BridgePlatformScreen *>(this)
     );
   }
 }

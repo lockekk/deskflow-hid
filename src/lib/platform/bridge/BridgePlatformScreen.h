@@ -34,7 +34,11 @@ class BridgePlatformScreen : public PlatformScreen
 {
 public:
   BridgePlatformScreen(
-      IEventQueue *events, std::shared_ptr<CdcTransport> transport, int32_t screenWidth, int32_t screenHeight
+      IEventQueue *events,
+      std::shared_ptr<CdcTransport> transport,
+      int32_t screenWidth,
+      int32_t screenHeight,
+      uint8_t bleIntervalMs
   );
   ~BridgePlatformScreen() override;
 
@@ -127,6 +131,8 @@ private:
   std::shared_ptr<CdcTransport> m_transport;
   int32_t m_screenWidth = 0;
   int32_t m_screenHeight = 0;
+  std::chrono::milliseconds m_mouseThrottleInterval{std::chrono::milliseconds(50)};
+  double m_mouseThrottleIntervalSeconds = 0.05;
   IEventQueue *m_events = nullptr;
 
   // Screen state
