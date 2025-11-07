@@ -145,5 +145,8 @@
         <file>icons/deskflow-light/index.theme</file>
         <file>bridge-client/client/orientation_landspace.png</file>
         <file>bridge-client/client/orientation_portrait.png</file>
+        <file>bridge-client/firmware/os_ios.png</file>
+        <file>bridge-client/firmware/os_andriod.png</file>
+        <file>bridge-client/firmware/os_unknown.png</file>
     </qresource>
 </RCC>

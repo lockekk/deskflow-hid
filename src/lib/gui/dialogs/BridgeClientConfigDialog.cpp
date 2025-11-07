@@ -7,12 +7,12 @@
 #include <QFormLayout>
 #include <QDialogButtonBox>
 #include <QHBoxLayout>
+#include <QSettings>
 
 namespace {
 constexpr auto kLandscapeIconPath = ":/bridge-client/client/orientation_landspace.png";
 constexpr auto kPortraitIconPath = ":/bridge-client/client/orientation_portrait.png";
 } // namespace
-#include <QSettings>
 #include <QFileInfo>
 #include <QDir>
 #include <QMessageBox>

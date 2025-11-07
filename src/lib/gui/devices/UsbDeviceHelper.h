@@ -9,6 +9,8 @@
 #include <QString>
 #include <QMap>
 
+#include "platform/bridge/CdcTransport.h"
+
 namespace deskflow::gui {
 
 /**
@@ -43,7 +45,9 @@ public:
    * @brief Perform a USB HELLO/ACK handshake with an ESP32 bridge to verify firmware presence.
    * @return true if the device responded with a valid ACK before the timeout expires.
    */
-  static bool verifyBridgeHandshake(const QString &devicePath, int timeoutMs = 1500);
+  static bool verifyBridgeHandshake(
+      const QString &devicePath, deskflow::bridge::FirmwareConfig *configOut = nullptr, int timeoutMs = 1500
+  );
 
   inline static const QString kEspressifVendorId = QStringLiteral("303a");
   inline static const QString kEspressifProductId = QStringLiteral("1001");

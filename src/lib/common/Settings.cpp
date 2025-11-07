@@ -203,6 +203,10 @@ QVariant Settings::defaultValue(const QString &key)
     return QString("portrait"); // Default orientation
   }
 
+  if (key == Bridge::HostOs) {
+    return QStringLiteral("unknown");
+  }
+
   return QVariant();
 }
 

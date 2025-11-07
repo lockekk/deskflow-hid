@@ -96,6 +96,11 @@ public:
   void setDeviceAvailable(const QString &devicePath, bool available);
 
   /**
+   * @brief Manually update host OS indicator
+   */
+  void setHostOs(const QString &hostOs);
+
+  /**
    * @brief Check if device is available
    */
   bool isDeviceAvailable() const
@@ -124,6 +129,7 @@ private Q_SLOTS:
 
 private:
   void refreshOrientationLabel();
+  void refreshHostOsIcon();
 
   QString m_screenName;
   QString m_devicePath;
@@ -133,7 +139,9 @@ private:
 
   QPushButton *m_btnConnect;
   QPushButton *m_btnConfigure;
+  QLabel *m_hostOsLabel;
   QLabel *m_orientationLabel;
+  QString m_hostOs;
   QString m_orientation;
 };
 

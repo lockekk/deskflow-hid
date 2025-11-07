@@ -173,7 +173,9 @@ bool UsbDeviceHelper::isSupportedBridgeDevice(const QString &devicePath)
 #endif
 }
 
-bool UsbDeviceHelper::verifyBridgeHandshake(const QString &devicePath, int timeoutMs)
+bool UsbDeviceHelper::verifyBridgeHandshake(
+    const QString &devicePath, deskflow::bridge::FirmwareConfig *configOut, int timeoutMs
+)
 {
 #ifdef Q_OS_LINUX
   Q_UNUSED(timeoutMs);
@@ -187,6 +189,9 @@ bool UsbDeviceHelper::verifyBridgeHandshake(const QString &devicePath, int timeo
 
   if (transport.hasDeviceConfig()) {
     const auto &cfg = transport.deviceConfig();
+    if (configOut != nullptr) {
+      *configOut = cfg;
+    }
     qInfo() << "Bridge handshake successful with" << devicePath
             << "proto:" << cfg.protocolVersion
             << "hid:" << (cfg.hidConnected ? 1 : 0)

@@ -30,6 +30,7 @@
 #include "gui/ipc/DaemonIpcClient.h"
 #include "gui/widgets/BridgeClientWidget.h"
 #include "gui/widgets/LogDock.h"
+#include "platform/bridge/CdcTransport.h"
 #include "net/FingerprintDatabase.h"
 #include "platform/Wayland.h"
 
@@ -1342,13 +1343,16 @@ void MainWindow::usbDeviceConnected(const UsbDeviceInfo &device)
   // Find matching config file(s) by serial number
   QStringList matchingConfigs = BridgeClientConfigManager::findConfigsBySerialNumber(serialNumber);
 
+  deskflow::bridge::FirmwareConfig handshakeConfig;
+  bool haveHandshakeData = false;
   if (matchingConfigs.isEmpty()) {
     qInfo() << "Performing bridge handshake for new device" << device.devicePath;
-    if (!UsbDeviceHelper::verifyBridgeHandshake(device.devicePath)) {
+    if (!UsbDeviceHelper::verifyBridgeHandshake(device.devicePath, &handshakeConfig)) {
       qWarning() << "Bridge handshake failed or timed out for" << device.devicePath << "- ignoring device";
       setStatus(tr("Ignoring USB device %1 (handshake failed)").arg(device.devicePath));
       return;
     }
+    haveHandshakeData = true;
   }
 
   // Store the mapping of device path -> serial number for later use on disconnect
@@ -1359,6 +1363,13 @@ void MainWindow::usbDeviceConnected(const UsbDeviceInfo &device)
     // No config found - create default config and add widget dynamically
     qDebug() << "No config found for serial number" << serialNumber << ", creating default config";
     configPath = BridgeClientConfigManager::createDefaultConfig(serialNumber, device.devicePath);
+
+    if (haveHandshakeData) {
+      const QString hostOs = QString::fromUtf8(handshakeConfig.hostOsString());
+      QSettings cfg(configPath, QSettings::IniFormat);
+      cfg.setValue(Settings::Bridge::HostOs, hostOs);
+      cfg.sync();
+    }
 
     // Create new widget for this config
     QString screenName = BridgeClientConfigManager::readScreenName(configPath);
@@ -1386,6 +1397,9 @@ void MainWindow::usbDeviceConnected(const UsbDeviceInfo &device)
 
     // Set device as available
     widget->setDeviceAvailable(device.devicePath, true);
+    if (haveHandshakeData) {
+      widget->setHostOs(QString::fromUtf8(handshakeConfig.hostOsString()));
+    }
 
     QString message = tr("New bridge client device connected: %1 (%2)").arg(screenName, device.devicePath);
     setStatus(message);

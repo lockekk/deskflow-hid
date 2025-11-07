@@ -14,6 +14,9 @@
 namespace {
 constexpr auto kLandscapeIconPath = ":/bridge-client/client/orientation_landspace.png";
 constexpr auto kPortraitIconPath = ":/bridge-client/client/orientation_portrait.png";
+constexpr auto kHostOsIosIconPath = ":/bridge-client/firmware/os_ios.png";
+constexpr auto kHostOsAndroidIconPath = ":/bridge-client/firmware/os_andriod.png";
+constexpr auto kHostOsUnknownIconPath = ":/bridge-client/firmware/os_unknown.png";
 } // namespace
 
 namespace deskflow::gui {
@@ -46,7 +49,11 @@ BridgeClientWidget::BridgeClientWidget(
   m_btnConfigure->setMinimumSize(80, 32);
   m_btnConfigure->setToolTip(tr("Configure bridge client settings"));
 
-  // Orientation label placeholder
+  // Host OS and orientation labels
+  m_hostOsLabel = new QLabel(this);
+  m_hostOsLabel->setAlignment(Qt::AlignVCenter | Qt::AlignLeft);
+  m_hostOsLabel->setFixedSize(36, 30);
+
   m_orientationLabel = new QLabel(this);
   m_orientationLabel->setAlignment(Qt::AlignVCenter | Qt::AlignLeft);
   m_orientationLabel->setFixedSize(40, 30);
@@ -55,12 +62,14 @@ BridgeClientWidget::BridgeClientWidget(
   layout->addWidget(m_btnConnect);
   layout->addWidget(m_btnConfigure);
   layout->addStretch(); // Push buttons to the left
+  layout->addWidget(m_hostOsLabel);
   layout->addWidget(m_orientationLabel);
 
   // Connect signals
   connect(m_btnConnect, &QPushButton::toggled, this, &BridgeClientWidget::onConnectToggled);
   connect(m_btnConfigure, &QPushButton::clicked, this, &BridgeClientWidget::onConfigureClicked);
 
+  refreshHostOsIcon();
   refreshOrientationLabel();
 }
 
@@ -79,7 +88,40 @@ void BridgeClientWidget::updateConfig(const QString &screenName, const QString &
   m_screenName = screenName;
   m_configPath = configPath;
   setTitle(screenName); // Update the group box title
+  refreshHostOsIcon();
   refreshOrientationLabel();
+}
+
+void BridgeClientWidget::setHostOs(const QString &hostOs)
+{
+  QString normalized = hostOs.trimmed().toLower();
+  if (normalized.isEmpty()) {
+    normalized = Settings::defaultValue(Settings::Bridge::HostOs).toString().toLower();
+  }
+  m_hostOs = normalized;
+
+  const char *iconPath = kHostOsUnknownIconPath;
+  QString tooltip = tr("Unknown");
+  if (normalized == QStringLiteral("ios")) {
+    iconPath = kHostOsIosIconPath;
+    tooltip = tr("iOS");
+  } else if (normalized == QStringLiteral("android") || normalized == QStringLiteral("andriod")) {
+    iconPath = kHostOsAndroidIconPath;
+    tooltip = tr("Android");
+  }
+
+  m_hostOsLabel->setPixmap(QPixmap(QString::fromLatin1(iconPath)));
+  m_hostOsLabel->setToolTip(tooltip);
+}
+
+void BridgeClientWidget::refreshHostOsIcon()
+{
+  QString hostOs = Settings::defaultValue(Settings::Bridge::HostOs).toString();
+  if (!m_configPath.isEmpty()) {
+    QSettings config(m_configPath, QSettings::IniFormat);
+    hostOs = config.value(Settings::Bridge::HostOs, hostOs).toString();
+  }
+  setHostOs(hostOs);
 }
 
 void BridgeClientWidget::refreshOrientationLabel()
