@@ -33,7 +33,8 @@ public:
   enum class Error
   {
     AddressMissing,
-    StartFailed
+    StartFailed,
+    DuplicateServer
   };
   enum class ProcessState
   {
@@ -122,6 +123,7 @@ private:
   void handleLogLines(const QString &text);
   QString correctedAddress(const QString &address) const;
   QString requestDaemonLogPath();
+  bool isAnotherServerRunning() const;
   static QString makeQuotedArgs(const QString &app, const QStringList &args);
   static QString processModeToString(const Settings::ProcessMode mode);
   static QString processStateToString(const CoreProcess::ProcessState state);

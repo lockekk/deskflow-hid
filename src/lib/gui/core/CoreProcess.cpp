@@ -19,6 +19,7 @@
 #include <QDir>
 #include <QFile>
 #include <QMutexLocker>
+#include <QSharedMemory>
 #include <QRegularExpression>
 
 namespace deskflow::gui {
@@ -297,6 +298,13 @@ void CoreProcess::start(std::optional<ProcessMode> processModeOption)
     return;
   }
 
+  if (m_mode == Settings::CoreMode::Server && isAnotherServerRunning()) {
+    qWarning("another deskflow server instance is already running, aborting start request");
+    setProcessState(ProcessState::Stopped);
+    Q_EMIT error(Error::DuplicateServer);
+    return;
+  }
+
   QMutexLocker locker(&m_processMutex);
 
   const auto currentMode = Settings::value(Settings::Core::ProcessMode).value<ProcessMode>();
@@ -403,6 +411,35 @@ void CoreProcess::restart()
   }
 
   start();
+}
+
+bool CoreProcess::isAnotherServerRunning() const
+{
+  if (m_mode != Settings::CoreMode::Server) {
+    return false;
+  }
+
+  static const QString kServerSharedKey = QStringLiteral("deskflow-core-server");
+  QSharedMemory sharedMemory(kServerSharedKey);
+
+  // Attempt to attach/detach first to clean up any stray segments left from crashed instances.
+  if (sharedMemory.attach()) {
+    sharedMemory.detach();
+  }
+
+  // Try to create a 1 byte segment; if it succeeds, no other server currently holds the lock.
+  if (sharedMemory.create(1)) {
+    sharedMemory.detach();
+    return false;
+  }
+
+  switch (sharedMemory.error()) {
+  case QSharedMemory::AlreadyExists:
+  case QSharedMemory::PermissionDenied:
+    return true;
+  default:
+    return false;
+  }
 }
 
 void CoreProcess::cleanup()

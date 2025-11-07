@@ -105,12 +105,19 @@ int main(int argc, char *argv[])
     // Ping the running instance to have it show itself
     QLocalSocket socket;
     socket.connectToServer("deskflow-gui", QLocalSocket::ReadOnly);
-    if (!socket.waitForConnected()) {
-      // If we can't connect to the other instance tell the user its running.
-      // This should never happen but just incase we should show something
-      QMessageBox::information(nullptr, QObject::tr("Deskflow"), QObject::tr("Deskflow is already running"));
-    }
+    const bool connected = socket.waitForConnected();
     socket.disconnectFromServer();
+
+    const QString message = connected
+                                ? QObject::tr(
+                                      "There is another Deskflow server is already running and has been brought to the foreground.\n"
+                                      "This new instance cannot start and will exit now."
+                                  )
+                                : QObject::tr(
+                                      "Deskflow is already running.\n"
+                                      "This new instance cannot start another server, so it will now exit."
+                                  );
+    QMessageBox::information(nullptr, QObject::tr("Deskflow"), message);
     return s_exitDuplicate;
   }
 

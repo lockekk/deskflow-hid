@@ -506,6 +506,16 @@ void MainWindow::coreProcessError(CoreProcess::Error error)
         "although it does exist. "
         "Please check if you have sufficient permissions to run this program."
     );
+  } else if (error == CoreProcess::Error::DuplicateServer) {
+    show();
+    raise();
+    activateWindow();
+    QMessageBox::warning(
+        this,
+        tr("Server already running"),
+        tr("Another Deskflow server instance is already running in the background. Please close the existing server "
+           "before starting a new one.")
+    );
   }
 }
 
@@ -1412,6 +1422,12 @@ void MainWindow::usbDeviceConnected(const UsbDeviceInfo &device)
     if (it != m_bridgeClientWidgets.end()) {
       BridgeClientWidget *widget = it.value();
       widget->setDeviceAvailable(device.devicePath, true);
+      QSettings existingConfig(config, QSettings::IniFormat);
+      widget->setHostOs(
+          existingConfig
+              .value(Settings::Bridge::HostOs, Settings::defaultValue(Settings::Bridge::HostOs))
+              .toString()
+      );
 
       QString screenName = widget->screenName();
       qDebug() << "Enabled widget for config:" << config << "screenName:" << screenName;
