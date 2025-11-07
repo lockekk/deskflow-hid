@@ -3,12 +3,13 @@
 ## Change Summary
 - Multi-instance support validated in practice: two bridge clients can now connect concurrently to a single server on the same PC.
 - Bridge client temporarily reports a fixed 1920×1080 display size so the server accepts DINF responses during debugging.
+- Hardware bridge target switched from Pico 2 W to ESP32 series modules to fix BLE radio reliability issues observed during field testing.
 
 ## Problem
-Need to extend PC keyboard/mouse control to mobile devices (iPad/iPhone/Android) that don't support standard Deskflow client installation.
+Need to extend PC keyboard/mouse control to mobile devices (iPad/iPhone/Android) that don't support standard Deskflow client installation while relying on a BLE radio that remains stable in typical office environments; the Pico 2 W modules we used initially have unacceptable packet loss, so the plan now standardizes on ESP32 hardware.
 
 ## Solution
-Create a hardware bridge using Pico 2 W that converts Deskflow protocol to Bluetooth LE HID, allowing PC to control mobile devices wirelessly through a USB-connected bridge device.
+Create a hardware bridge using ESP32 (e.g., ESP32-S3) modules that converts Deskflow protocol to Bluetooth LE HID, allowing PC to control mobile devices wirelessly through a USB-connected bridge device with stronger RF performance.
 
 The software portion runs entirely inside `deskflow-core` and integrates with the existing client/server stack. All new behavior must keep protocol compatibility with the upstream server.
 
@@ -16,10 +17,10 @@ The software portion runs entirely inside `deskflow-core` and integrates with th
 - **GUI** — `deskflow` executable, responsible for configuration and link management.
 - **Server** — Modified Deskflow server.
 - **Client** — Modified bridge client, aka Bridge client
-- **Link** — USB CDC connection to Pico 2 W.
+- **Link** — USB CDC connection to the ESP32 bridge board.
 - **Upstream Server / Client** — Original Deskflow components.
-- **Pico 2 W** — Remote MCU translating Deskflow HID frames to Bluetooth LE HID.
-- **Mobile device** — iPad/iPhone/Android receiving BLE HID input from Pico 2 W.
+- **ESP32 bridge** — Remote MCU translating Deskflow HID frames to Bluetooth LE HID.
+- **Mobile device** — iPad/iPhone/Android receiving BLE HID input from the ESP32 bridge.
 
 Compatibility requirements:
 - Server remains compatible with upstream clients.
@@ -47,7 +48,7 @@ Compatibility requirements:
 **Linux (✓ Complete)**:
 - Implemented `LinuxUdevMonitor` using libudev for USB device plug/unplug events
 - Monitors "tty" subsystem for USB CDC devices (no root permissions required)
-- Filters by vendor ID (2e8a for Raspberry Pi Pico)
+- Filters by vendor ID (303a for Espressif ESP32 series modules)
 - Integrates with Qt event loop using `QSocketNotifier`
 - Tracks connected devices to handle removal events (vendor ID unavailable after unplug)
 - Bridge Clients GUI section added with dynamic buttons (3 per row):
@@ -68,7 +69,7 @@ Compatibility requirements:
 - GUI loads all existing configs on startup
 - Config contains: serial number, screen dimensions, orientation, screen name, log level
 - Serial number used to match USB devices to config files
-- Vendor filter: only USB CDC devices with vendor ID 2e8a (Raspberry Pi) generate configs
+- Vendor filter: only USB CDC devices with vendor ID 303a (Espressif) generate configs
 - Config file names mirror the bridge screen name (default `Bridge-<tty>`), preventing duplicate files when the client launches
 - Widgets created for each config (grayed out if device not plugged in)
 - Configuration dialog allows editing settings and renaming config files
@@ -79,7 +80,9 @@ Compatibility requirements:
 - Serial number matching: Devices matched to configs via serial number from sysfs
 - Dynamic state: Widgets gray out when device unplugged, enable when plugged in
 - Connect/Disconnect buttons: Toggle to start/stop bridge client processes
-- Configure button: Always enabled, opens configuration dialog
+- Configure button: Disabled when bridge client is connected, enabled when disconnected
+  - Prevents configuration changes while the bridge client is actively running
+  - Re-enabled automatically when user disconnects the bridge client
 
 **Process Management (✓ Complete)**:
 - Process tracking: `QMap<QString, QProcess*>` keyed by device path
@@ -115,13 +118,30 @@ Compatibility requirements:
   4. Gray out widget to indicate device unavailable
   5. Clean up serial number mapping
 
+**Screen Name Change Handling (✓ Complete)**:
+When a bridge client's screen name is changed in the configuration dialog:
+1. Config file is updated with new screen name and renamed to match
+2. Widget is updated with new screen name and config path
+3. Widget tracking map (`m_bridgeClientWidgets`) is updated with new config path as key
+4. **Server configuration is automatically updated** via `ServerConfig::renameScreen()`:
+   - Finds the screen in the server's screen grid by old name
+   - Updates the screen name to the new value
+   - Commits changes to persist them
+   - Returns true on success, false if screen not found or new name already exists
+5. Server core process is restarted (if running) to apply changes immediately
+6. Bridge client can now reconnect with new name and server recognizes it as the same client
+
+This ensures the server doesn't treat renamed bridge clients as new clients after reconnection.
+
 **Files Modified**:
 - `src/lib/gui/MainWindow.h` - Added process/timer tracking maps, new slot declarations
-- `src/lib/gui/MainWindow.cpp` - Implemented process lifecycle management
-- `src/lib/gui/widgets/BridgeClientWidget.h/cpp` - Widget state management
+- `src/lib/gui/MainWindow.cpp` - Implemented process lifecycle management, config change handling with server config update
+- `src/lib/gui/widgets/BridgeClientWidget.h/cpp` - Widget state management, Configure button state control
 - `src/lib/gui/devices/UsbDeviceHelper.h/cpp` - Serial number reading, device enumeration
 - `src/lib/gui/core/BridgeClientConfigManager.h/cpp` - Config file management
 - `src/lib/gui/dialogs/BridgeClientConfigDialog.h/cpp` - Configuration dialog
+- `src/lib/gui/config/ServerConfig.h` - Added `renameScreen()` method declaration
+- `src/lib/gui/config/ServerConfig.cpp` - Implemented `renameScreen()` method for updating screen names in server config
 
 **CDC Device Release Strategy**:
 When disconnecting a bridge client, the GUI:
@@ -154,11 +174,11 @@ This ensures the USB CDC device is properly released and available for reconnect
 ### 4. Special USB-HID Bridge Client Implementation
 
 #### Overview
-A new client type that acts as a bridge: converts Deskflow events → HID reports → Pico 2 W (via USB CDC) → Bluetooth LE HID → Mobile device (iPad/iPhone/Android)
+A new client type that acts as a bridge: converts Deskflow events → HID reports → ESP32 (via USB CDC) → Bluetooth LE HID → Mobile device (iPad/iPhone/Android)
 
 #### Arguments (passed from GUI)
 1. `--name <unique-name>`: For multi-instance support
-2. `--link <usb cdc device-path>`: USB CDC device for Pico 2 W communication
+2. `--link <usb cdc device-path>`: USB CDC device for ESP32 communication
 
 #### Architecture Flow
 ```
@@ -167,25 +187,25 @@ Deskflow Server (PC)
 USB-HID Bridge Client (PC)
     ↓ (convert events to HID reports)
     ↓ (pack as frames via USB CDC)
-Pico 2 W (hardware bridge)
+ESP32 (hardware bridge)
     ↓ (Bluetooth LE HID)
 Mobile Device (iPad/iPhone/Android)
 ```
 
 #### Client Initialization Sequence
 Performed before the standard `ClientApp` starts:
-1. Query Pico 2 W over CDC for **arch** (e.g., `bridge-ios`, `bridge-android`).
+1. Query ESP32 over CDC for **arch** (e.g., `bridge-ios`, `bridge-android`).
    - Map the result to a `BridgePlatformScreen` instance (derived from `PlatformScreen`) that knows which HID layout to emit.
    - Instantiate `BridgeClientApp` (derived from `ClientApp`) with an initialized Link so `createScreen()` can return the bridge screen.
-2. Query Pico 2 W for **screen info**: resolution, rotation, physical size (inches), scale factor.
+2. Query ESP32 for **screen info**: resolution, rotation, physical size (inches), scale factor.
    - Feed this into `BridgePlatformScreen::getShape()` so Deskflow coordinates match the mobile display.
 3. Configure TLS by reading cert paths from the server's main settings file; configure remote host using the per-instance settings file so the bridge client connects with the user's configured security settings.
 
 #### Key Differences from upstream Client
 - **No local event injection**: Doesn't fake mouse/keyboard events on PC
 - **Bridge platform screen**: New `IPlatformScreen` implementation packages `fakeMouse*` and `fakeKey*` calls into HID reports sent over CDC
-- **USB CDC transport**: Sends framed HID data to Pico 2 W
-- **Screen info supplied by Pico 2 W**: Uses mobile device screen properties, not PC screen
+- **USB CDC transport**: Sends framed HID data to ESP32
+- **Screen info supplied by ESP32**: Uses mobile device screen properties, not PC screen
 - **Clipboard handling**: `BridgePlatformScreen::setClipboard()` discards clipboard payloads instead of forwarding them over the Link; the server still follows the standard clipboard protocol.
 - **Settings isolation**: Each bridge client instance loads a dedicated QSettings file at `~/.config/deskflow/bridge-clients/<client-name>.conf` (created on first run if not exists) and strips TLS keys to avoid leaking preferences back into the main Deskflow configuration.
 - **TLS compatibility**: Bridge client reuses the server's TLS certificates/config by reading cert paths from the server's main settings file (no user-facing toggle); when the server requires TLS, connect using the same security level and certificate files.
@@ -193,14 +213,14 @@ Performed before the standard `ClientApp` starts:
 
 ### 5. CLI / Argument Handling
 - Extend `CoreArgParser` options with:
-  - `--link <usb cdc dev>` (string) for the Pico USB CDC device path, eg. /dev/ttyACM0
+  - `--link <usb cdc dev>` (string) for the ESP32 USB CDC device path, eg. /dev/ttyACM0
 - The GUI always launches bridge clients once a matching Link is detected, so the presence of `--link` implies bridge mode and client-only execution.
 - Bridge client settings are automatically stored at `~/.config/deskflow/bridge-clients/<client-name>.conf` (no override option needed).
 - Strip/ignore client-side TLS switches from the parsed option set so they cannot override server-driven behavior.
 - Update `deskflow-core` `main()` to:
   1. Inspect arguments for `--link` before the single-instance guard.
   2. Select the shared-memory key and settings file based on `--name` (bridge clients use `bridge-clients/<name>.conf`).
-  3. Fetch Pico configuration, instantiate `BridgeClientApp`, and run it.
+  3. Fetch ESP32 configuration, instantiate `BridgeClientApp`, and run it.
 
 ### 6. Transport / HID Framing
 - Bridge client owns a CDC transport helper that:
@@ -211,8 +231,8 @@ Performed before the standard `ClientApp` starts:
 
 ### 7. Arch Reuse Strategy
 - Client-side `Arch` services (time, threading, sockets, mutexes, etc.) reuse upstream implementations unchanged.
-- The critical deviation is input routing: instead of injecting OS events through the platform `Arch`, the bridge client packages the synthesized input into HID frames and sends them over the Link to Pico 2 W.
-- Pico 2 W parses the frame, applies any host-arch key translations, enqueues the HID report into its BLE stack, and the mobile device receives the resulting mouse/keyboard events.
+- The critical deviation is input routing: instead of injecting OS events through the platform `Arch`, the bridge client packages the synthesized input into HID frames and sends them over the Link to ESP32.
+- The ESP32 firmware parses the frame, applies any host-arch key translations, enqueues the HID report into its BLE stack, and the mobile device receives the resulting mouse/keyboard events.
 
 ### 8. TLS Configuration for Bridge Clients
 

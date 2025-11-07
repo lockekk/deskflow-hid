@@ -1,351 +1,82 @@
-# Pico-HID Firmware Summary
+# ESP32 HID Firmware Summary
 
 ## Repository Location
-`/home/locke/checkouts/pico-hid`
+`/home/locke/checkouts/esp32-hid`
 
 ## Purpose
-Hardware bridge firmware for Raspberry Pi Pico 2 W that converts USB CDC HID events to Bluetooth LE HID reports, enabling PC keyboard/mouse control of mobile devices (iPad/iPhone/Android).
+ESP32-based replacement for the original Pico firmware that speaks Deskflow’s USB framing on the wired side and emits BLE HID keyboard/mouse/consumer-control reports to phones and tablets, keeping the desktop changes minimal while solving the Pico 2 W radio issues (`PLAN.md:3-17` in this repo and `PLAN.md:3-12` in `/home/locke/checkouts/deskflow-lim`).
 
 ---
 
 ## Architecture Overview
 
-The firmware uses a 4-layer architecture:
+```
+Deskflow Client ─USB CDC frames─> usb_cdc_transport ─parsed hid_event_t─> hid_combo
+     ↑                                                             │
+     └────────────── HELLO/ACK, display info ─ device_display_config│
+                                                                   ▼
+                                                   ESP-IDF BLE stack → Mobile host
+```
 
-```
-┌─────────────────────────────────────────┐
-│  USB CDC Transport Layer                │  ← Receives framed HID events from deskflow-core
-├─────────────────────────────────────────┤
-│  HID Protocol Layer                     │  ← Parses event types and payloads
-├─────────────────────────────────────────┤
-│  BLE HID Layer                          │  ← Generates HID reports (keyboard, mouse)
-├─────────────────────────────────────────┤
-│  FreeRTOS + BLE Stack                   │  ← Manages tasks and BLE communication
-└─────────────────────────────────────────┘
-```
+- **HID protocol layer** (`components/hid_protocol/include/hid_protocol.h:21-109`, `src/hid_protocol.c`) keeps the 0xAA55 framing, keyboard/mouse/consumer event structs, parser stats, and helper logging.
+- **USB transport** (`components/usb_transport/src/usb_cdc_transport.c:87-200` and `325-420`) runs on the ESP32-C3 USB Serial/JTAG peripheral, owns the RX FreeRTOS task, handshake state, compact mouse/key paths, and sends ACKs that advertise firmware version plus the baked-in display size from `components/hid_protocol/include/device_display_config.h:1-19`.
+- **BLE combo layer** (`components/ble_hid/src/hid_combo.c:1-455`) queues prepared reports, tracks modifier state, converts consumer usages to Espressif `consumer_cmd_t`, and pushes data through `hid_dev_send_report()`.
+- **Application entry** (`main/ble_hidd_demo_main.c:1-194`) initializes NVS, BT controller, HID profile, GAP/GATTS callbacks, and advertising/back-off logic that temporarily switches to non-connectable advertising when the phone drops the link to avoid iOS auto-reconnect storms.
+
+The code-flow and boot/data sequences are further documented in `CODE_FLOW_EXPLANATION.md` and `BLE_HOST_DETECTION_ANALYSIS.md` at the repo root.
 
 ---
 
-## Directory Structure
+## Directory Structure Highlights
 
 ```
-/home/locke/checkouts/pico-hid/
-├── app/                          # Application code
-│   ├── hid_protocol/             # HID event type definitions and protocol
-│   │   ├── hid_protocol.h        # Event types enum, event structures
-│   │   └── hid_protocol.c        # (Implementation if exists)
-│   ├── usb/                      # USB CDC transport layer
-│   │   ├── usb_cdc_transport.h   # CDC interface declarations
-│   │   └── usb_cdc_transport.c   # Frame parsing, compact frame handling
-│   └── ble/                      # Bluetooth LE HID layer
-│       ├── hid_combo.h           # HID combo device interface
-│       ├── hid_combo.c           # Report generation, event processing
-│       └── hid_descriptor.h      # HID descriptor definitions (likely)
-├── lib/                          # Third-party libraries
-│   └── FreeRTOS/                 # Real-time operating system
-├── CMakeLists.txt                # Build configuration
-└── README.md                     # Project documentation
+components/
+  hid_protocol/      # Parser + shared display config
+  usb_transport/     # USB Serial/JTAG framing and HELLO/ACK handshake
+  ble_hid/           # HID combo queue + host heuristics
+main/
+  ble_hidd_demo_main.c, esp_hidd_prf_api.c, hid_device_le_prf.c # ESP-IDF HID example sources
+docs/ (root)         # *_EXPLANATION.md analysis notes
+sdkconfig*           # IDF build configs per chip
 ```
+
+`plan.md` tracks project status and work items; right now hardware validation is still pending even though the software layers compile and link (`plan.md:10-16`).
 
 ---
 
-## Layer 1: HID Protocol Layer
+## Key Firmware Behaviors
 
-**File**: `app/hid_protocol/hid_protocol.h`
-
-### Event Types (Current Implementation)
-```c
-typedef enum {
-    HID_EVENT_KEYBOARD_PRESS = 0x01,
-    HID_EVENT_KEYBOARD_RELEASE = 0x02,
-    HID_EVENT_MOUSE_MOVE = 0x03,
-    HID_EVENT_MOUSE_BUTTON_PRESS = 0x04,
-    HID_EVENT_MOUSE_BUTTON_RELEASE = 0x05,
-    HID_EVENT_MOUSE_SCROLL = 0x06,
-    // Consumer control support NOT YET IMPLEMENTED
-} hid_event_type_t;
-```
-
-### Event Structures
-```c
-typedef struct {
-    uint8_t modifiers;  // Modifier bitmap (Ctrl, Shift, Alt, etc.)
-    uint8_t keycode;    // HID keyboard scancode
-} hid_keyboard_event_t;
-
-typedef struct {
-    int16_t dx;  // Relative X movement
-    int16_t dy;  // Relative Y movement
-} hid_mouse_move_event_t;
-
-typedef struct {
-    uint8_t button_mask;  // Button bitmap (bit 0 = left, bit 1 = right, etc.)
-} hid_mouse_button_event_t;
-
-typedef struct {
-    int8_t delta;  // Scroll wheel delta
-} hid_mouse_scroll_event_t;
-
-typedef struct {
-    hid_event_type_t type;
-    union {
-        hid_keyboard_event_t keyboard;
-        hid_mouse_move_event_t mouse_move;
-        hid_mouse_button_event_t mouse_button;
-        hid_mouse_scroll_event_t mouse_scroll;
-    } data;
-} hid_event_t;
-```
+- **Deskflow handshake compatibility**: The RX task blocks until the desktop sends `HELLO`, then answers with `ACK` that includes protocol version, BLE-connected bit, and fixed 1080×2424 screen metadata so Deskflow can size the virtual screen (`components/usb_transport/src/usb_cdc_transport.c:335-377` plus `device_display_config.h:6-19`). Any malformed frames yield `USB_LINK_CONTROL_ERROR`.
+- **Compact frame fast path**: Mouse delta, keyboard, button, and scroll compact frames bypass the parser and map header bytes straight into `hid_event_t` structs to minimize latency (`components/usb_transport/src/usb_cdc_transport.c:403-454`).
+- **BLE host heuristics**: Connection-interval and MTU callbacks categorize the remote OS as iOS vs Android so Deskflow can tune gestures later; detections are logged and exposed via `hid_combo_get_host_os()` (`components/ble_hid/src/hid_combo.c:417-455` and expanded rationale in `BLE_HOST_DETECTION_ANALYSIS.md`).
+- **Reconnect back-off**: When the phone intentionally drops the BLE link (e.g., iOS switching devices), the GAP handler swaps to non-connectable advertising for ~5 s before resuming fast connectable mode, reducing thrash when multiple hosts are nearby (`main/ble_hidd_demo_main.c:43-194`).
+- **Report coverage**: The firmware already handles keyboard, mouse, and consumer-control usage IDs, matching Deskflow’s event set (`components/hid_protocol/include/hid_protocol.h:27-35`, `components/ble_hid/src/hid_combo.c:330-409`).
 
 ---
 
-## Layer 2: USB CDC Transport Layer
+## Build & Flash Workflow
 
-**File**: `app/usb/usb_cdc_transport.c`
+1. Select the SoC target (`idf.py set-target esp32c3`) and ensure the right `sdkconfig.defaults.*` is copied/merged for your board (README instructions at `README.md:18-59` still apply).
+2. Build/flash/monitor in one shot with `idf.py -p <PORT> flash monitor`.
+3. Use the ESP-IDF serial monitor (`Ctrl-]` to exit) to watch USB handshake logs (`USB_CDC`, `DeskflowHID`) for HELLO/ACK, BLE pairing messages, and host OS detection cues.
 
-### Frame Format
-```
-┌────────┬────────┬────────┬────────┬──────────────┐
-│ Header │  Type  │ Length │ Payload│   ...        │
-│ 0xAA55 │ 1 byte │ 1 byte │ N bytes│              │
-└────────┴────────┴────────┴────────┴──────────────┘
-```
-
-### Compact Frame Sizes (Current)
-```c
-#define COMPACT_KEYBOARD_PRESS_SIZE 3      // type + modifiers + keycode
-#define COMPACT_KEYBOARD_RELEASE_SIZE 3
-#define COMPACT_MOUSE_MOVE_SIZE 5          // type + dx_low + dx_high + dy_low + dy_high
-#define COMPACT_MOUSE_BUTTON_PRESS_SIZE 2  // type + button_mask
-#define COMPACT_MOUSE_BUTTON_RELEASE_SIZE 2
-#define COMPACT_MOUSE_SCROLL_SIZE 2        // type + delta
-```
-
-### Frame Parsing Logic
-Located in `parse_hid_frame()` function (around line 150):
-- Validates frame header (0xAA55)
-- Extracts event type and payload length
-- Parses payload based on event type
-- Handles little-endian multi-byte values
+> Tip: Because the transport uses USB Serial/JTAG, no external USB-UART bridge is required—just plug the ESP32-C3 SuperMini into the PC; enumeration proves the driver is alive (`plan.md:11-16`).
 
 ---
 
-## Layer 3: BLE HID Layer
+## Testing Status & Next Steps
 
-**File**: `app/ble/hid_combo.c`
-
-### HID Report IDs (Current)
-```c
-#define HID_REPORT_ID_KEYBOARD 1  // Standard keyboard (8 bytes)
-#define HID_REPORT_ID_MOUSE 2     // Standard mouse (4 bytes)
-// Consumer control Report ID 3 NOT YET IMPLEMENTED
-```
-
-### Keyboard Report Format (Report ID 1)
-```
-Byte 0: Report ID (0x01)
-Byte 1: Modifier bitmap
-Byte 2: Reserved (0x00)
-Byte 3-8: Up to 6 concurrent key scancodes
-```
-
-### Mouse Report Format (Report ID 2)
-```
-Byte 0: Report ID (0x02)
-Byte 1: Button bitmap
-Byte 2: X movement (signed 8-bit)
-Byte 3: Y movement (signed 8-bit)
-```
-
-### State Management
-```c
-static struct {
-    uint8_t keyboard_report[8];  // Current keyboard state
-    uint8_t mouse_report[4];     // Current mouse state
-} hid_state;
-```
-
-### Event Processing
-Function: `hid_combo_process_event(const hid_event_t *event)`
-- Switch on event type
-- Update internal state
-- Send HID report via `tud_hid_report()`
+- ✅ Layers compile and integrate; docs capture boot flow, host detection, and unused code analysis (`CODE_FLOW_EXPLANATION.md`, `UNUSED_CODE_ANALYSIS.md`).
+- ⚠️ Pending: On-hardware validation of USB enumeration, Deskflow client handshake, and BLE input on iOS/Android as tracked in `plan.md:41-52`.
+- 📌 Follow-ups: dynamic display configuration and OTA/dual-host ideas remain in the “future work” bullets of `plan.md:18-53`; keep these in mind when adding ESP32-specific requirements to Deskflow’s GUI.
 
 ---
 
-## Layer 4: FreeRTOS & BLE Stack
+## Cross-Repo Dependencies
 
-**Location**: `lib/FreeRTOS/` and platform BLE libraries
-
-### Key Components
-- **Task Management**: Separate tasks for USB CDC RX, HID event processing, BLE TX
-- **Queue Management**: Event queues between layers
-- **BLE GATT Profile**: HID-over-GATT service with Report characteristic
-- **Pairing/Security**: BLE pairing state machine (implementation details TBD)
+- Deskflow GUI/client expects the ESP32 bridge to speak the same link protocol and now filters on the Espressif VID 0x303A (`PLAN.md` in `/home/locke/checkouts/deskflow-lim`); ensure firmware USB descriptors stay consistent with the Serial/JTAG peripheral’s default enumeration.
+- The deckflow bridge client relies on the ACK display dimensions reported here; update `device_display_config.h` if the ESP32 firmware starts querying the phone for live display info, then keep Deskflow’s `PLAN.md` and launcher arguments in sync.
 
 ---
 
-## Current Limitations
-
-### Missing Features
-1. **Consumer Control Support**: No Report ID 3 for media keys
-   - No `HID_EVENT_CONSUMER_CONTROL_PRESS/RELEASE` event types
-   - No consumer control descriptor in HID report map
-   - No consumer control state tracking or report generation
-
-2. **Advanced HID Features** (if needed):
-   - Gamepad/joystick support
-   - Touchscreen absolute positioning
-   - Custom vendor-specific reports
-
-### Protocol Version
-- Current protocol appears to be **version 1.0**
-- No explicit version negotiation in CDC handshake (yet)
-
----
-
-## Integration with Deskflow Bridge Client
-
-### Data Flow
-```
-BridgePlatformScreen (PC)
-    ↓ sendConsumerControlEvent(type=0x07, usageCode=0x00E9)
-    ↓ HidEventPacket::serialize()
-    ↓ CdcTransport::send()
-    ↓ [USB CDC to Pico 2 W]
-    ↓ usb_cdc_transport.c::parse_hid_frame()
-    ↓ hid_combo.c::hid_combo_process_event()
-    ↓ tud_hid_report(REPORT_ID_3, [0x03, 0xE9, 0x00])
-    ↓ [BLE HID to iPad/Android]
-    ✓ Volume Up
-```
-
-### Protocol Alignment
-- **Deskflow Client**: Defines event types 0x01-0x08 (including consumer control)
-- **Pico Firmware**: Only implements 0x01-0x06 (keyboard + mouse)
-- **Gap**: Event types 0x07 (ConsumerControlPress) and 0x08 (ConsumerControlRelease) need implementation
-
----
-
-## Implementation Plan for Consumer Control
-
-See detailed plan in previous response. Summary:
-
-### Phase 1: Protocol Layer
-- Add `HID_EVENT_CONSUMER_CONTROL_PRESS = 0x07`
-- Add `HID_EVENT_CONSUMER_CONTROL_RELEASE = 0x08`
-- Add `hid_consumer_control_event_t` structure with `uint16_t usage_code`
-
-### Phase 2: USB Transport
-- Add compact frame parsing for 2-byte consumer control payload (little-endian)
-
-### Phase 3: BLE HID Layer
-- Add Report ID 3 for consumer control
-- Implement `send_consumer_control_report(uint16_t usage_code)`
-- Update `hid_combo_process_event()` with new cases
-
-### Phase 4: HID Descriptor
-- Append Consumer Devices (0x0C) collection to HID descriptor
-- 16-bit usage code, single report count
-
----
-
-## Key Files Reference
-
-| File | Lines of Interest | Purpose |
-|------|-------------------|---------|
-| `app/hid_protocol/hid_protocol.h` | 20-27 | Event type enum |
-| `app/hid_protocol/hid_protocol.h` | 60-70 | Event union structure |
-| `app/usb/usb_cdc_transport.c` | ~45 | Compact frame size definitions |
-| `app/usb/usb_cdc_transport.c` | ~150 | Frame parsing switch statement |
-| `app/ble/hid_combo.c` | ~15 | Report ID definitions |
-| `app/ble/hid_combo.c` | ~30 | State tracking structure |
-| `app/ble/hid_combo.c` | ~50-120 | HID descriptor array |
-| `app/ble/hid_combo.c` | ~180 | Event processing switch statement |
-
----
-
-## Testing Strategy
-
-### Unit Tests (if available)
-- Protocol layer: Event structure serialization/deserialization
-- Transport layer: Frame parsing edge cases
-
-### Integration Tests
-1. **USB CDC Loopback**: Send test frames, verify parsed events
-2. **BLE HID Sniffer**: Capture BLE packets, validate report format
-3. **End-to-End**: deskflow-core → Pico → iPad, verify input works
-
-### Test Devices
-- **Keyboard**: Volume Up/Down, Play/Pause, Brightness
-- **Mouse**: Movement, buttons, scroll wheel
-- **Consumer Control** (after implementation): Media keys
-
----
-
-## Build Notes
-
-### CMake Configuration
-- Target: `pico2_w` (RP2350 with wireless)
-- SDK: Pico SDK 2.x
-- Dependencies: FreeRTOS, TinyUSB, BTstack (or pico-sdk BLE)
-
-### Build Commands
-```bash
-cd /home/locke/checkouts/pico-hid
-mkdir -p build && cd build
-cmake ..
-make -j$(nproc)
-# Output: pico-hid.uf2
-```
-
-### Flashing
-1. Hold BOOTSEL button on Pico 2 W
-2. Connect USB
-3. Copy `pico-hid.uf2` to mounted drive
-4. Device reboots and runs firmware
-
----
-
-## Debugging
-
-### Logging
-- USB CDC transport likely has debug UART output
-- Check for `printf()` or custom logging macros
-
-### Common Issues
-1. **Frame parsing errors**: Check magic header 0xAA55
-2. **Report not sending**: Verify BLE connection state
-3. **Wrong HID codes**: Validate mapping tables in deskflow client
-
----
-
-## Future Enhancements
-
-1. **Configuration Protocol**: Allow runtime config (screen resolution, arch, pairing mode)
-2. **OTA Updates**: Firmware update over BLE
-3. **Multi-Device Pairing**: Switch between multiple paired devices
-4. **Latency Optimization**: Reduce USB → BLE latency
-5. **Power Management**: Sleep modes when idle
-
----
-
-## Protocol Version History
-
-| Version | Date | Changes |
-|---------|------|---------|
-| 1.0 | Initial | Keyboard + Mouse support (events 0x01-0x06) |
-| 1.1 | TBD | Consumer Control support (events 0x07-0x08) |
-
----
-
-## Contact & Maintenance
-
-- **Repository Owner**: User `locke`
-- **Bridge Client Repo**: `/home/locke/checkouts/deskflow-lim`
-- **Related Docs**: See `PLAN.md` in deskflow-lim repo
-
----
-
-**Last Updated**: 2025-11-02
-**Firmware Status**: Consumer control implementation pending
+**Last Verified**: current ESP32 firmware tree as of this task (see timestamps in repo). Update this summary whenever protocol changes, new boards/targets come online, or the testing status in `plan.md` advances.
