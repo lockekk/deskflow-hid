@@ -42,6 +42,7 @@ constexpr uint8_t kUsbControlConfigResponse = 0x82;
 
 constexpr uint8_t kUsbConfigGetDeviceName = 0x02;
 constexpr uint8_t kUsbConfigSetDeviceName = 0x03;
+constexpr uint8_t kUsbConfigGetSerialNumber = 0x04;
 
 constexpr size_t kAckProtocolVersionIndex = 1;
 constexpr size_t kAckReservedIndex = 2;
@@ -322,6 +323,15 @@ bool CdcTransport::performHandshake()
           LOG_INFO("CDC: firmware device name='%s'", fetchedName.c_str());
         } else {
           LOG_WARN("CDC: failed to read device name: %s", m_lastError.c_str());
+          m_lastError.clear();
+        }
+
+        // Also fetch serial number during handshake
+        std::string serialNumber;
+        if (fetchSerialNumber(serialNumber)) {
+          LOG_INFO("CDC: firmware serial number='%s'", serialNumber.c_str());
+        } else {
+          LOG_WARN("CDC: failed to read serial number: %s", m_lastError.c_str());
           m_lastError.clear();
         }
       } else {
@@ -621,6 +631,40 @@ bool CdcTransport::setDeviceName(const std::string &name)
   }
 
   m_deviceConfig.deviceName = name;
+  return true;
+}
+
+bool CdcTransport::fetchSerialNumber(std::string &outSerial)
+{
+  if (!ensureOpen()) {
+    return false;
+  }
+
+  std::vector<uint8_t> payload(1);
+  payload[0] = kUsbConfigGetSerialNumber;
+  if (!sendUsbFrame(kUsbFrameTypeControl, 0, payload)) {
+    return false;
+  }
+
+  uint8_t msgType = 0;
+  uint8_t status = 0;
+  std::vector<uint8_t> data;
+  if (!waitForConfigResponse(msgType, status, data, kConfigCommandTimeoutMs)) {
+    return false;
+  }
+
+  if (msgType != kUsbConfigGetSerialNumber) {
+    m_lastError = "Unexpected config response";
+    return false;
+  }
+  if (status != 0) {
+    m_lastError = "Firmware error code " + std::to_string(status);
+    LOG_ERR("CDC: fetchSerialNumber firmware returned error=%u", status);
+    return false;
+  }
+
+  // Firmware returns any readable string (null-terminated)
+  outSerial.assign(reinterpret_cast<const char *>(data.data()), data.size());
   return true;
 }
 

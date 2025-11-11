@@ -20,11 +20,13 @@ class UsbDeviceHelper
 {
 public:
   /**
-   * @brief Read serial number from USB CDC device
+   * @brief Read serial number from USB CDC device via CDC command
    * @param devicePath USB CDC device path (e.g., "/dev/ttyACM0")
    * @return Serial number string, or empty if not found
    *
-   * On Linux, reads from sysfs: /sys/class/tty/ttyACM0/../../../../serial
+   * Reads serial number by sending CDC command to firmware.
+   * Only reads when device is not opened by bridge client to avoid conflicts.
+   * Works on Linux and Windows platforms.
    */
   static QString readSerialNumber(const QString &devicePath);
 
@@ -32,7 +34,8 @@ public:
    * @brief Get all currently connected USB CDC devices with their serial numbers
    * @return Map of device path -> serial number
    *
-   * On Linux, scans /dev/ttyACM* devices and reads their serial numbers
+   * Scans platform-specific device paths and reads serial numbers via CDC commands.
+   * Works on Linux and Windows platforms.
    */
   static QMap<QString, QString> getConnectedDevices();
 

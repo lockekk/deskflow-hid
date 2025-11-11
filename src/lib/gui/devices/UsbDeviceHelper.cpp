@@ -6,14 +6,14 @@
 
 #include "UsbDeviceHelper.h"
 
+#include "platform/bridge/CdcTransport.h"
+
 #include <QDebug>
 #include <QDir>
 #include <QFile>
 #include <QFileInfo>
 #include <QStringList>
 #include <QTextStream>
-
-#include "platform/bridge/CdcTransport.h"
 
 namespace deskflow::gui {
 
@@ -65,61 +65,58 @@ QString readUsbAttribute(const QString &canonicalDevicePath, const QString &attr
 
 QString UsbDeviceHelper::readSerialNumber(const QString &devicePath)
 {
-#ifdef Q_OS_LINUX
-  // Extract tty device name from path (e.g., /dev/ttyACM0 -> ttyACM0)
-  QFileInfo deviceInfo(devicePath);
-  QString ttyName = deviceInfo.fileName();
+#if defined(Q_OS_LINUX) || defined(Q_OS_WIN)
+  // Read serial number via CDC command from firmware
+  // This ensures we only read when device is not opened by bridge client
 
-  const QString ttyBasePath = QStringLiteral("/sys/class/tty/%1").arg(ttyName);
-  QFileInfo ttyLink(ttyBasePath);
-  if (!ttyLink.exists()) {
-    qWarning() << "TTY entry does not exist for" << devicePath << ":" << ttyBasePath;
+  qDebug() << "Reading serial number via CDC for device:" << devicePath;
+
+  try {
+    // Create CDC transport instance
+    deskflow::bridge::CdcTransport transport(devicePath);
+
+    // Check if device is busy by attempting to open it
+    // This will fail if the bridge client already has it open
+    if (!transport.open()) {
+      qDebug() << "Device is busy or not accessible (likely opened by bridge client):" << devicePath;
+      return QString(); // Device is in use, don't block
+    }
+
+    // Read serial number via CDC command
+    std::string serial;
+    if (transport.fetchSerialNumber(serial)) {
+      transport.close();
+      QString qSerial = QString::fromStdString(serial);
+      if (!qSerial.isEmpty()) {
+        qDebug() << "Read serial number via CDC for" << devicePath << ":" << qSerial;
+        return qSerial;
+      } else {
+        qDebug() << "Device returned empty serial number:" << devicePath;
+        return QString();
+      }
+    } else {
+      qWarning() << "Failed to read serial number via CDC for" << devicePath
+                 << "error:" << QString::fromStdString(transport.lastError());
+      transport.close();
+      return QString();
+    }
+
+  } catch (const std::exception &e) {
+    qWarning() << "Exception reading serial number via CDC for" << devicePath
+               << "error:" << e.what();
     return QString();
   }
 
-  QFileInfo deviceLink(ttyBasePath + QStringLiteral("/device"));
-  QStringList attemptedPaths;
-
-  auto tryReadSerial = [&](const QString &candidatePath) -> QString {
-    attemptedPaths << candidatePath;
-    QFile serialFile(candidatePath);
-    if (!serialFile.open(QIODevice::ReadOnly | QIODevice::Text)) {
-      return QString();
-    }
-    QTextStream in(&serialFile);
-    QString serialNumber = in.readLine().trimmed();
-    serialFile.close();
-    return serialNumber;
-  };
-
-  // Some kernels expose the serial directly on the tty node (rare, but fast to check).
-  const QString directSerial = tryReadSerial(ttyBasePath + QStringLiteral("/serial"));
-  if (!directSerial.isEmpty()) {
-    qDebug() << "Read serial number for" << devicePath << ":" << directSerial;
-    return directSerial;
-  }
-
-  // Resolve the tty device symlink and search upwards for a "serial" attribute on the USB node.
-  const QString canonicalDevicePath = deviceLink.canonicalFilePath();
-  if (!canonicalDevicePath.isEmpty()) {
-    const QString serial = readUsbAttribute(canonicalDevicePath, QStringLiteral("serial"));
-    if (!serial.isEmpty()) {
-      qDebug() << "Read serial number for" << devicePath << ":" << serial;
-      return serial;
-    }
-  }
-
-  qWarning() << "Failed to read serial number for" << devicePath << "after checking"
-             << attemptedPaths;
-#elif defined(Q_OS_WIN)
-  // TODO: Add CDC command to read serial number from device firmware
-  // For now, return device path as identifier to allow connection
-  // This enables the connect button until proper serial number reading is implemented
-  Q_UNUSED(devicePath);
-  return devicePath; // Use device path as temporary identifier
-#endif
-
+#elif defined(Q_OS_IOS)
+  // TODO: Implement CDC serial number reading for iOS
+  // iOS has limited access to CDC devices, may need different approach
+  qWarning() << "Serial number reading not implemented for iOS platform";
   return QString();
+
+#else
+  qWarning() << "Serial number reading not implemented for this platform";
+  return QString();
+#endif
 }
 
 QMap<QString, QString> UsbDeviceHelper::getConnectedDevices()

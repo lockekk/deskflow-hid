@@ -110,6 +110,13 @@ public:
   bool setDeviceName(const std::string &name);
 
   /**
+   * @brief Read serial number from firmware via CDC command
+   * @param outSerial Output string to store serial number
+   * @return true if successful, false if failed
+   */
+  bool fetchSerialNumber(std::string &outSerial);
+
+  /**
    * @brief Get last error message
    */
   std::string lastError() const
