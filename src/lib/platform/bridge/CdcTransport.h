@@ -110,6 +110,7 @@ public:
   bool fetchDeviceName(std::string &outName);
   bool setDeviceName(const std::string &name);
   bool setAllowHidHost(bool allowed);
+  bool sendKeepAlive(uint32_t &uptimeSeconds);
 
   /**
    * @brief Read serial number from firmware via CDC command
@@ -170,6 +171,7 @@ private:
   bool sendUsbFrame(uint8_t type, uint8_t flags, const uint8_t *payload, uint16_t length);
   bool sendUsbFrame(uint8_t type, uint8_t flags, const std::vector<uint8_t> &payload);
   bool waitForConfigResponse(uint8_t &msgType, uint8_t &status, std::vector<uint8_t> &payload, int timeoutMs);
+  bool waitForControlMessage(uint8_t controlId, std::vector<uint8_t> &payload, int timeoutMs);
   bool writeAll(const uint8_t *data, size_t length);
   bool readFrame(uint8_t &type, uint8_t &flags, std::vector<uint8_t> &payload, int timeoutMs);
   void resetState();

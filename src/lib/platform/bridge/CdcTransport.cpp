@@ -41,6 +41,7 @@ constexpr uint8_t kUsbFrameTypeHidScrollCompact = 0x05;
 constexpr uint8_t kUsbFrameTypeControl = 0x80;
 
 constexpr uint8_t kUsbControlHello = 0x01;
+constexpr uint8_t kUsbControlKeepAlive = 0x21;
 constexpr uint8_t kUsbControlAck = 0x81;
 constexpr uint8_t kUsbControlConfigResponse = 0x82;
 
@@ -62,6 +63,7 @@ constexpr size_t kAckMinimumPayloadSize = kAckHardwareVersionIndex + 1;
 constexpr int kHandshakeTimeoutMs = 2000;
 constexpr int kReadPollIntervalMs = 10;
 constexpr int kConfigCommandTimeoutMs = 1000;
+constexpr int kKeepAliveTimeoutMs = 1000;
 constexpr size_t kMaxDeviceNameBytes = 22;
 constexpr size_t kAuthKeyBytes = 32;
 constexpr size_t kAuthNonceBytes = 8;
@@ -677,6 +679,31 @@ bool CdcTransport::waitForConfigResponse(uint8_t &msgType, uint8_t &status, std:
   return false;
 }
 
+bool CdcTransport::waitForControlMessage(uint8_t controlId, std::vector<uint8_t> &payload, int timeoutMs)
+{
+  auto deadline = std::chrono::steady_clock::now() + std::chrono::milliseconds(timeoutMs);
+  while (std::chrono::steady_clock::now() < deadline) {
+    uint8_t frameType = 0;
+    uint8_t flags = 0;
+    std::vector<uint8_t> framePayload;
+    if (!readFrame(frameType, flags, framePayload, kReadPollIntervalMs)) {
+      continue;
+    }
+    if (frameType != kUsbFrameTypeControl || framePayload.empty() || framePayload[0] != controlId) {
+      continue;
+    }
+
+    payload.assign(framePayload.begin() + 1, framePayload.end());
+    return true;
+  }
+
+  std::ostringstream oss;
+  oss << "Timed out waiting for control message 0x" << std::hex << std::uppercase << std::setw(2) << std::setfill('0')
+      << static_cast<unsigned>(controlId);
+  m_lastError = oss.str();
+  return false;
+}
+
 bool CdcTransport::fetchDeviceName(std::string &outName)
 {
   if (!ensureOpen()) {
@@ -785,6 +812,40 @@ bool CdcTransport::setAllowHidHost(bool allowed)
   }
 
   LOG_INFO("CDC: Set allow HID host -> %s", allowed ? "enabled" : "disabled");
+  return true;
+}
+
+bool CdcTransport::sendKeepAlive(uint32_t &uptimeSeconds)
+{
+  uptimeSeconds = 0;
+  if (!ensureOpen()) {
+    return false;
+  }
+
+  const std::vector<uint8_t> payload = {kUsbControlKeepAlive};
+  if (!sendUsbFrame(kUsbFrameTypeControl, 0, payload)) {
+    return false;
+  }
+
+  std::vector<uint8_t> response;
+  if (!waitForControlMessage(kUsbControlKeepAlive, response, kKeepAliveTimeoutMs)) {
+    if (m_lastError.empty()) {
+      m_lastError = "Timed out waiting for KEEP_ALIVE response";
+    }
+    return false;
+  }
+
+  if (response.size() < sizeof(uint32_t)) {
+    m_lastError = "KEEP_ALIVE payload too short";
+    return false;
+  }
+
+  uptimeSeconds = static_cast<uint32_t>(response[0]) |
+                  (static_cast<uint32_t>(response[1]) << 8) |
+                  (static_cast<uint32_t>(response[2]) << 16) |
+                  (static_cast<uint32_t>(response[3]) << 24);
+
+  LOG_DEBUG("CDC: KEEP_ALIVE acknowledged uptime=%us", static_cast<unsigned>(uptimeSeconds));
   return true;
 }
 

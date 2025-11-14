@@ -8,6 +8,7 @@
 #include "CdcTransport.h"
 #include "deskflow/PlatformScreen.h"
 
+#include <chrono>
 #include <set>
 #include <map>
 #include <cstdint>
@@ -122,10 +123,16 @@ private:
   uint8_t convertButtonID(ButtonID id) const;
   uint8_t activeModifierBitmap() const;
   void resetMouseAccumulator() const;
+  void handleKeepAliveTimer(const Event &event) const;
+  void startKeepAliveTimer();
+  void stopKeepAliveTimer();
+  void sendKeepAliveIfIdle() const;
+  void recordCdcCommand(std::chrono::steady_clock::time_point now = std::chrono::steady_clock::now()) const;
 
   std::shared_ptr<CdcTransport> m_transport;
   int32_t m_screenWidth = 0;
   int32_t m_screenHeight = 0;
+  IEventQueue *m_events = nullptr;
 
   // Screen state
   int32_t m_cursorX = 0;
@@ -145,6 +152,9 @@ private:
 
   bool m_enabled = false;
   uint32_t m_sequenceNumber = 0;
+  mutable EventQueueTimer *m_keepAliveTimer = nullptr;
+  mutable std::chrono::steady_clock::time_point m_lastCdcCommand =
+      std::chrono::steady_clock::time_point::min();
 };
 
 } // namespace deskflow::bridge
