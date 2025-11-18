@@ -17,11 +17,10 @@
 namespace deskflow::bridge {
 
 enum class ActivationState : uint8_t {
-  Factory = 0,
-  FreeTrial = 1,
-  Inactive = 2,
-  Bricked = 3,
-  Activated = 4,
+  FreeTrial = 0,
+  Inactive = 1,
+  Bricked = 2,
+  Activated = 3,
   Unknown = 0xFF
 };
 
@@ -30,7 +29,6 @@ inline const char *activationStateToString(ActivationState state)
   switch (state) {
   case ActivationState::Activated:
     return "activated";
-  case ActivationState::Factory:
   case ActivationState::FreeTrial:
     return "free trial";
   case ActivationState::Inactive:
