@@ -358,9 +358,8 @@ bool UsbDeviceHelper::verifyBridgeHandshake(
 
     qInfo() << "Bridge handshake successful with" << devicePath
             << "proto:" << cfg.protocolVersion
-            << "hid:" << (cfg.hidConnected ? 1 : 0)
-            << "host_os:" << cfg.hostOsString()
-            << "activated:" << (cfg.productionActivated ? 1 : 0)
+            << "activation_state:" << cfg.activationStateString()
+            << "(" << static_cast<unsigned>(cfg.activationState) << ")"
             << "fw_bcd:" << cfg.firmwareVersionBcd
             << "hw_bcd:" << cfg.hardwareVersionBcd
             << "name:" << nameForLog;

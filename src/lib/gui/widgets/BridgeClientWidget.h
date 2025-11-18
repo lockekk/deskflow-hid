@@ -96,9 +96,9 @@ public:
   void setDeviceAvailable(const QString &devicePath, bool available);
 
   /**
-   * @brief Manually update host OS indicator
+   * @brief Manually update activation state indicator
    */
-  void setHostOs(const QString &hostOs);
+  void setActivationState(const QString &activationState);
 
   /**
    * @brief Update firmware device name label
@@ -142,7 +142,7 @@ private Q_SLOTS:
 
 private:
   void refreshOrientationLabel();
-  void refreshHostOsIcon();
+  void refreshActivationStateLabel();
   void refreshDeviceNameLabel();
   void refreshButtonStates();
 
@@ -157,10 +157,10 @@ private:
   QPushButton *m_btnConnect;
   QPushButton *m_btnConfigure;
   QLabel *m_deviceNameLabel;
-  QLabel *m_hostOsLabel;
+  QLabel *m_activationStateLabel;
   QLabel *m_orientationLabel;
   QString m_deviceName;
-  QString m_hostOs;
+  QString m_activationState;
   QString m_orientation;
 };
 

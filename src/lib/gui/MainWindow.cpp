@@ -1374,7 +1374,7 @@ void MainWindow::usbDeviceConnected(const UsbDeviceInfo &device)
     setStatus(tr("Ignoring USB device %1 (handshake failed)").arg(device.devicePath));
     return;
   }
-  const QString handshakeHostOs = QString::fromUtf8(handshakeConfig.hostOsString());
+  const QString activationState = QString::fromUtf8(handshakeConfig.activationStateString());
   QString handshakeDeviceName = QString::fromStdString(handshakeConfig.deviceName);
   if (handshakeDeviceName.trimmed().isEmpty()) {
     QString fetchedName;
@@ -1420,9 +1420,9 @@ void MainWindow::usbDeviceConnected(const UsbDeviceInfo &device)
     widget->setDeviceAvailable(device.devicePath, true);
 
     QSettings cfg(configPath, QSettings::IniFormat);
-    const QString hostOsToStore = handshakeHostOs.isEmpty()
-                                      ? Settings::defaultValue(Settings::Bridge::HostOs).toString()
-                                      : handshakeHostOs;
+    const QString activationToStore = activationState.isEmpty()
+                                          ? Settings::defaultValue(Settings::Bridge::ActivationState).toString()
+                                          : activationState;
 
     // Always prefer device name from the device itself
     QString deviceNameToStore = handshakeDeviceName.trimmed();
@@ -1436,13 +1436,13 @@ void MainWindow::usbDeviceConnected(const UsbDeviceInfo &device)
                               .toString();
     }
 
-    cfg.setValue(Settings::Bridge::HostOs, hostOsToStore);
+    cfg.setValue(Settings::Bridge::ActivationState, activationToStore);
     if (!deviceNameToStore.isEmpty()) {
       cfg.setValue(Settings::Bridge::DeviceName, deviceNameToStore);
     }
     cfg.sync();
 
-    widget->setHostOs(hostOsToStore);
+    widget->setActivationState(activationToStore);
     widget->setDeviceName(deviceNameToStore);
 
     QString message = tr("New bridge client device connected: %1 (%2)").arg(screenName, device.devicePath);
@@ -1457,11 +1457,13 @@ void MainWindow::usbDeviceConnected(const UsbDeviceInfo &device)
       BridgeClientWidget *widget = it.value();
       widget->setDeviceAvailable(device.devicePath, true);
       QSettings existingConfig(config, QSettings::IniFormat);
-      QString hostOsValue =
-          existingConfig.value(Settings::Bridge::HostOs, Settings::defaultValue(Settings::Bridge::HostOs)).toString();
+      QString activationValue = existingConfig
+                                    .value(Settings::Bridge::ActivationState,
+                                           Settings::defaultValue(Settings::Bridge::ActivationState))
+                                    .toString();
 
-      if (!handshakeHostOs.isEmpty()) {
-        hostOsValue = handshakeHostOs;
+      if (!activationState.isEmpty()) {
+        activationValue = activationState;
       }
 
       // Always prefer device name from the device itself
@@ -1476,13 +1478,13 @@ void MainWindow::usbDeviceConnected(const UsbDeviceInfo &device)
                               .toString();
       }
 
-      existingConfig.setValue(Settings::Bridge::HostOs, hostOsValue);
+      existingConfig.setValue(Settings::Bridge::ActivationState, activationValue);
       if (!deviceNameValue.isEmpty()) {
         existingConfig.setValue(Settings::Bridge::DeviceName, deviceNameValue);
       }
       existingConfig.sync();
 
-      widget->setHostOs(hostOsValue);
+      widget->setActivationState(activationValue);
       widget->setDeviceName(deviceNameValue);
 
       QString screenName = widget->screenName();
@@ -2118,6 +2120,35 @@ void MainWindow::bridgeClientProcessReadyRead(const QString &devicePath)
         cfg.setValue(Settings::Bridge::DeviceName, deviceName);
         cfg.sync();
         qInfo() << "Updated device name to:" << deviceName << "for config:" << configPath;
+        break;
+      }
+    }
+  }
+
+  // Check for activation state reported in the handshake log
+  static const QRegularExpression activationRegex(
+      R"(Firmware handshake:.*activation_state=([^()]+)\((\d+)\))",
+      QRegularExpression::CaseInsensitiveOption);
+  QRegularExpressionMatch activationMatch = activationRegex.match(output);
+  if (activationMatch.hasMatch()) {
+    const int stateCode = activationMatch.captured(2).toInt();
+    const auto activationState = static_cast<deskflow::bridge::ActivationState>(stateCode);
+    QString stateText = QString::fromUtf8(deskflow::bridge::activationStateToString(activationState));
+    if (stateText.trimmed().isEmpty()) {
+      stateText = activationMatch.captured(1).trimmed().toLower();
+    }
+
+    for (auto it = m_bridgeClientWidgets.begin(); it != m_bridgeClientWidgets.end(); ++it) {
+      BridgeClientWidget *widget = it.value();
+      if (widget->devicePath() == devicePath) {
+        widget->setActivationState(stateText);
+
+        // Persist the latest activation state for this device profile
+        const QString configPath = it.key();
+        QSettings cfg(configPath, QSettings::IniFormat);
+        cfg.setValue(Settings::Bridge::ActivationState, stateText);
+        cfg.sync();
+        qInfo() << "Updated activation state to:" << stateText << "for config:" << configPath;
         break;
       }
     }

@@ -50,15 +50,12 @@ constexpr uint8_t kUsbConfigSetDeviceName = 0x03;
 constexpr uint8_t kUsbConfigGetSerialNumber = 0x04;
 constexpr uint8_t kUsbConfigSetAllowHidHost = 0x05;
 
+constexpr size_t kAckCoreLen = 16;
 constexpr size_t kAckProtocolVersionIndex = 1;
-constexpr size_t kAckReservedIndex = 2;
-constexpr size_t kAckHidConnectedIndex = 3;
-constexpr size_t kAckHostOsIndex = 4;
-[[maybe_unused]] constexpr size_t kAckBleIntervalIndex = 5;
-constexpr size_t kAckProductionFlagIndex = 6;
-constexpr size_t kAckFirmwareVersionIndex = 7;
-constexpr size_t kAckHardwareVersionIndex = 8;
-constexpr size_t kAckMinimumPayloadSize = kAckHardwareVersionIndex + 1;
+constexpr size_t kAckActivationStateIndex = 2;
+constexpr size_t kAckFirmwareVersionIndex = 3;
+constexpr size_t kAckHardwareVersionIndex = 4;
+constexpr size_t kAckMinimumPayloadSize = 1 + kAckCoreLen;
 
 constexpr int kHandshakeTimeoutMs = 2000;
 constexpr int kReadPollIntervalMs = 10;
@@ -69,7 +66,6 @@ constexpr size_t kAuthKeyBytes = 32;
 constexpr size_t kAuthNonceBytes = 8;
 constexpr size_t kAuthTagBytes = 32;
 constexpr size_t kHelloPayloadLen = 1 + 1 + kAuthNonceBytes + kAuthTagBytes;
-constexpr size_t kAckCoreLen = 12;
 constexpr size_t kAckPayloadLen = kAckCoreLen + kAuthNonceBytes + kAuthTagBytes;
 constexpr uint8_t kAuthModeHmacSha256 = 0x01;
 constexpr size_t kAckTotalPayloadWithId = 1 + kAckPayloadLen;
@@ -107,18 +103,6 @@ std::string hexDump(const uint8_t *data, size_t length, size_t maxBytes = 64)
   }
 
   return oss.str();
-}
-
-FirmwareHostOs decodeHostOs(uint8_t value)
-{
-  switch (value) {
-  case 1:
-    return FirmwareHostOs::Ios;
-  case 2:
-    return FirmwareHostOs::Android;
-  default:
-    return FirmwareHostOs::Unknown;
-  }
 }
 
 bool parseHexKeyChar(QChar ch, uint8_t &value)
@@ -410,27 +394,21 @@ bool CdcTransport::performHandshake()
 
       if (framePayload.size() >= kAckMinimumPayloadSize) {
         const uint8_t protocolVersion = framePayload[kAckProtocolVersionIndex];
-        const bool hidConnected = framePayload[kAckHidConnectedIndex] != 0;
-        const FirmwareHostOs hostOs = decodeHostOs(framePayload[kAckHostOsIndex]);
-        const bool productionActivated = framePayload[kAckProductionFlagIndex] != 0;
+        const ActivationState activationState = static_cast<ActivationState>(framePayload[kAckActivationStateIndex]);
         const uint8_t firmwareBcd = framePayload[kAckFirmwareVersionIndex];
         const uint8_t hardwareBcd = framePayload[kAckHardwareVersionIndex];
 
         m_deviceConfig.protocolVersion = protocolVersion;
-        m_deviceConfig.hidConnected = hidConnected;
-        m_deviceConfig.hostOs = hostOs;
-        m_deviceConfig.productionActivated = productionActivated;
+        m_deviceConfig.activationState = activationState;
         m_deviceConfig.firmwareVersionBcd = firmwareBcd;
         m_deviceConfig.hardwareVersionBcd = hardwareBcd;
         m_hasDeviceConfig = true;
 
         LOG_INFO(
-            "CDC: handshake completed version=%u hid=%u host_os=%s(%u) production=%u fw_bcd=%u hw_bcd=%u",
+            "CDC: handshake completed version=%u activation_state=%s(%u) fw_bcd=%u hw_bcd=%u",
             protocolVersion,
-            hidConnected ? 1 : 0,
-            toString(hostOs),
-            static_cast<unsigned>(framePayload[kAckHostOsIndex]),
-            productionActivated ? 1 : 0,
+            activationStateToString(activationState),
+            static_cast<unsigned>(framePayload[kAckActivationStateIndex]),
             static_cast<unsigned>(firmwareBcd),
             static_cast<unsigned>(hardwareBcd)
         );

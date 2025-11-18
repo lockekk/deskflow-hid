@@ -15,9 +15,6 @@
 namespace {
 constexpr auto kLandscapeIconPath = ":/bridge-client/client/orientation_landspace.png";
 constexpr auto kPortraitIconPath = ":/bridge-client/client/orientation_portrait.png";
-constexpr auto kHostOsIosIconPath = ":/bridge-client/firmware/os_ios.png";
-constexpr auto kHostOsAndroidIconPath = ":/bridge-client/firmware/os_andriod.png";
-constexpr auto kHostOsUnknownIconPath = ":/bridge-client/firmware/os_unknown.png";
 } // namespace
 
 namespace deskflow::gui {
@@ -55,10 +52,10 @@ BridgeClientWidget::BridgeClientWidget(
   m_deviceNameLabel->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Preferred);
   m_deviceNameLabel->setMinimumWidth(140);
 
-  // Host OS and orientation labels
-  m_hostOsLabel = new QLabel(this);
-  m_hostOsLabel->setAlignment(Qt::AlignVCenter | Qt::AlignLeft);
-  m_hostOsLabel->setFixedSize(36, 30);
+  // Activation state and orientation labels
+  m_activationStateLabel = new QLabel(tr("unknown"), this);
+  m_activationStateLabel->setAlignment(Qt::AlignVCenter | Qt::AlignLeft);
+  m_activationStateLabel->setMinimumWidth(90);
 
   m_orientationLabel = new QLabel(this);
   m_orientationLabel->setAlignment(Qt::AlignVCenter | Qt::AlignLeft);
@@ -69,7 +66,7 @@ BridgeClientWidget::BridgeClientWidget(
   layout->addWidget(m_btnConfigure);
   layout->addSpacing(12);
   layout->addWidget(m_deviceNameLabel, 1);
-  layout->addWidget(m_hostOsLabel);
+  layout->addWidget(m_activationStateLabel);
   layout->addWidget(m_orientationLabel);
 
   // Connect signals
@@ -77,7 +74,7 @@ BridgeClientWidget::BridgeClientWidget(
   connect(m_btnConfigure, &QPushButton::clicked, this, &BridgeClientWidget::onConfigureClicked);
 
   refreshDeviceNameLabel();
-  refreshHostOsIcon();
+  refreshActivationStateLabel();
   refreshOrientationLabel();
   refreshButtonStates();
 }
@@ -98,30 +95,19 @@ void BridgeClientWidget::updateConfig(const QString &screenName, const QString &
   m_screenName = screenName;
   m_configPath = configPath;
   setTitle(screenName); // Update the group box title
-  refreshHostOsIcon();
+  refreshActivationStateLabel();
   refreshOrientationLabel();
 }
 
-void BridgeClientWidget::setHostOs(const QString &hostOs)
+void BridgeClientWidget::setActivationState(const QString &activationState)
 {
-  QString normalized = hostOs.trimmed().toLower();
+  QString normalized = activationState.trimmed().toLower();
   if (normalized.isEmpty()) {
-    normalized = Settings::defaultValue(Settings::Bridge::HostOs).toString().toLower();
+    normalized = Settings::defaultValue(Settings::Bridge::ActivationState).toString().toLower();
   }
-  m_hostOs = normalized;
-
-  const char *iconPath = kHostOsUnknownIconPath;
-  QString tooltip = tr("Unknown");
-  if (normalized == QStringLiteral("ios")) {
-    iconPath = kHostOsIosIconPath;
-    tooltip = tr("iOS");
-  } else if (normalized == QStringLiteral("android") || normalized == QStringLiteral("andriod")) {
-    iconPath = kHostOsAndroidIconPath;
-    tooltip = tr("Android");
-  }
-
-  m_hostOsLabel->setPixmap(QPixmap(QString::fromLatin1(iconPath)));
-  m_hostOsLabel->setToolTip(tooltip);
+  m_activationState = normalized;
+  m_activationStateLabel->setText(normalized);
+  m_activationStateLabel->setToolTip(normalized);
 }
 
 void BridgeClientWidget::setDeviceName(const QString &deviceName)
@@ -132,14 +118,14 @@ void BridgeClientWidget::setDeviceName(const QString &deviceName)
   m_deviceNameLabel->setText(display);
 }
 
-void BridgeClientWidget::refreshHostOsIcon()
+void BridgeClientWidget::refreshActivationStateLabel()
 {
-  QString hostOs = Settings::defaultValue(Settings::Bridge::HostOs).toString();
+  QString activationState = Settings::defaultValue(Settings::Bridge::ActivationState).toString();
   if (!m_configPath.isEmpty()) {
     QSettings config(m_configPath, QSettings::IniFormat);
-    hostOs = config.value(Settings::Bridge::HostOs, hostOs).toString();
+    activationState = config.value(Settings::Bridge::ActivationState, activationState).toString();
   }
-  setHostOs(hostOs);
+  setActivationState(activationState);
 }
 
 void BridgeClientWidget::refreshDeviceNameLabel()

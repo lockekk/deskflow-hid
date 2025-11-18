@@ -7,27 +7,34 @@
 
 #include "HidFrame.h"
 
-#include <QString>
 #include <array>
 #include <cstdint>
 #include <string>
 #include <vector>
 
+#include <QString>
+
 namespace deskflow::bridge {
 
-enum class FirmwareHostOs : uint8_t {
-  Unknown = 0,
-  Ios = 1,
-  Android = 2,
+enum class ActivationState : uint8_t {
+  Factory = 0,
+  FreeTrial = 1,
+  Inactive = 2,
+  Bricked = 3,
+  Activated = 4,
+  Unknown = 0xFF
 };
 
-inline const char *toString(FirmwareHostOs os)
+inline const char *activationStateToString(ActivationState state)
 {
-  switch (os) {
-  case FirmwareHostOs::Ios:
-    return "ios";
-  case FirmwareHostOs::Android:
-    return "android";
+  switch (state) {
+  case ActivationState::Activated:
+    return "activated";
+  case ActivationState::Factory:
+  case ActivationState::FreeTrial:
+    return "free trial";
+  case ActivationState::Inactive:
+    return "unlicensed";
   default:
     return "unknown";
   }
@@ -38,16 +45,14 @@ inline const char *toString(FirmwareHostOs os)
  */
 struct FirmwareConfig {
   uint8_t protocolVersion = 0;
-  bool hidConnected = false;
-  FirmwareHostOs hostOs = FirmwareHostOs::Unknown;
-  bool productionActivated = false;
+  ActivationState activationState = ActivationState::Unknown;
   uint8_t firmwareVersionBcd = 0;
   uint8_t hardwareVersionBcd = 0;
   std::string deviceName;
 
-  const char *hostOsString() const
+  const char *activationStateString() const
   {
-    return toString(hostOs);
+    return activationStateToString(activationState);
   }
 };
 
