@@ -134,17 +134,33 @@ void ScreenSetupView::startDrag(Qt::DropActions)
   if (pDrag->exec(Qt::MoveAction, Qt::MoveAction) == Qt::MoveAction) {
     selectionModel()->clear();
 
+    // Save the screen name before potentially clearing it
+    QString screenName = model()->screen(indexes[0]).name();
+
     // make sure to only delete the drag source if screens weren't swapped
     // see ScreenSetupModel::dropMimeData
     if (!model()->screen(indexes[0]).swapped()) {
-      // Emit signal before deleting the screen so we can check if it's a bridge client
-      QString deletedScreenName = model()->screen(indexes[0]).name();
-      if (!deletedScreenName.isEmpty()) {
-        Q_EMIT screenDeleted(deletedScreenName);
-      }
+      // Clear the source cell
       model()->screen(indexes[0]) = Screen();
-    }
-    else
+
+      // Check if the screen still exists elsewhere in the grid (relocated or swapped)
+      // Only emit screenDeleted if the screen was actually removed (dragged to trash)
+      bool screenStillExists = false;
+      if (!screenName.isEmpty()) {
+        for (int col = 0; col < model()->columnCount() && !screenStillExists; col++) {
+          for (int row = 0; row < model()->rowCount() && !screenStillExists; row++) {
+            if (!model()->screen(col, row).isNull() && model()->screen(col, row).name() == screenName) {
+              screenStillExists = true;
+            }
+          }
+        }
+
+        // Only emit screenDeleted if the screen was actually deleted (not relocated)
+        if (!screenStillExists) {
+          Q_EMIT screenDeleted(screenName);
+        }
+      }
+    } else
       model()->screen(indexes[0]).setSwapped(false);
 
     Q_EMIT model()->screensChanged();
