@@ -44,19 +44,27 @@ BridgeClientConfigDialog::BridgeClientConfigDialog(const QString &configPath, QW
   m_editDeviceName->setPlaceholderText(tr("A-Z, 0-9, spaces, .-_ (max 22 chars)"));
   formLayout->addRow(tr("Firmware Device Name:"), m_editDeviceName);
 
-  // Screen Width
+  // Screen Resolution (width x height on one line)
+  auto *resolutionLayout = new QHBoxLayout();
+  resolutionLayout->setContentsMargins(0, 0, 0, 0);
+  resolutionLayout->setSpacing(8);
+
   m_spinWidth = new QSpinBox(this);
   m_spinWidth->setMinimum(640);
   m_spinWidth->setMaximum(7680);
   m_spinWidth->setSingleStep(1);
-  formLayout->addRow(tr("Screen Width:"), m_spinWidth);
+  resolutionLayout->addWidget(m_spinWidth);
 
-  // Screen Height
+  resolutionLayout->addWidget(new QLabel(tr("x"), this));
+
   m_spinHeight = new QSpinBox(this);
   m_spinHeight->setMinimum(480);
   m_spinHeight->setMaximum(4320);
   m_spinHeight->setSingleStep(1);
-  formLayout->addRow(tr("Screen Height:"), m_spinHeight);
+  resolutionLayout->addWidget(m_spinHeight);
+
+  resolutionLayout->addStretch();
+  formLayout->addRow(tr("Screen resolution:"), resolutionLayout);
 
   // Screen Orientation
   auto *orientationLayout = new QHBoxLayout();
