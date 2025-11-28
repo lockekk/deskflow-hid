@@ -41,6 +41,7 @@ constexpr uint8_t kUsbFrameTypeHidScrollCompact = 0x05;
 constexpr uint8_t kUsbFrameTypeControl = 0x80;
 
 constexpr uint8_t kUsbControlHello = 0x01;
+constexpr uint8_t kUsbControlKeepAlive = 0x09;
 
 constexpr uint8_t kUsbControlAck = 0x81;
 constexpr uint8_t kUsbControlConfigResponse = 0x82;
@@ -48,7 +49,6 @@ constexpr uint8_t kUsbControlConfigResponse = 0x82;
 constexpr uint8_t kUsbConfigGetDeviceName = 0x02;
 constexpr uint8_t kUsbConfigSetDeviceName = 0x03;
 constexpr uint8_t kUsbConfigGetSerialNumber = 0x04;
-
 
 constexpr size_t kAckCoreLen = 16;
 constexpr size_t kAckProtocolVersionIndex = 1;
@@ -76,10 +76,8 @@ const uint8_t kHelloLabel[] = {'D', 'F', 'H', 'E', 'L', 'L', 'O'};
 const uint8_t kAckLabel[] = {'D', 'F', 'A', 'C', 'K'};
 
 const std::array<uint8_t, kAuthKeyBytes> kDefaultAuthKey = {
-    0x9C, 0x3B, 0x1F, 0x04, 0xFE, 0x55, 0x80, 0x12,
-    0xD9, 0x47, 0x2A, 0x6C, 0x3F, 0xE5, 0x9B, 0x01,
-    0x75, 0xA1, 0x47, 0x33, 0x2D, 0x84, 0x5F, 0x66,
-    0x08, 0xBB, 0x3D, 0x12, 0x6A, 0x90, 0x4E, 0xD5,
+    0x9C, 0x3B, 0x1F, 0x04, 0xFE, 0x55, 0x80, 0x12, 0xD9, 0x47, 0x2A, 0x6C, 0x3F, 0xE5, 0x9B, 0x01,
+    0x75, 0xA1, 0x47, 0x33, 0x2D, 0x84, 0x5F, 0x66, 0x08, 0xBB, 0x3D, 0x12, 0x6A, 0x90, 0x4E, 0xD5,
 };
 
 std::string hexDump(const uint8_t *data, size_t length, size_t maxBytes = 64)
@@ -150,8 +148,10 @@ QByteArray hmacSha256(const QByteArray &message, const std::array<uint8_t, kAuth
   return QMessageAuthenticationCode::hash(message, keyBytes, QCryptographicHash::Sha256);
 }
 
-QByteArray makeHelloHmac(const std::array<uint8_t, kAuthNonceBytes> &hostNonce, uint8_t hostVersion,
-                         const std::array<uint8_t, kAuthKeyBytes> &key)
+QByteArray makeHelloHmac(
+    const std::array<uint8_t, kAuthNonceBytes> &hostNonce, uint8_t hostVersion,
+    const std::array<uint8_t, kAuthKeyBytes> &key
+)
 {
   QByteArray msg;
   msg.append(reinterpret_cast<const char *>(kHelloLabel), static_cast<int>(sizeof(kHelloLabel)));
@@ -160,10 +160,10 @@ QByteArray makeHelloHmac(const std::array<uint8_t, kAuthNonceBytes> &hostNonce, 
   return hmacSha256(msg, key);
 }
 
-QByteArray makeAckHmac(const std::array<uint8_t, kAuthNonceBytes> &hostNonce,
-                       const uint8_t *deviceNonce,
-                       const uint8_t *ackCore,
-                       const std::array<uint8_t, kAuthKeyBytes> &key)
+QByteArray makeAckHmac(
+    const std::array<uint8_t, kAuthNonceBytes> &hostNonce, const uint8_t *deviceNonce, const uint8_t *ackCore,
+    const std::array<uint8_t, kAuthKeyBytes> &key
+)
 {
   QByteArray msg;
   msg.append(reinterpret_cast<const char *>(kAckLabel), static_cast<int>(sizeof(kAckLabel)));
@@ -405,12 +405,9 @@ bool CdcTransport::performHandshake()
         m_hasDeviceConfig = true;
 
         LOG_INFO(
-            "CDC: handshake completed version=%u activation_state=%s(%u) fw_bcd=%u hw_bcd=%u",
-            protocolVersion,
-            activationStateToString(activationState),
-            static_cast<unsigned>(framePayload[kAckActivationStateIndex]),
-            static_cast<unsigned>(firmwareBcd),
-            static_cast<unsigned>(hardwareBcd)
+            "CDC: handshake completed version=%u activation_state=%s(%u) fw_bcd=%u hw_bcd=%u", protocolVersion,
+            activationStateToString(activationState), static_cast<unsigned>(framePayload[kAckActivationStateIndex]),
+            static_cast<unsigned>(firmwareBcd), static_cast<unsigned>(hardwareBcd)
         );
 
         std::string fetchedName;
@@ -430,10 +427,7 @@ bool CdcTransport::performHandshake()
           m_lastError.clear();
         }
       } else {
-        LOG_WARN(
-            "CDC: handshake ACK missing metadata (payload=%zu)",
-            framePayload.size()
-        );
+        LOG_WARN("CDC: handshake ACK missing metadata (payload=%zu)", framePayload.size());
         LOG_INFO("CDC: handshake completed");
       }
       return true;
@@ -488,11 +482,8 @@ bool CdcTransport::sendMouseMoveCompact(int16_t dx, int16_t dy)
 
   const std::string frameHex = hexDump(frame.data(), frame.size(), 32);
   LOG_DEBUG(
-      "CDC: TX compact mouse frame type=0x%02x dx=%d dy=%d bytes=%s",
-      kUsbFrameTypeHidMouseCompact,
-      clampedDx,
-      clampedDy,
-      frameHex.c_str()
+      "CDC: TX compact mouse frame type=0x%02x dx=%d dy=%d bytes=%s", kUsbFrameTypeHidMouseCompact, clampedDx,
+      clampedDy, frameHex.c_str()
   );
 
   return writeAll(frame.data(), frame.size());
@@ -517,12 +508,8 @@ bool CdcTransport::sendKeyboardCompact(uint8_t modifiers, uint8_t keycode, bool 
 
   const std::string frameHex = hexDump(frame.data(), frame.size(), 32);
   LOG_DEBUG(
-      "CDC: TX compact key frame type=0x%02x press=%d mods=0x%02x key=0x%02x bytes=%s",
-      kUsbFrameTypeHidKeyCompact,
-      isPress ? 1 : 0,
-      modifiers,
-      keycode,
-      frameHex.c_str()
+      "CDC: TX compact key frame type=0x%02x press=%d mods=0x%02x key=0x%02x bytes=%s", kUsbFrameTypeHidKeyCompact,
+      isPress ? 1 : 0, modifiers, keycode, frameHex.c_str()
   );
 
   return writeAll(frame.data(), frame.size());
@@ -548,10 +535,7 @@ bool CdcTransport::sendMouseButtonCompact(uint8_t buttons, bool isPress)
   const std::string frameHex = hexDump(frame.data(), frame.size(), 32);
   LOG_DEBUG(
       "CDC: TX compact mouse button frame type=0x%02x press=%d buttons=0x%02x bytes=%s",
-      kUsbFrameTypeHidMouseButtonCompact,
-      isPress ? 1 : 0,
-      buttons,
-      frameHex.c_str()
+      kUsbFrameTypeHidMouseButtonCompact, isPress ? 1 : 0, buttons, frameHex.c_str()
   );
 
   return writeAll(frame.data(), frame.size());
@@ -576,9 +560,7 @@ bool CdcTransport::sendMouseScrollCompact(int8_t delta)
 
   const std::string frameHex = hexDump(frame.data(), frame.size(), 32);
   LOG_DEBUG(
-      "CDC: TX compact scroll frame type=0x%02x delta=%d bytes=%s",
-      kUsbFrameTypeHidScrollCompact,
-      delta,
+      "CDC: TX compact scroll frame type=0x%02x delta=%d bytes=%s", kUsbFrameTypeHidScrollCompact, delta,
       frameHex.c_str()
   );
 
@@ -630,8 +612,51 @@ bool CdcTransport::sendUsbFrame(uint8_t type, uint8_t flags, const uint8_t *payl
   return true;
 }
 
+bool CdcTransport::sendKeepAlive(uint32_t &uptimeSeconds)
+{
+  if (!ensureOpen()) {
+    return false;
+  }
 
-bool CdcTransport::waitForConfigResponse(uint8_t &msgType, uint8_t &status, std::vector<uint8_t> &payload, int timeoutMs)
+  std::vector<uint8_t> payload(1);
+  payload[0] = kUsbControlKeepAlive;
+
+  if (!sendUsbFrame(kUsbFrameTypeControl, 0, payload)) {
+    LOG_ERR("CDC: failed to send keep-alive command");
+    return false;
+  }
+
+  // Wait for response
+  uint8_t msgType = 0;
+  uint8_t status = 0;
+  std::vector<uint8_t> responsePayload;
+
+  if (!waitForConfigResponse(msgType, status, responsePayload, 1000)) {
+    LOG_ERR("CDC: keep-alive response timeout");
+    return false;
+  }
+
+  if (msgType != kUsbControlKeepAlive || status != 0) {
+    LOG_ERR("CDC: keep-alive failed msgType=%u status=%u", msgType, status);
+    return false;
+  }
+
+  // Parse uptime from response (4 bytes, little-endian)
+  if (responsePayload.size() >= 4) {
+    uptimeSeconds = static_cast<uint32_t>(responsePayload[0]) | (static_cast<uint32_t>(responsePayload[1]) << 8) |
+                    (static_cast<uint32_t>(responsePayload[2]) << 16) |
+                    (static_cast<uint32_t>(responsePayload[3]) << 24);
+  } else {
+    uptimeSeconds = 0;
+  }
+
+  LOG_DEBUG("CDC: keep-alive success uptime=%us", static_cast<unsigned>(uptimeSeconds));
+  return true;
+}
+
+bool CdcTransport::waitForConfigResponse(
+    uint8_t &msgType, uint8_t &status, std::vector<uint8_t> &payload, int timeoutMs
+)
 {
   auto deadline = std::chrono::steady_clock::now() + std::chrono::milliseconds(timeoutMs);
   while (std::chrono::steady_clock::now() < deadline) {
@@ -754,10 +779,6 @@ bool CdcTransport::setDeviceName(const std::string &name)
   return true;
 }
 
-
-
-
-
 bool CdcTransport::fetchSerialNumber(std::string &outSerial)
 {
   if (!ensureOpen()) {
@@ -827,7 +848,9 @@ bool CdcTransport::writeAll(const uint8_t *data, size_t length)
     offset += static_cast<size_t>(written);
 #elif defined(Q_OS_WIN)
     DWORD written = 0;
-    if (!WriteFile(reinterpret_cast<HANDLE>(m_fd), data + offset, static_cast<DWORD>(length - offset), &written, nullptr)) {
+    if (!WriteFile(
+            reinterpret_cast<HANDLE>(m_fd), data + offset, static_cast<DWORD>(length - offset), &written, nullptr
+        )) {
       m_lastError = "Failed to write to device";
       return false;
     }

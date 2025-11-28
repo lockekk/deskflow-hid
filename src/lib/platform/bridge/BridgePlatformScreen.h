@@ -9,10 +9,10 @@
 #include "deskflow/PlatformScreen.h"
 
 #include <chrono>
-#include <set>
-#include <map>
 #include <cstdint>
+#include <map>
 #include <memory>
+#include <set>
 
 class Event;
 
@@ -34,10 +34,7 @@ class BridgePlatformScreen : public PlatformScreen
 {
 public:
   BridgePlatformScreen(
-      IEventQueue *events,
-      std::shared_ptr<CdcTransport> transport,
-      int32_t screenWidth,
-      int32_t screenHeight,
+      IEventQueue *events, std::shared_ptr<CdcTransport> transport, int32_t screenWidth, int32_t screenHeight,
       bool invertScroll
   );
   ~BridgePlatformScreen() override;
@@ -68,9 +65,7 @@ public:
 
   // IKeyState overrides
   void fakeKeyDown(KeyID id, KeyModifierMask mask, KeyButton button, const std::string &lang) override;
-  bool fakeKeyRepeat(
-      KeyID id, KeyModifierMask mask, int32_t count, KeyButton button, const std::string &lang
-  ) override;
+  bool fakeKeyRepeat(KeyID id, KeyModifierMask mask, int32_t count, KeyButton button, const std::string &lang) override;
   bool fakeKeyUp(KeyButton button) override;
   void fakeAllKeysUp() override;
   void updateKeyMap() override;
@@ -125,6 +120,10 @@ private:
   void resetMouseAccumulator() const;
 
   void recordCdcCommand(std::chrono::steady_clock::time_point now = std::chrono::steady_clock::now()) const;
+  void handleKeepAliveTimer(const Event &event) const;
+  void startKeepAliveTimer();
+  void stopKeepAliveTimer();
+  void sendKeepAliveIfIdle() const;
 
   std::shared_ptr<CdcTransport> m_transport;
   int32_t m_screenWidth = 0;
@@ -150,6 +149,10 @@ private:
   bool m_enabled = false;
   uint32_t m_sequenceNumber = 0;
 
+  // Bluetooth keep-alive
+  mutable std::chrono::steady_clock::time_point m_lastCdcCommand;
+  void *m_keepAliveTimer = nullptr;
+  bool m_bluetoothKeepAliveEnabled = false;
 };
 
 } // namespace deskflow::bridge

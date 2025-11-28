@@ -81,9 +81,12 @@ QString BridgeClientConfigManager::createDefaultConfig(const QString &serialNumb
   config.setValue(Settings::Bridge::ActivationState, Settings::defaultValue(Settings::Bridge::ActivationState));
   config.setValue(Settings::Bridge::DeviceName, Settings::defaultValue(Settings::Bridge::DeviceName));
   config.setValue(Settings::Bridge::SerialNumber, serialNumber);
+  config.setValue(Settings::Bridge::BluetoothKeepAlive, Settings::defaultValue(Settings::Bridge::BluetoothKeepAlive));
 
   // [client] section
-  config.setValue(Settings::Client::InvertScrollDirection, Settings::defaultValue(Settings::Client::InvertScrollDirection));
+  config.setValue(
+      Settings::Client::InvertScrollDirection, Settings::defaultValue(Settings::Client::InvertScrollDirection)
+  );
   config.setValue(Settings::Client::ScrollSpeed, Settings::defaultValue(Settings::Client::ScrollSpeed));
   config.setValue(Settings::Client::LanguageSync, true);
 
@@ -107,8 +110,7 @@ QString BridgeClientConfigManager::createDefaultConfig(const QString &serialNumb
 void BridgeClientConfigManager::removeLegacySecuritySettings(const QString &configPath)
 {
   QSettings config(configPath, QSettings::IniFormat);
-  if (config.childGroups().contains(QStringLiteral("security")) ||
-      config.contains(Settings::Security::TlsEnabled) ||
+  if (config.childGroups().contains(QStringLiteral("security")) || config.contains(Settings::Security::TlsEnabled) ||
       config.contains(Settings::Security::CheckPeers)) {
     config.beginGroup(QStringLiteral("security"));
     config.remove(QLatin1String(""));

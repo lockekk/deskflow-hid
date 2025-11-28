@@ -16,7 +16,8 @@
 
 namespace deskflow::bridge {
 
-enum class ActivationState : uint8_t {
+enum class ActivationState : uint8_t
+{
   FreeTrial = 0,
   Inactive = 1,
   Bricked = 2,
@@ -41,7 +42,8 @@ inline const char *activationStateToString(ActivationState state)
 /**
  * @brief Firmware-reported configuration structure
  */
-struct FirmwareConfig {
+struct FirmwareConfig
+{
   uint8_t protocolVersion = 0;
   ActivationState activationState = ActivationState::Unknown;
   uint8_t firmwareVersionBcd = 0;
@@ -66,7 +68,6 @@ struct FirmwareConfig {
 class CdcTransport
 {
 public:
-
   explicit CdcTransport(const QString &devicePath);
   ~CdcTransport();
 
@@ -112,7 +113,6 @@ public:
 
   bool fetchDeviceName(std::string &outName);
   bool setDeviceName(const std::string &name);
-
 
   /**
    * @brief Read serial number from firmware via CDC command
@@ -164,6 +164,13 @@ public:
    * @brief Validate whether a string is a valid auth key (64 hex characters or empty).
    */
   static bool isValidAuthKeyHex(const QString &hex);
+
+  /**
+   * @brief Send a keep-alive CDC command to the firmware
+   * @param uptimeSeconds Output parameter for firmware uptime in seconds
+   * @return true if successful
+   */
+  bool sendKeepAlive(uint32_t &uptimeSeconds);
 
 private:
   static constexpr size_t kAuthKeySize = 32;

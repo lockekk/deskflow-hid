@@ -3,19 +3,19 @@
 #include "common/Settings.h"
 #include "gui/core/BridgeClientConfigManager.h"
 
-#include <QVBoxLayout>
-#include <QFormLayout>
 #include <QDialogButtonBox>
+#include <QFormLayout>
 #include <QHBoxLayout>
 #include <QLabel>
 #include <QSettings>
+#include <QVBoxLayout>
 
 namespace {
 constexpr auto kLandscapeIconPath = ":/bridge-client/client/orientation_landspace.png";
 constexpr auto kPortraitIconPath = ":/bridge-client/client/orientation_portrait.png";
 } // namespace
-#include <QFileInfo>
 #include <QDir>
+#include <QFileInfo>
 #include <QMessageBox>
 #include <QRegularExpression>
 #include <QRegularExpressionValidator>
@@ -23,7 +23,9 @@ constexpr auto kPortraitIconPath = ":/bridge-client/client/orientation_portrait.
 using namespace deskflow::gui;
 
 BridgeClientConfigDialog::BridgeClientConfigDialog(const QString &configPath, QWidget *parent)
-    : QDialog(parent), m_configPath(configPath) {
+    : QDialog(parent),
+      m_configPath(configPath)
+{
   setWindowTitle(tr("Bridge Client Configuration"));
   setMinimumWidth(400);
 
@@ -36,8 +38,9 @@ BridgeClientConfigDialog::BridgeClientConfigDialog(const QString &configPath, QW
 
   m_editDeviceName = new QLineEdit(this);
   m_editDeviceName->setMaxLength(22);
-  m_editDeviceName->setValidator(
-      new QRegularExpressionValidator(QRegularExpression(QStringLiteral("^[A-Za-z0-9 _\\-\\.]{0,22}$")), m_editDeviceName));
+  m_editDeviceName->setValidator(new QRegularExpressionValidator(
+      QRegularExpression(QStringLiteral("^[A-Za-z0-9 _\\-\\.]{0,22}$")), m_editDeviceName
+  ));
   m_editDeviceName->setPlaceholderText(tr("A-Z, 0-9, spaces, .-_ (max 22 chars)"));
   formLayout->addRow(tr("Firmware Device Name:"), m_editDeviceName);
 
@@ -87,6 +90,11 @@ BridgeClientConfigDialog::BridgeClientConfigDialog(const QString &configPath, QW
   scrollLayout->addStretch();
   formLayout->addRow(tr("Scroll:"), scrollLayout);
 
+  // Bluetooth Keep-Alive
+  m_checkBluetoothKeepAlive = new QCheckBox(tr("Bluetooth connection follow client"), this);
+  m_checkBluetoothKeepAlive->setToolTip(tr("Send keep-alive commands to maintain Bluetooth connection"));
+  formLayout->addRow(QString(), m_checkBluetoothKeepAlive);
+
   mainLayout->addLayout(formLayout);
 
   // Dialog buttons
@@ -99,7 +107,8 @@ BridgeClientConfigDialog::BridgeClientConfigDialog(const QString &configPath, QW
   loadConfig();
 }
 
-void BridgeClientConfigDialog::loadConfig() {
+void BridgeClientConfigDialog::loadConfig()
+{
   QSettings config(m_configPath, QSettings::IniFormat);
 
   // Load screen name
@@ -107,48 +116,40 @@ void BridgeClientConfigDialog::loadConfig() {
   m_editScreenName->setText(screenName);
   m_originalScreenName = screenName;
 
-  QString deviceName = config
-                           .value(
-                               Settings::Bridge::DeviceName,
-                               Settings::defaultValue(Settings::Bridge::DeviceName))
-                           .toString();
+  QString deviceName =
+      config.value(Settings::Bridge::DeviceName, Settings::defaultValue(Settings::Bridge::DeviceName)).toString();
   m_editDeviceName->setText(deviceName);
   m_originalDeviceName = deviceName;
 
   // Load screen dimensions
-  int width = config
-                 .value(
-                     Settings::Bridge::ScreenWidth,
-                     Settings::defaultValue(Settings::Bridge::ScreenWidth))
-                 .toInt();
-  int height = config
-                  .value(
-                      Settings::Bridge::ScreenHeight,
-                      Settings::defaultValue(Settings::Bridge::ScreenHeight))
-                  .toInt();
+  int width =
+      config.value(Settings::Bridge::ScreenWidth, Settings::defaultValue(Settings::Bridge::ScreenWidth)).toInt();
+  int height =
+      config.value(Settings::Bridge::ScreenHeight, Settings::defaultValue(Settings::Bridge::ScreenHeight)).toInt();
   m_spinWidth->setValue(width);
   m_spinHeight->setValue(height);
 
-  int scrollSpeed = config
-                        .value(
-                            Settings::Client::ScrollSpeed,
-                            Settings::defaultValue(Settings::Client::ScrollSpeed))
-                        .toInt();
+  int scrollSpeed =
+      config.value(Settings::Client::ScrollSpeed, Settings::defaultValue(Settings::Client::ScrollSpeed)).toInt();
   m_spinScrollSpeed->setValue(scrollSpeed);
 
-  bool invertScroll = config
-                           .value(
-                               Settings::Client::InvertScrollDirection,
-                               Settings::defaultValue(Settings::Client::InvertScrollDirection))
-                           .toBool();
+  bool invertScroll =
+      config
+          .value(
+              Settings::Client::InvertScrollDirection, Settings::defaultValue(Settings::Client::InvertScrollDirection)
+          )
+          .toBool();
   m_checkInvertScroll->setChecked(invertScroll);
 
+  bool bluetoothKeepAlive =
+      config.value(Settings::Bridge::BluetoothKeepAlive, Settings::defaultValue(Settings::Bridge::BluetoothKeepAlive))
+          .toBool();
+  m_checkBluetoothKeepAlive->setChecked(bluetoothKeepAlive);
+
   // Load screen orientation
-  QString orientation = config
-                            .value(
-                                Settings::Bridge::ScreenOrientation,
-                                Settings::defaultValue(Settings::Bridge::ScreenOrientation))
-                            .toString();
+  QString orientation =
+      config.value(Settings::Bridge::ScreenOrientation, Settings::defaultValue(Settings::Bridge::ScreenOrientation))
+          .toString();
   if (orientation == QStringLiteral("landscape")) {
     m_radioLandscape->setChecked(true);
   } else {
@@ -156,7 +157,8 @@ void BridgeClientConfigDialog::loadConfig() {
   }
 }
 
-void BridgeClientConfigDialog::saveConfig() {
+void BridgeClientConfigDialog::saveConfig()
+{
   QSettings config(m_configPath, QSettings::IniFormat);
 
   config.setValue(Settings::Core::ScreenName, m_editScreenName->text());
@@ -166,11 +168,13 @@ void BridgeClientConfigDialog::saveConfig() {
   config.setValue(Settings::Bridge::DeviceName, deviceName());
   config.setValue(Settings::Client::ScrollSpeed, m_spinScrollSpeed->value());
   config.setValue(Settings::Client::InvertScrollDirection, m_checkInvertScroll->isChecked());
+  config.setValue(Settings::Bridge::BluetoothKeepAlive, m_checkBluetoothKeepAlive->isChecked());
 
   config.sync();
 }
 
-QString BridgeClientConfigDialog::renameConfigFile(const QString &newScreenName) {
+QString BridgeClientConfigDialog::renameConfigFile(const QString &newScreenName)
+{
   QString dir = BridgeClientConfigManager::bridgeClientsDir();
   QFileInfo oldFileInfo(m_configPath);
 
@@ -198,9 +202,8 @@ QString BridgeClientConfigDialog::renameConfigFile(const QString &newScreenName)
   if (oldFileInfo.absoluteFilePath() != newFilePath) {
     if (!QFile::rename(m_configPath, newFilePath)) {
       QMessageBox::warning(
-          this, tr("Rename Failed"), tr("Failed to rename config file from '%1' to '%2'")
-                                         .arg(m_configPath)
-                                         .arg(newFilePath)
+          this, tr("Rename Failed"),
+          tr("Failed to rename config file from '%1' to '%2'").arg(m_configPath).arg(newFilePath)
       );
       return m_configPath; // Return old path on failure
     }
@@ -210,7 +213,8 @@ QString BridgeClientConfigDialog::renameConfigFile(const QString &newScreenName)
   return m_configPath; // No rename needed
 }
 
-void BridgeClientConfigDialog::onAccepted() {
+void BridgeClientConfigDialog::onAccepted()
+{
   QString oldConfigPath = m_configPath;
   QString newScreenName = m_editScreenName->text().trimmed();
   const QString newDeviceName = deviceName();
@@ -227,9 +231,9 @@ void BridgeClientConfigDialog::onAccepted() {
   }
   if (!m_editDeviceName->hasAcceptableInput()) {
     QMessageBox::warning(
-        this,
-        tr("Invalid Input"),
-        tr("Device name may only use English letters, numbers, spaces, '.', '-' or '_' and must be 22 characters or fewer.")
+        this, tr("Invalid Input"),
+        tr("Device name may only use English letters, numbers, spaces, '.', '-' or '_' and must be 22 characters or "
+           "fewer.")
     );
     return;
   }
@@ -247,19 +251,23 @@ void BridgeClientConfigDialog::onAccepted() {
   accept();
 }
 
-QString BridgeClientConfigDialog::screenName() const {
+QString BridgeClientConfigDialog::screenName() const
+{
   return m_editScreenName->text();
 }
 
-int BridgeClientConfigDialog::screenWidth() const {
+int BridgeClientConfigDialog::screenWidth() const
+{
   return m_spinWidth->value();
 }
 
-int BridgeClientConfigDialog::screenHeight() const {
+int BridgeClientConfigDialog::screenHeight() const
+{
   return m_spinHeight->value();
 }
 
-QString BridgeClientConfigDialog::screenOrientation() const {
+QString BridgeClientConfigDialog::screenOrientation() const
+{
   return m_radioPortrait->isChecked() ? QStringLiteral("portrait") : QStringLiteral("landscape");
 }
 
@@ -281,4 +289,9 @@ QString BridgeClientConfigDialog::deviceName() const
 bool BridgeClientConfigDialog::deviceNameChanged() const
 {
   return deviceName() != m_originalDeviceName;
+}
+
+bool BridgeClientConfigDialog::bluetoothKeepAlive() const
+{
+  return m_checkBluetoothKeepAlive->isChecked();
 }

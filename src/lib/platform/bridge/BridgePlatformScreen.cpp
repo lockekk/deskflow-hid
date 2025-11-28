@@ -9,11 +9,12 @@
 #include "base/Event.h"
 #include "base/EventTypes.h"
 #include "base/Log.h"
+#include "common/Settings.h"
 
 #include <algorithm>
 #include <chrono>
-#include <iomanip>
 #include <cstring>
+#include <iomanip>
 #include <sstream>
 #include <utility>
 
@@ -22,7 +23,8 @@ namespace deskflow::bridge {
 namespace {
 constexpr int kMinMouseDelta = -127;
 constexpr int kMaxMouseDelta = 127;
-
+constexpr std::chrono::seconds kKeepAliveInterval(60);
+constexpr double kKeepAliveIntervalSeconds = static_cast<double>(kKeepAliveInterval.count());
 
 std::string hexDump(const uint8_t *data, size_t length, size_t maxBytes = 32)
 {
@@ -46,33 +48,39 @@ std::string hexDump(const uint8_t *data, size_t length, size_t maxBytes = 32)
 
   return oss.str();
 }
-}
+} // namespace
 
 BridgePlatformScreen::BridgePlatformScreen(
-    IEventQueue *events,
-    std::shared_ptr<CdcTransport> transport,
-    int32_t screenWidth,
-    int32_t screenHeight,
+    IEventQueue *events, std::shared_ptr<CdcTransport> transport, int32_t screenWidth, int32_t screenHeight,
     bool invertScroll
-) :
-    PlatformScreen(events, invertScroll),
-    m_transport(std::move(transport)),
-    m_screenWidth(screenWidth),
-    m_screenHeight(screenHeight),
-    m_events(events)
+)
+    : PlatformScreen(events, invertScroll),
+      m_transport(std::move(transport)),
+      m_screenWidth(screenWidth),
+      m_screenHeight(screenHeight),
+      m_events(events)
 {
-  LOG_INFO(
-      "BridgeScreen: initialized screen=%dx%d",
-      m_screenWidth,
-      m_screenHeight
-  );
+  LOG_INFO("BridgeScreen: initialized screen=%dx%d", m_screenWidth, m_screenHeight);
 
+  m_lastCdcCommand = std::chrono::steady_clock::now();
 
+  // Read configuration and start keep-alive timer if enabled
+  m_bluetoothKeepAliveEnabled = Settings::value(Settings::Bridge::BluetoothKeepAlive).toBool();
+  if (m_bluetoothKeepAliveEnabled && m_events != nullptr) {
+    LOG_INFO("BridgeScreen: Bluetooth keep-alive enabled, starting timer");
+    m_events->addHandler(deskflow::EventTypes::Timer, this, [this](const Event &event) {
+      handleKeepAliveTimer(event);
+    });
+    startKeepAliveTimer();
+  }
 }
 
 BridgePlatformScreen::~BridgePlatformScreen()
 {
-
+  stopKeepAliveTimer();
+  if (m_events != nullptr) {
+    m_events->removeHandler(deskflow::EventTypes::Timer, this);
+  }
 }
 
 void *BridgePlatformScreen::getEventTarget() const
@@ -212,12 +220,10 @@ void BridgePlatformScreen::fakeMouseRelativeMove(int32_t dx, int32_t dy) const
   int64_t remainingDx = dx;
   int64_t remainingDy = dy;
   while (remainingDx != 0 || remainingDy != 0) {
-    const int64_t stepDx = std::clamp(
-        remainingDx, static_cast<int64_t>(kMinMouseDelta), static_cast<int64_t>(kMaxMouseDelta)
-    );
-    const int64_t stepDy = std::clamp(
-        remainingDy, static_cast<int64_t>(kMinMouseDelta), static_cast<int64_t>(kMaxMouseDelta)
-    );
+    const int64_t stepDx =
+        std::clamp(remainingDx, static_cast<int64_t>(kMinMouseDelta), static_cast<int64_t>(kMaxMouseDelta));
+    const int64_t stepDy =
+        std::clamp(remainingDy, static_cast<int64_t>(kMinMouseDelta), static_cast<int64_t>(kMaxMouseDelta));
 
     if (!sendMouseMoveEvent(static_cast<int16_t>(stepDx), static_cast<int16_t>(stepDy))) {
       LOG_ERR("BridgeScreen: failed to send mouse move");
@@ -243,8 +249,6 @@ void BridgePlatformScreen::fakeMouseWheel(int32_t, int32_t yDelta) const
     LOG_ERR("BridgeScreen: failed to send scroll event");
   }
 }
-
-
 
 void BridgePlatformScreen::resetMouseAccumulator() const
 {
@@ -1145,6 +1149,61 @@ uint8_t BridgePlatformScreen::convertButtonID(ButtonID id) const
 {
   // Return the button ID directly for the firmware
   return static_cast<uint8_t>(id);
+}
+
+void BridgePlatformScreen::handleKeepAliveTimer(const Event &event) const
+{
+  if (event.getTarget() != this) {
+    return;
+  }
+
+  const auto *timerEvent = static_cast<IEventQueue::TimerEvent *>(event.getData());
+  if (timerEvent == nullptr || timerEvent->m_timer != m_keepAliveTimer) {
+    return;
+  }
+
+  sendKeepAliveIfIdle();
+}
+
+void BridgePlatformScreen::startKeepAliveTimer()
+{
+  if (m_events == nullptr || m_keepAliveTimer != nullptr) {
+    return;
+  }
+  m_keepAliveTimer = m_events->newTimer(kKeepAliveIntervalSeconds, this);
+}
+
+void BridgePlatformScreen::stopKeepAliveTimer()
+{
+  if (m_events != nullptr && m_keepAliveTimer != nullptr) {
+    m_events->deleteTimer(static_cast<EventQueueTimer *>(m_keepAliveTimer));
+    m_keepAliveTimer = nullptr;
+  }
+}
+
+void BridgePlatformScreen::sendKeepAliveIfIdle() const
+{
+  if (m_transport == nullptr) {
+    return;
+  }
+
+  const auto now = std::chrono::steady_clock::now();
+  if (m_lastCdcCommand != std::chrono::steady_clock::time_point::min() && now - m_lastCdcCommand < kKeepAliveInterval) {
+    return;
+  }
+
+  uint32_t uptimeSeconds = 0;
+  if (m_transport->sendKeepAlive(uptimeSeconds)) {
+    LOG_INFO("BridgeScreen: keep-alive ack uptime=%us", static_cast<unsigned>(uptimeSeconds));
+    recordCdcCommand(now);
+  } else {
+    LOG_WARN("BridgeScreen: keep-alive failed (%s)", m_transport->lastError().c_str());
+  }
+}
+
+void BridgePlatformScreen::recordCdcCommand(std::chrono::steady_clock::time_point now) const
+{
+  m_lastCdcCommand = now;
 }
 
 } // namespace deskflow::bridge

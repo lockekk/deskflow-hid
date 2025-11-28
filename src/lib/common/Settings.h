@@ -99,6 +99,7 @@ public:
     inline static const auto HostOs = QStringLiteral("bridge/hostOs");
     inline static const auto ActivationState = QStringLiteral("bridge/activationState");
     inline static const auto DeviceName = QStringLiteral("bridge/deviceName");
+    inline static const auto BluetoothKeepAlive = QStringLiteral("bridge/bluetoothKeepAlive");
   };
 
   // Enums types used in settings
@@ -216,6 +217,7 @@ private:
     , Settings::Bridge::ScreenWidth
     , Settings::Bridge::ScreenHeight
     , Settings::Bridge::ScreenOrientation
+    , Settings::Bridge::BluetoothKeepAlive
   };
   // clang-format on
 };

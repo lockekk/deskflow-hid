@@ -215,6 +215,10 @@ QVariant Settings::defaultValue(const QString &key)
     return QString();
   }
 
+  if (key == Bridge::BluetoothKeepAlive) {
+    return false;
+  }
+
   return QVariant();
 }
 
