@@ -14,6 +14,7 @@
 namespace deskflow::gui {
 
 struct UsbDeviceInfo;
+class Esp32HidToolsWidget;
 
 /**
  * @brief Widget for managing a single bridge client
@@ -36,10 +37,7 @@ public:
    * @param parent Parent widget
    */
   explicit BridgeClientWidget(
-      const QString &screenName,
-      const QString &devicePath,
-      const QString &configPath,
-      QWidget *parent = nullptr
+      const QString &screenName, const QString &devicePath, const QString &configPath, QWidget *parent = nullptr
   );
 
   ~BridgeClientWidget() override = default;
@@ -127,26 +125,18 @@ Q_SIGNALS:
    * @param configPath Config file path
    * @param connected true to connect, false to disconnect
    */
-  void connectToggled(const QString &devicePath, const QString &configPath, bool connected);
+  Q_SIGNAL void connectToggled(const QString &devicePath, const QString &configPath, bool shouldConnect);
+  Q_SIGNAL void configureClicked(const QString &devicePath, const QString &configPath);
+  Q_SIGNAL void firmwareClicked(const QString &devicePath, const QString &configPath);
+  Q_SIGNAL void deleteClicked(const QString &devicePath, const QString &configPath);
+  Q_SIGNAL void refreshDevicesRequested();
 
-  /**
-   * @brief Emitted when configure button is clicked
-   * @param devicePath Device path
-   * @param configPath Config file path
-   */
-  void configureClicked(const QString &devicePath, const QString &configPath);
-
-  /**
-   * @brief Emitted when delete button is clicked
-   * @param devicePath Device path
-   * @param configPath Config file path
-   */
-  void deleteClicked(const QString &devicePath, const QString &configPath);
-
+protected:
 private Q_SLOTS:
   void onConnectToggled(bool checked);
   void onConfigureClicked();
   void onDeleteClicked();
+  void onFirmwareClicked();
 
 private:
   void refreshOrientationLabel();
@@ -165,6 +155,7 @@ private:
   QPushButton *m_btnConnect;
   QPushButton *m_btnConfigure;
   QPushButton *m_btnDelete;
+  QPushButton *m_btnFirmware;
   QLabel *m_deviceNameLabel;
   QLabel *m_activationStateLabel;
   QLabel *m_orientationLabel;

@@ -1976,6 +1976,7 @@ void MainWindow::loadBridgeClientConfigs()
     connect(widget, &BridgeClientWidget::connectToggled, this, &MainWindow::bridgeClientConnectToggled);
     connect(widget, &BridgeClientWidget::configureClicked, this, &MainWindow::bridgeClientConfigureClicked);
     connect(widget, &BridgeClientWidget::deleteClicked, this, &MainWindow::bridgeClientDeleteClicked);
+    connect(widget, &BridgeClientWidget::refreshDevicesRequested, this, &MainWindow::updateBridgeClientDeviceStates);
 
     // Add to grid layout (3 columns per row)
     int count = m_bridgeClientWidgets.size();

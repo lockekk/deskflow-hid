@@ -5,6 +5,7 @@
  */
 
 #include "BridgeClientWidget.h"
+#include "Esp32HidToolsWidget.h"
 
 #include "common/Settings.h"
 
@@ -22,14 +23,14 @@ namespace deskflow::gui {
 
 BridgeClientWidget::BridgeClientWidget(
     const QString &screenName, const QString &devicePath, const QString &configPath, QWidget *parent
-) :
-    QGroupBox(screenName, parent),
-    m_screenName(screenName),
-    m_devicePath(devicePath),
-    m_configPath(configPath)
+)
+    : QGroupBox(screenName, parent),
+      m_screenName(screenName),
+      m_devicePath(devicePath),
+      m_configPath(configPath)
 {
-  setMinimumWidth(480);
-  setMaximumWidth(520);
+  setMinimumWidth(650);
+  setMaximumWidth(16777215); // QWIDGETSIZE_MAX
 
   // Create horizontal layout for buttons
   auto *layout = new QHBoxLayout(this);
@@ -47,6 +48,11 @@ BridgeClientWidget::BridgeClientWidget(
   m_btnConfigure = new QPushButton(tr("Configure"), this);
   m_btnConfigure->setMinimumSize(80, 32);
   m_btnConfigure->setToolTip(tr("Configure bridge client settings"));
+
+  // Create Firmware button
+  m_btnFirmware = new QPushButton(tr("Firmware"), this);
+  m_btnFirmware->setMinimumSize(80, 32);
+  m_btnFirmware->setToolTip(tr("Open firmware update tools"));
 
   // Create Delete button
   m_btnDelete = new QPushButton(tr("Delete"), this);
@@ -70,6 +76,7 @@ BridgeClientWidget::BridgeClientWidget(
   // Add buttons and label to layout
   layout->addWidget(m_btnConnect);
   layout->addWidget(m_btnConfigure);
+  layout->addWidget(m_btnFirmware);
   layout->addWidget(m_btnDelete);
   layout->addSpacing(12);
   layout->addWidget(m_deviceNameLabel, 1);
@@ -79,6 +86,7 @@ BridgeClientWidget::BridgeClientWidget(
   // Connect signals
   connect(m_btnConnect, &QPushButton::toggled, this, &BridgeClientWidget::onConnectToggled);
   connect(m_btnConfigure, &QPushButton::clicked, this, &BridgeClientWidget::onConfigureClicked);
+  connect(m_btnFirmware, &QPushButton::clicked, this, &BridgeClientWidget::onFirmwareClicked);
   connect(m_btnDelete, &QPushButton::clicked, this, &BridgeClientWidget::onDeleteClicked);
 
   refreshDeviceNameLabel();
@@ -155,11 +163,9 @@ void BridgeClientWidget::refreshOrientationLabel()
   }
 
   QSettings config(m_configPath, QSettings::IniFormat);
-  const QString orientation = config
-                                  .value(
-                                      Settings::Bridge::ScreenOrientation,
-                                      Settings::defaultValue(Settings::Bridge::ScreenOrientation))
-                                  .toString();
+  const QString orientation =
+      config.value(Settings::Bridge::ScreenOrientation, Settings::defaultValue(Settings::Bridge::ScreenOrientation))
+          .toString();
   m_orientation = orientation;
   const QString normalized = orientation.trimmed().toLower();
   QString display;
@@ -200,9 +206,8 @@ void BridgeClientWidget::refreshButtonStates()
   if (!m_deviceAvailable) {
     connectTooltip = tr("Device not connected");
   } else if (m_groupLocked && !m_isConnected) {
-    connectTooltip = m_groupLockReason.isEmpty()
-                         ? tr("Another profile for this device is already connected")
-                         : m_groupLockReason;
+    connectTooltip =
+        m_groupLockReason.isEmpty() ? tr("Another profile for this device is already connected") : m_groupLockReason;
   } else {
     connectTooltip = tr("Connect/disconnect bridge client");
   }
@@ -215,9 +220,8 @@ void BridgeClientWidget::refreshButtonStates()
   if (m_isConnected) {
     configureTooltip = tr("Disconnect before configuring");
   } else if (m_groupLocked) {
-    configureTooltip = m_groupLockReason.isEmpty()
-                           ? tr("This profile is locked because another one is connected")
-                           : m_groupLockReason;
+    configureTooltip =
+        m_groupLockReason.isEmpty() ? tr("This profile is locked because another one is connected") : m_groupLockReason;
   } else {
     configureTooltip = tr("Configure bridge client settings");
   }
@@ -230,9 +234,8 @@ void BridgeClientWidget::refreshButtonStates()
   if (m_isConnected) {
     deleteTooltip = tr("Disconnect before deleting");
   } else if (m_groupLocked) {
-    deleteTooltip = m_groupLockReason.isEmpty()
-                       ? tr("This profile is locked because another one is connected")
-                       : m_groupLockReason;
+    deleteTooltip =
+        m_groupLockReason.isEmpty() ? tr("This profile is locked because another one is connected") : m_groupLockReason;
   } else {
     deleteTooltip = tr("Delete this bridge client configuration");
   }
@@ -257,16 +260,25 @@ void BridgeClientWidget::onDeleteClicked()
 {
   // Show warning and confirmation dialog
   QMessageBox::StandardButton reply = QMessageBox::question(
-      this,
-      tr("Delete Configuration"),
+      this, tr("Delete Configuration"),
       tr("Are you sure you want to delete this bridge client configuration?\n\nThis action cannot be undone."),
-      QMessageBox::Yes | QMessageBox::No,
-      QMessageBox::No
+      QMessageBox::Yes | QMessageBox::No, QMessageBox::No
   );
 
   if (reply == QMessageBox::Yes) {
     Q_EMIT deleteClicked(m_devicePath, m_configPath);
   }
+}
+
+void BridgeClientWidget::onFirmwareClicked()
+{
+  if (m_isConnected) {
+    m_btnConnect->setChecked(false);
+  }
+  Esp32HidToolsWidget dialog(m_devicePath, this);
+  dialog.exec();
+  refreshButtonStates();
+  Q_EMIT refreshDevicesRequested();
 }
 
 } // namespace deskflow::gui

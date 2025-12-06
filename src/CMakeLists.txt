@@ -8,6 +8,7 @@ include_directories(${CMAKE_CURRENT_BINARY_DIR}/lib)
 
 add_subdirectory(lib)
 add_subdirectory(apps)
+add_subdirectory(${CMAKE_SOURCE_DIR}/submodules/esp32-hid-tools ${CMAKE_BINARY_DIR}/submodules/esp32-hid-tools)
 
 option(BUILD_TESTS "Build tests" ON)
 if(BUILD_TESTS)

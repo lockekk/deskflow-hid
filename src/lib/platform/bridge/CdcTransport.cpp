@@ -49,6 +49,7 @@ constexpr uint8_t kUsbControlConfigResponse = 0x82;
 constexpr uint8_t kUsbConfigGetDeviceName = 0x02;
 constexpr uint8_t kUsbConfigSetDeviceName = 0x03;
 constexpr uint8_t kUsbConfigGetSerialNumber = 0x04;
+constexpr uint8_t kUsbConfigActivateDevice = 0x07;
 
 constexpr size_t kAckCoreLen = 16;
 constexpr size_t kAckProtocolVersionIndex = 1;
@@ -810,6 +811,40 @@ bool CdcTransport::fetchSerialNumber(std::string &outSerial)
 
   // Firmware returns any readable string (null-terminated)
   outSerial.assign(reinterpret_cast<const char *>(data.data()), data.size());
+  return true;
+}
+
+bool CdcTransport::activateDevice(const std::string &licenseCode)
+{
+  if (!ensureOpen()) {
+    return false;
+  }
+
+  std::vector<uint8_t> payload(1 + licenseCode.size());
+  payload[0] = kUsbConfigActivateDevice;
+  std::copy(licenseCode.begin(), licenseCode.end(), payload.begin() + 1);
+
+  if (!sendUsbFrame(kUsbFrameTypeControl, 0, payload)) {
+    return false;
+  }
+
+  uint8_t msgType = 0;
+  uint8_t status = 0;
+  std::vector<uint8_t> data;
+  if (!waitForConfigResponse(msgType, status, data, kConfigCommandTimeoutMs)) {
+    return false;
+  }
+
+  if (msgType != kUsbConfigActivateDevice) {
+    m_lastError = "Unexpected config response";
+    return false;
+  }
+  if (status != 0) {
+    m_lastError = "Firmware error code " + std::to_string(status);
+    LOG_ERR("CDC: activateDevice firmware returned error=%u", status);
+    return false;
+  }
+
   return true;
 }
 

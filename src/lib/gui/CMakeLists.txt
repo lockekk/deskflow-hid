@@ -137,6 +137,8 @@ add_library(${target} STATIC
   validators/IpAddressValidator.h
   widgets/BridgeClientWidget.cpp
   widgets/BridgeClientWidget.h
+  widgets/Esp32HidToolsWidget.cpp
+  widgets/Esp32HidToolsWidget.h
   widgets/FingerprintPreview.cpp
   widgets/FingerprintPreview.h
   widgets/KeySequenceWidget.cpp
@@ -159,7 +161,9 @@ target_link_libraries(
   platform
   Qt6::Core
   Qt6::Widgets
-  Qt6::Network)
+  Qt6::Network
+  Qt6::Concurrent
+  flash_tool_lib)
 
 if(WIN32)
   target_link_libraries(

@@ -14,17 +14,17 @@
 #include <QFileInfo>
 #include <QStringList>
 #include <QTextStream>
-#include <vector>
-#include <cwchar>
 #include <algorithm>
+#include <cwchar>
+#include <vector>
 
 #ifdef Q_OS_WIN
 #ifndef NOMINMAX
 #define NOMINMAX
 #endif
 #define WIN32_LEAN_AND_MEAN
-#include <Windows.h>
 #include <SetupAPI.h>
+#include <Windows.h>
 #include <devguid.h>
 #include <initguid.h>
 #include <winreg.h>
@@ -108,13 +108,8 @@ bool deviceMatchesBridge(HDEVINFO infoSet, SP_DEVINFO_DATA &infoData, const QStr
   while (true) {
     DWORD requiredSize = 0;
     if (SetupDiGetDeviceRegistryPropertyW(
-            infoSet,
-            &infoData,
-            SPDRP_HARDWAREID,
-            &propertyType,
-            reinterpret_cast<PBYTE>(buffer.data()),
-            static_cast<DWORD>(buffer.size() * sizeof(wchar_t)),
-            &requiredSize
+            infoSet, &infoData, SPDRP_HARDWAREID, &propertyType, reinterpret_cast<PBYTE>(buffer.data()),
+            static_cast<DWORD>(buffer.size() * sizeof(wchar_t)), &requiredSize
         )) {
       break;
     }
@@ -206,8 +201,7 @@ QString UsbDeviceHelper::readSerialNumber(const QString &devicePath)
     }
 
   } catch (const std::exception &e) {
-    qWarning() << "Exception reading serial number via CDC for" << devicePath
-               << "error:" << e.what();
+    qWarning() << "Exception reading serial number via CDC for" << devicePath << "error:" << e.what();
     return QString();
   }
 
@@ -223,7 +217,7 @@ QString UsbDeviceHelper::readSerialNumber(const QString &devicePath)
 #endif
 }
 
-QMap<QString, QString> UsbDeviceHelper::getConnectedDevices()
+QMap<QString, QString> UsbDeviceHelper::getConnectedDevices(bool queryDevice)
 {
   QMap<QString, QString> devices;
 
@@ -242,11 +236,15 @@ QMap<QString, QString> UsbDeviceHelper::getConnectedDevices()
       continue;
     }
 
-    QString serialNumber = readSerialNumber(devicePath);
-
-    if (!serialNumber.isEmpty()) {
-      devices[devicePath] = serialNumber;
+    QString serialNumber;
+    if (queryDevice) {
+      serialNumber = readSerialNumber(devicePath);
     }
+
+    if (serialNumber.isEmpty()) {
+      serialNumber = "Unknown";
+    }
+    devices[devicePath] = serialNumber;
   }
 
   qDebug() << "Found" << devices.size() << "connected USB CDC devices";
@@ -273,8 +271,12 @@ QMap<QString, QString> UsbDeviceHelper::getConnectedDevices()
     }
 
     const QString devicePath = QStringLiteral("\\\\.\\%1").arg(portName);
-    QString serialNumber = readSerialNumber(devicePath);
+    QString serialNumber;
+    if (queryDevice) {
+      serialNumber = readSerialNumber(devicePath);
+    }
     if (serialNumber.isEmpty()) {
+      // Fallback to port name if serial read failed or skipped
       serialNumber = portName;
     }
 
@@ -334,8 +336,7 @@ bool UsbDeviceHelper::verifyBridgeHandshake(
 
   deskflow::bridge::CdcTransport transport(devicePath);
   if (!transport.open()) {
-    qWarning() << "Bridge handshake failed for" << devicePath
-               << ":" << QString::fromStdString(transport.lastError());
+    qWarning() << "Bridge handshake failed for" << devicePath << ":" << QString::fromStdString(transport.lastError());
     return false;
   }
 
@@ -356,13 +357,10 @@ bool UsbDeviceHelper::verifyBridgeHandshake(
 
     const QString nameForLog = QString::fromStdString(cfg.deviceName);
 
-    qInfo() << "Bridge handshake successful with" << devicePath
-            << "proto:" << cfg.protocolVersion
-            << "activation_state:" << cfg.activationStateString()
-            << "(" << static_cast<unsigned>(cfg.activationState) << ")"
-            << "fw_bcd:" << cfg.firmwareVersionBcd
-            << "hw_bcd:" << cfg.hardwareVersionBcd
-            << "name:" << nameForLog;
+    qInfo() << "Bridge handshake successful with" << devicePath << "proto:" << cfg.protocolVersion
+            << "activation_state:" << cfg.activationStateString() << "(" << static_cast<unsigned>(cfg.activationState)
+            << ")"
+            << "fw_bcd:" << cfg.firmwareVersionBcd << "hw_bcd:" << cfg.hardwareVersionBcd << "name:" << nameForLog;
   } else {
     qInfo() << "Bridge handshake successful with" << devicePath << "(no config payload)";
   }

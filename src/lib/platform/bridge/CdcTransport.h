@@ -122,6 +122,13 @@ public:
   bool fetchSerialNumber(std::string &outSerial);
 
   /**
+   * @brief Activate the device with a license code
+   * @param licenseCode Base64 license string
+   * @return true if successful
+   */
+  bool activateDevice(const std::string &licenseCode);
+
+  /**
    * @brief Get last error message
    */
   std::string lastError() const

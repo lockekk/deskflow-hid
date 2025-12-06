@@ -19,7 +19,7 @@ macro(configure_libs)
     )
   endif()
 
-  find_package(Qt6 ${REQUIRED_QT_VERSION} REQUIRED COMPONENTS Core Widgets Network)
+  find_package(Qt6 ${REQUIRED_QT_VERSION} REQUIRED COMPONENTS Core Widgets Network Concurrent)
   if(UNIX AND NOT APPLE)
       find_package(Qt6 ${REQUIRED_QT_VERSION} REQUIRED COMPONENTS DBus Xml)
   endif()

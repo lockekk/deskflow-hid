@@ -6,8 +6,8 @@
 
 #pragma once
 
-#include <QString>
 #include <QMap>
+#include <QString>
 
 #include "platform/bridge/CdcTransport.h"
 
@@ -32,12 +32,13 @@ public:
 
   /**
    * @brief Get all currently connected USB CDC devices with their serial numbers
+   * @param queryDevice If true, attempt to read serial number via CDC (can be slow/timeout).
    * @return Map of device path -> serial number
    *
-   * Scans platform-specific device paths and reads serial numbers via CDC commands.
+   * Scans platform-specific device paths.
    * Works on Linux and Windows platforms.
    */
-  static QMap<QString, QString> getConnectedDevices();
+  static QMap<QString, QString> getConnectedDevices(bool queryDevice = true);
 
   /**
    * @brief Check if the device path belongs to a supported bridge firmware device
