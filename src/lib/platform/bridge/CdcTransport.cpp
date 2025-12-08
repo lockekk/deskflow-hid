@@ -31,8 +31,10 @@
 namespace deskflow::bridge {
 
 namespace {
-constexpr uint16_t kUsbLinkMagic = 0xC35A;
-constexpr uint8_t kUsbLinkVersion = 1;
+constexpr uint16_t kUsbLinkMagic = 0xC35A; // USB Control Link Constants
+constexpr uint8_t kUsbLinkVersion = 0x01;
+constexpr uint8_t kAuthModeNone = 0x00;
+constexpr uint8_t kAuthModeHmacSha256 = 0x01;
 constexpr uint8_t kUsbFrameTypeHid = 0x01;
 constexpr uint8_t kUsbFrameTypeHidMouseCompact = 0x02;
 constexpr uint8_t kUsbFrameTypeHidKeyCompact = 0x03;
@@ -56,6 +58,7 @@ constexpr size_t kAckProtocolVersionIndex = 1;
 constexpr size_t kAckActivationStateIndex = 2;
 constexpr size_t kAckFirmwareVersionIndex = 3;
 constexpr size_t kAckHardwareVersionIndex = 4;
+constexpr size_t kAckFirmwareModeIndex = 5;
 constexpr size_t kAckMinimumPayloadSize = 1 + kAckCoreLen;
 
 constexpr int kHandshakeTimeoutMs = 2000;
@@ -68,7 +71,6 @@ constexpr size_t kAuthNonceBytes = 8;
 constexpr size_t kAuthTagBytes = 32;
 constexpr size_t kHelloPayloadLen = 1 + 1 + kAuthNonceBytes + kAuthTagBytes;
 constexpr size_t kAckPayloadLen = kAckCoreLen + kAuthNonceBytes + kAuthTagBytes;
-constexpr uint8_t kAuthModeHmacSha256 = 0x01;
 constexpr size_t kAckTotalPayloadWithId = 1 + kAckPayloadLen;
 constexpr size_t kAckDeviceNonceOffset = 1 + kAckCoreLen;
 constexpr size_t kAckTagOffset = kAckDeviceNonceOffset + kAuthNonceBytes;
@@ -189,6 +191,7 @@ CdcTransport::~CdcTransport()
 void CdcTransport::resetState()
 {
   m_handshakeComplete = false;
+  m_isSecure = false;
   m_hostNonce.fill(0);
   m_hasHostNonce = false;
   m_rxBuffer.clear();
@@ -196,24 +199,29 @@ void CdcTransport::resetState()
   m_deviceConfig = FirmwareConfig{};
 }
 
-bool CdcTransport::ensureOpen()
-{
-  if (isOpen() && m_handshakeComplete) {
-    return true;
-  }
-  if (!open()) {
-    return false;
-  }
-  return true;
-}
-
-bool CdcTransport::open()
+bool CdcTransport::ensureOpen(bool allowInsecure)
 {
   if (isOpen()) {
     if (m_handshakeComplete) {
       return true;
     }
-    return performHandshake();
+    // If open but handshake not complete, try to complete it
+    return performHandshake(allowInsecure);
+  }
+  // If not open, try to open and perform handshake
+  if (!open(allowInsecure)) {
+    return false;
+  }
+  return true;
+}
+
+bool CdcTransport::open(bool allowInsecure)
+{
+  if (isOpen()) {
+    if (m_handshakeComplete) {
+      return true;
+    }
+    return performHandshake(allowInsecure);
   }
 
 #if defined(Q_OS_UNIX)
@@ -304,7 +312,7 @@ bool CdcTransport::open()
 
   LOG_INFO("CDC: opened device %s", m_devicePath.toUtf8().constData());
   resetState();
-  return performHandshake();
+  return performHandshake(allowInsecure);
 }
 
 void CdcTransport::close()
@@ -329,7 +337,7 @@ bool CdcTransport::isOpen() const
   return m_fd != -1;
 }
 
-bool CdcTransport::performHandshake()
+bool CdcTransport::performHandshake(bool allowInsecure)
 {
   if (!isOpen()) {
     m_lastError = "Device not open";
@@ -344,10 +352,18 @@ bool CdcTransport::performHandshake()
   std::vector<uint8_t> payload(1 + kHelloPayloadLen);
   payload[0] = kUsbControlHello;
   payload[1] = kUsbLinkVersion;
-  payload[2] = kAuthModeHmacSha256;
-  std::memcpy(payload.data() + 3, m_hostNonce.data(), kAuthNonceBytes);
-  const QByteArray helloTag = makeHelloHmac(m_hostNonce, kUsbLinkVersion, m_authKey);
-  std::memcpy(payload.data() + 3 + kAuthNonceBytes, helloTag.constData(), kAuthTagBytes);
+
+  if (allowInsecure) {
+    payload[2] = kAuthModeNone;
+    std::memcpy(payload.data() + 3, m_hostNonce.data(), kAuthNonceBytes);
+    // Zero out the tag for insecure mode
+    std::memset(payload.data() + 3 + kAuthNonceBytes, 0, kAuthTagBytes);
+  } else {
+    payload[2] = kAuthModeHmacSha256;
+    std::memcpy(payload.data() + 3, m_hostNonce.data(), kAuthNonceBytes);
+    const QByteArray helloTag = makeHelloHmac(m_hostNonce, kUsbLinkVersion, m_authKey);
+    std::memcpy(payload.data() + 3 + kAuthNonceBytes, helloTag.constData(), kAuthTagBytes);
+  }
 
   if (!sendUsbFrame(kUsbFrameTypeControl, 0, payload)) {
     return false;
@@ -383,12 +399,18 @@ bool CdcTransport::performHandshake()
       const uint8_t *deviceNonce = framePayload.data() + kAckDeviceNonceOffset;
       const uint8_t *ackTag = framePayload.data() + kAckTagOffset;
 
-      const QByteArray computedTag = makeAckHmac(m_hostNonce, deviceNonce, ackCore, m_authKey);
-      if (computedTag.size() != static_cast<int>(kAuthTagBytes) ||
-          std::memcmp(computedTag.constData(), ackTag, kAuthTagBytes) != 0) {
-        m_lastError = "Handshake authentication tag mismatch";
-        LOG_ERR("CDC: %s", m_lastError.c_str());
-        return false;
+      // Verify tag (only if not in insecure mode and auth was requested)
+      if (!allowInsecure) {
+        const QByteArray computedTag = makeAckHmac(m_hostNonce, deviceNonce, ackCore, m_authKey);
+        if (computedTag.size() != static_cast<int>(kAuthTagBytes) ||
+            std::memcmp(computedTag.constData(), ackTag, kAuthTagBytes) != 0) {
+          m_lastError = "Handshake authentication tag mismatch";
+          LOG_ERR("CDC: %s", m_lastError.c_str());
+          return false;
+        }
+        m_isSecure = true;
+      } else {
+        m_isSecure = false;
       }
 
       m_handshakeComplete = true;
@@ -398,17 +420,20 @@ bool CdcTransport::performHandshake()
         const ActivationState activationState = static_cast<ActivationState>(framePayload[kAckActivationStateIndex]);
         const uint8_t firmwareBcd = framePayload[kAckFirmwareVersionIndex];
         const uint8_t hardwareBcd = framePayload[kAckHardwareVersionIndex];
+        const FirmwareMode firmwareMode = static_cast<FirmwareMode>(framePayload[kAckFirmwareModeIndex]);
 
         m_deviceConfig.protocolVersion = protocolVersion;
         m_deviceConfig.activationState = activationState;
         m_deviceConfig.firmwareVersionBcd = firmwareBcd;
         m_deviceConfig.hardwareVersionBcd = hardwareBcd;
+        m_deviceConfig.firmwareMode = firmwareMode;
         m_hasDeviceConfig = true;
 
         LOG_INFO(
-            "CDC: handshake completed version=%u activation_state=%s(%u) fw_bcd=%u hw_bcd=%u", protocolVersion,
-            activationStateToString(activationState), static_cast<unsigned>(framePayload[kAckActivationStateIndex]),
-            static_cast<unsigned>(firmwareBcd), static_cast<unsigned>(hardwareBcd)
+            "CDC: handshake completed version=%u activation_state=%s(%u) fw_bcd=%u hw_bcd=%u fw_mode=%u",
+            protocolVersion, activationStateToString(activationState),
+            static_cast<unsigned>(framePayload[kAckActivationStateIndex]), static_cast<unsigned>(firmwareBcd),
+            static_cast<unsigned>(hardwareBcd), static_cast<unsigned>(firmwareMode)
         );
 
         std::string fetchedName;

@@ -55,7 +55,7 @@ Esp32HidToolsWidget::Esp32HidToolsWidget(const QString &devicePath, QWidget *par
 
   auto *factoryInputLayout = new QHBoxLayout();
   m_factoryPathEdit = new QLineEdit();
-  m_factoryPathEdit->setPlaceholderText(tr("Path to factory.enc"));
+  m_factoryPathEdit->setPlaceholderText(tr("Path to factory.fzip"));
   m_factoryBrowseBtn = new QPushButton(tr("Browse..."));
   factoryInputLayout->addWidget(new QLabel(tr("Factory Package:")));
   factoryInputLayout->addWidget(m_factoryPathEdit);
@@ -78,7 +78,7 @@ Esp32HidToolsWidget::Esp32HidToolsWidget(const QString &devicePath, QWidget *par
 
   auto *upgradeInputLayout = new QHBoxLayout();
   m_upgradePathEdit = new QLineEdit();
-  m_upgradePathEdit->setPlaceholderText(tr("Path to upgrade.bin"));
+  m_upgradePathEdit->setPlaceholderText(tr("Path to upgrade.uzip"));
   m_upgradeBrowseBtn = new QPushButton(tr("Browse..."));
   upgradeInputLayout->addWidget(new QLabel(tr("Upgrade Firmware:")));
   upgradeInputLayout->addWidget(m_upgradePathEdit);
@@ -209,7 +209,7 @@ void Esp32HidToolsWidget::refreshPorts()
 void Esp32HidToolsWidget::onBrowseFactory()
 {
   QString path =
-      QFileDialog::getOpenFileName(this, tr("Select Factory Package"), QString(), tr("Encrypted Package (*.enc)"));
+      QFileDialog::getOpenFileName(this, tr("Select Factory Package"), QString(), tr("Factory Package (*.fzip)"));
   if (!path.isEmpty()) {
     m_factoryPathEdit->setText(path);
   }
@@ -218,7 +218,7 @@ void Esp32HidToolsWidget::onBrowseFactory()
 void Esp32HidToolsWidget::onBrowseUpgrade()
 {
   QString path =
-      QFileDialog::getOpenFileName(this, tr("Select Firmware Binary"), QString(), tr("Binary Files (*.bin)"));
+      QFileDialog::getOpenFileName(this, tr("Select Upgrade Package"), QString(), tr("Upgrade Package (*.uzip)"));
   if (!path.isEmpty()) {
     m_upgradePathEdit->setText(path);
   }
@@ -323,6 +323,24 @@ void Esp32HidToolsWidget::onFlashFactory()
       }
     };
 
+    // Pre-check: Handshake must FAIL for Factory Flash (Device must be in valid Bootloader mode, not Firmware mode)
+    {
+      deskflow::bridge::CdcTransport cdc(QString::fromStdString(port));
+      // Use permissive open to detect if device is in firmware mode (any FW)
+      if (cdc.open(true)) {
+        // Handshake succeeded -> We are in Firmware Mode!
+        QMetaObject::invokeMethod(this, [this]() {
+          log(tr("Device is already running with factory firmware."));
+          QMessageBox::information(
+              this, tr("Info"), tr("Device is already running with factory firmware, no need to flash again.")
+          );
+        });
+        return;
+      }
+      // If open() failed, we assume it's because the device is in Bootloader mode (no handshake support)
+      // and proceed to try flashing.
+    }
+
     // Note: This calls the blocking C++ API
     FlashResult res = flash_factory(port, data, info, progress_cb, log_cb);
 
@@ -395,12 +413,47 @@ void Esp32HidToolsWidget::onFlashUpgrade()
     };
 
     // Note: This calls the blocking C++ API
+    // Pre-check: Handshake must SUCCEED, and mode must be FACTORY
+    {
+      deskflow::bridge::CdcTransport cdc(QString::fromStdString(port));
+      // Use permissive open to check status
+      if (!cdc.open(true)) {
+        QMetaObject::invokeMethod(this, [this]() {
+          log(tr("Error: Handshake failed."));
+          QMessageBox::warning(
+              this, tr("Connection Error"),
+              tr("Handshake failed. The device must be running compatible firmware to perform an "
+                 "upgrade.\nIf the device is bricked, please use Factory Mode.")
+          );
+        });
+        return;
+      }
+
+      const auto &config = cdc.deviceConfig();
+      if (config.firmwareMode == deskflow::bridge::FirmwareMode::App) {
+        QMetaObject::invokeMethod(this, [this]() {
+          log(tr("Error: Device in APP mode."));
+          QMessageBox::warning(
+              this, tr("Wrong Mode"),
+              tr("Device is currently in Application Mode.\n\nPlease press the BOOT button on the "
+                 "device for 2 seconds to switch to Factory Mode before upgrading.")
+          );
+        });
+        return;
+      }
+      // if config.firmwareMode == Factory (or maybe Unknown but we assume Factory if open succeeded and not App?)
+      // We proceed.
+    }
+
     FlashResult res = flash_upgrade(port, data, progress_cb, log_cb);
 
     // Update UI on main thread
     QMetaObject::invokeMethod(this, [this, res]() {
       if (res == FlashResult::OK) {
         log(tr("Upgrade Success!"));
+      } else if (static_cast<int>(res) == -4) {
+        // User requested "invalid firmware" for error -4
+        log(tr("Upgrade Failed: Invalid Firmware (-4)"));
       } else {
         log(tr("Upgrade Failed! Error code: %1").arg(static_cast<int>(res)));
       }
@@ -450,13 +503,15 @@ void deskflow::gui::Esp32HidToolsWidget::refreshDeviceState()
   auto task = [this, portName]() {
     deskflow::bridge::CdcTransport cdc(portName);
     std::string serial;
-    bool openSuccess = cdc.open();
+    // Use permissive open for status check (Factory FW might not support auth)
+    bool openSuccess = cdc.open(true);
 
     struct State
     {
       QString serial;
       QString activationState;
       bool isActivated;
+      bool isFactoryMode;
       bool success;
       QString error;
     } result;
@@ -469,6 +524,7 @@ void deskflow::gui::Esp32HidToolsWidget::refreshDeviceState()
       const auto &config = cdc.deviceConfig();
       result.activationState = QString::fromLatin1(config.activationStateString());
       result.isActivated = (config.activationState == deskflow::bridge::ActivationState::Activated);
+      result.isFactoryMode = (config.firmwareMode == deskflow::bridge::FirmwareMode::Factory);
       result.success = true;
     } else {
       result.success = false;
@@ -481,10 +537,15 @@ void deskflow::gui::Esp32HidToolsWidget::refreshDeviceState()
         m_lineSerial->setText(result.serial);
         m_labelActivationState->setText(tr("State: %1").arg(result.activationState));
 
-        // Conditional UI: Hide activation input if already activated
-        m_groupActivationInput->setVisible(!result.isActivated);
-
-        log(tr("Device State Refreshed. Serial: %1, State: %2").arg(result.serial, result.activationState));
+        if (result.isFactoryMode) {
+          m_labelActivationState->setText(tr("State: Factory Mode (Cannot Activate)"));
+          m_groupActivationInput->setVisible(false);
+          log(tr("Device State Refreshed. Serial: %1, Mode: Factory").arg(result.serial));
+        } else {
+          // Conditional UI: Hide activation input if already activated
+          m_groupActivationInput->setVisible(!result.isActivated);
+          log(tr("Device State Refreshed. Serial: %1, State: %2").arg(result.serial, result.activationState));
+        }
       } else {
         m_labelActivationState->setText(tr("State: Error"));
         log(tr("Failed to refresh state: %1").arg(result.error));
@@ -533,7 +594,8 @@ void deskflow::gui::Esp32HidToolsWidget::onActivateClicked()
 
   auto task = [this, portName, key]() {
     deskflow::bridge::CdcTransport cdc(portName);
-    if (cdc.open() && cdc.activateDevice(key.toStdString())) {
+    // Activation REQUIRES secure connection.
+    if (cdc.open(false) && cdc.activateDevice(key.toStdString())) {
       QMetaObject::invokeMethod(this, [this]() {
         log(tr("Activation successful!"));
         QMessageBox::information(this, tr("Success"), tr("Device activated successfully."));

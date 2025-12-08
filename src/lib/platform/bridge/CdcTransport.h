@@ -25,6 +25,13 @@ enum class ActivationState : uint8_t
   Unknown = 0xFF
 };
 
+enum class FirmwareMode : uint8_t
+{
+  Factory = 0,
+  App = 1,
+  Unknown = 0xFF
+};
+
 inline const char *activationStateToString(ActivationState state)
 {
   switch (state) {
@@ -48,6 +55,7 @@ struct FirmwareConfig
   ActivationState activationState = ActivationState::Unknown;
   uint8_t firmwareVersionBcd = 0;
   uint8_t hardwareVersionBcd = 0;
+  FirmwareMode firmwareMode = FirmwareMode::Unknown;
   std::string deviceName;
 
   const char *activationStateString() const
@@ -73,9 +81,10 @@ public:
 
   /**
    * @brief Open the CDC device
+   * @param allowInsecure If true, perform an insecure handshake (no HMAC).
    * @return true if successful
    */
-  bool open();
+  bool open(bool allowInsecure = false);
 
   /**
    * @brief Close the CDC device
@@ -86,6 +95,14 @@ public:
    * @brief Check if device is open
    */
   bool isOpen() const;
+
+  /**
+   * @brief Check if connection is authenticated/secure
+   */
+  bool isSecure() const
+  {
+    return m_isSecure;
+  }
 
   /**
    * @brief Send HID event packet to firmware device
@@ -183,7 +200,7 @@ private:
   static constexpr size_t kAuthKeySize = 32;
   static constexpr size_t kAuthNonceSize = 8;
 
-  bool performHandshake();
+  bool performHandshake(bool allowInsecure);
   bool sendUsbFrame(uint8_t type, uint8_t flags, const uint8_t *payload, uint16_t length);
   bool sendUsbFrame(uint8_t type, uint8_t flags, const std::vector<uint8_t> &payload);
   bool waitForConfigResponse(uint8_t &msgType, uint8_t &status, std::vector<uint8_t> &payload, int timeoutMs);
@@ -191,11 +208,12 @@ private:
   bool writeAll(const uint8_t *data, size_t length);
   bool readFrame(uint8_t &type, uint8_t &flags, std::vector<uint8_t> &payload, int timeoutMs);
   void resetState();
-  bool ensureOpen();
+  bool ensureOpen(bool allowInsecure = false);
 
   QString m_devicePath;
   intptr_t m_fd = -1; // File descriptor (Unix) or HANDLE (Windows)
   bool m_handshakeComplete = false;
+  bool m_isSecure = false;
   std::array<uint8_t, kAuthNonceSize> m_hostNonce{};
   bool m_hasHostNonce = false;
   std::vector<uint8_t> m_rxBuffer;
