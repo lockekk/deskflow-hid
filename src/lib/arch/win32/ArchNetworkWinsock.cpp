@@ -202,10 +202,12 @@ ArchSocket ArchNetworkWinsock::newSocket(AddressFamily family, SocketType type)
   }
   try {
     setBlockingOnSocket(fd, false);
-    BOOL flag = 0;
-    int size = sizeof(flag);
-    if (setsockopt_winsock(fd, IPPROTO_IPV6, IPV6_V6ONLY, &flag, size) == SOCKET_ERROR) {
-      throwError(getsockerror_winsock());
+    if (family == AddressFamily::INet6) {
+      BOOL flag = 0;
+      int size = sizeof(flag);
+      if (setsockopt_winsock(fd, IPPROTO_IPV6, IPV6_V6ONLY, &flag, size) == SOCKET_ERROR) {
+        throwError(getsockerror_winsock());
+      }
     }
   } catch (...) {
     close_winsock(fd);
