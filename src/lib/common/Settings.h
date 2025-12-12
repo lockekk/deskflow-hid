@@ -54,6 +54,7 @@ public:
     inline static const auto UseHooks = QStringLiteral("core/useHooks");
     inline static const auto Language = QStringLiteral("core/language");
     inline static const auto UseWlClipboard = QStringLiteral("core/wlClipboard");
+    inline static const auto RestartOnFailure = QStringLiteral("core/restartOnFailure");
   };
   struct Daemon
   {

@@ -85,8 +85,7 @@ int main(int argc, char **argv)
   QString initialSettingsFile;
   if (isBridgeClient) {
     // Bridge clients use: ~/.config/deskflow/bridge-clients/<client-name>.conf
-    initialSettingsFile = QStringLiteral("%1/bridge-clients/%2.conf")
-                              .arg(Settings::settingsPath(), instanceName);
+    initialSettingsFile = QStringLiteral("%1/bridge-clients/%2.conf").arg(Settings::settingsPath(), instanceName);
   } else if (!configOverride.isEmpty()) {
     initialSettingsFile = configOverride;
   }
@@ -125,7 +124,7 @@ int main(int argc, char **argv)
 
   // Step 3: Create shared memory segment with the constructed key
   // This is to prevent a new instance from running if one is already running
-  QSharedMemory sharedMemory(kCoreBinName);
+  QSharedMemory sharedMemory(sharedMemKey);
 
   // Attempt to attach first and detach in order to clean up stale shm chunks
   // This can happen if the previous instance was killed or crashed
@@ -155,11 +154,7 @@ int main(int argc, char **argv)
       // Create CDC transport
       auto transport = std::make_shared<deskflow::bridge::CdcTransport>(linkDevice);
       if (!transport->open()) {
-        LOG_ERR(
-            "failed to open CDC transport %s: %s",
-            linkDevice.toUtf8().constData(),
-            transport->lastError().c_str()
-        );
+        LOG_ERR("failed to open CDC transport %s: %s", linkDevice.toUtf8().constData(), transport->lastError().c_str());
         return s_exitFailed;
       }
 
@@ -172,12 +167,10 @@ int main(int argc, char **argv)
       deskflow::bridge::FirmwareConfig config = transport->deviceConfig();
 
       LOG_INFO(
-          "Firmware handshake: proto=%u activation_state=%s(%u) fw_bcd=%u hw_bcd=%u",
-          config.protocolVersion,
-          config.activationStateString(),
-          static_cast<unsigned>(config.activationState),
-          static_cast<unsigned>(config.firmwareVersionBcd),
-          static_cast<unsigned>(config.hardwareVersionBcd));
+          "Firmware handshake: proto=%u activation_state=%s(%u) fw_bcd=%u hw_bcd=%u", config.protocolVersion,
+          config.activationStateString(), static_cast<unsigned>(config.activationState),
+          static_cast<unsigned>(config.firmwareVersionBcd), static_cast<unsigned>(config.hardwareVersionBcd)
+      );
 
       // Get screen info from CLI arguments (provided by GUI)
       int screenWidth = parser.screenWidth();
@@ -185,19 +178,14 @@ int main(int argc, char **argv)
 
       if (screenWidth <= 0 || screenHeight <= 0) {
         LOG_ERR(
-            "Invalid screen dimensions from CLI arguments: %dx%d (use --screen-width and --screen-height)",
-            screenWidth,
+            "Invalid screen dimensions from CLI arguments: %dx%d (use --screen-width and --screen-height)", screenWidth,
             screenHeight
         );
         transport->close();
         return s_exitFailed;
       }
 
-      LOG_INFO(
-          "Screen config from CLI: %dx%d",
-          screenWidth,
-          screenHeight
-      );
+      LOG_INFO("Screen config from CLI: %dx%d", screenWidth, screenHeight);
 
       // Create and run bridge client
       int exitCode = s_exitFailed;

@@ -116,22 +116,23 @@ int main(int argc, char *argv[])
     // Ping the running instance to have it show itself
     QLocalSocket socket;
     socket.connectToServer(shmId, QLocalSocket::ReadOnly);
-    if (!socket.waitForConnected()) {
+    const bool connected = socket.waitForConnected();
+    if (!connected) {
       // If we can't connect to the other instance tell the user its running.
       // This should never happen but just incase we should show something
       QMessageBox::information(nullptr, kAppName, QObject::tr("%1 is already running").arg(kAppName));
     }
     socket.disconnectFromServer();
 
-    const QString message = connected
-                                ? QObject::tr(
-                                      "There is another Deskflow server is already running and has been brought to the foreground.\n"
-                                      "This new instance cannot start and will exit now."
-                                  )
-                                : QObject::tr(
-                                      "Deskflow is already running.\n"
-                                      "This new instance cannot start another server, so it will now exit."
-                                  );
+    const QString message =
+        connected ? QObject::tr(
+                        "There is another Deskflow server is already running and has been brought to the foreground.\n"
+                        "This new instance cannot start and will exit now."
+                    )
+                  : QObject::tr(
+                        "Deskflow is already running.\n"
+                        "This new instance cannot start another server, so it will now exit."
+                    );
     QMessageBox::information(nullptr, QObject::tr("Deskflow"), message);
     return s_exitDuplicate;
   }

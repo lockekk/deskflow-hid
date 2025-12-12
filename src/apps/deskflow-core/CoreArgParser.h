@@ -37,6 +37,7 @@ public:
   QString linkDevice() const;
   int screenWidth() const;
   int screenHeight() const;
+  const char *display() const;
 
 private:
   [[noreturn]] void showHelpText() const;
