@@ -587,17 +587,6 @@ bool BridgePlatformScreen::sendEvent(HidEventType type, const std::vector<uint8_
 
 bool BridgePlatformScreen::sendKeyboardEvent(HidEventType type, uint8_t modifiers, uint8_t keycode) const
 {
-  const bool isPress = (type == HidEventType::KeyboardPress);
-  const bool isRelease = (type == HidEventType::KeyboardRelease);
-
-  if (isPress || isRelease) {
-    if (m_transport->sendKeyboardCompact(modifiers, keycode, isPress)) {
-      LOG_ERR("-----------------sendKeyboardEvent 1 : %d", type);
-      return true;
-    }
-    LOG_WARN("BridgeScreen: compact keyboard send failed, falling back to HID payload");
-  }
-  LOG_ERR("-----------------sendKeyboardEvent 2: %d", type);
   if (!sendEvent(type, {modifiers, keycode})) {
     LOG_ERR("BridgeScreen: failed to send keyboard event");
     return false;
@@ -607,27 +596,21 @@ bool BridgePlatformScreen::sendKeyboardEvent(HidEventType type, uint8_t modifier
 
 bool BridgePlatformScreen::sendMouseMoveEvent(int16_t dx, int16_t dy) const
 {
-  if (!m_transport->sendMouseMoveCompact(dx, dy)) {
+  // Little-endian serialization of 16-bit values
+  uint8_t dxLo = static_cast<uint8_t>(dx & 0xFF);
+  uint8_t dxHi = static_cast<uint8_t>((dx >> 8) & 0xFF);
+  uint8_t dyLo = static_cast<uint8_t>(dy & 0xFF);
+  uint8_t dyHi = static_cast<uint8_t>((dy >> 8) & 0xFF);
+
+  if (!sendEvent(HidEventType::MouseMove, {dxLo, dxHi, dyLo, dyHi})) {
     LOG_ERR("BridgeScreen: failed to send mouse move event");
     return false;
   }
-
   return true;
 }
 
 bool BridgePlatformScreen::sendMouseButtonEvent(HidEventType type, uint8_t buttonMask) const
 {
-  const bool isPress = (type == HidEventType::MouseButtonPress);
-  const bool isRelease = (type == HidEventType::MouseButtonRelease);
-
-  if (isPress || isRelease) {
-    if (m_transport->sendMouseButtonCompact(buttonMask, isPress)) {
-
-      return true;
-    }
-    LOG_WARN("BridgeScreen: compact mouse button send failed, falling back to HID payload");
-  }
-
   if (!sendEvent(type, {buttonMask})) {
     LOG_ERR("BridgeScreen: failed to send mouse button event");
     return false;
@@ -637,10 +620,6 @@ bool BridgePlatformScreen::sendMouseButtonEvent(HidEventType type, uint8_t butto
 
 bool BridgePlatformScreen::sendMouseScrollEvent(int8_t delta) const
 {
-  if (m_transport->sendMouseScrollCompact(delta)) {
-
-    return true;
-  }
   if (!sendEvent(HidEventType::MouseScroll, {static_cast<uint8_t>(delta)})) {
     LOG_ERR("BridgeScreen: failed to send scroll event");
     return false;

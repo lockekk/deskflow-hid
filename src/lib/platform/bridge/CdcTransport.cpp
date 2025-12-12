@@ -483,118 +483,13 @@ bool CdcTransport::sendHidEvent(const HidEventPacket &packet)
   return sendUsbFrame(kUsbFrameTypeHid, 0, payload);
 }
 
-bool CdcTransport::sendMouseMoveCompact(int16_t dx, int16_t dy)
-{
-  if (!ensureOpen()) {
-    return false;
-  }
 
-  constexpr int32_t kDeltaMin = -127;
-  constexpr int32_t kDeltaMax = 127;
 
-  const int32_t clampedDx = std::clamp(static_cast<int32_t>(dx), kDeltaMin, kDeltaMax);
-  const int32_t clampedDy = std::clamp(static_cast<int32_t>(dy), kDeltaMin, kDeltaMax);
 
-  const uint8_t packedDx = static_cast<uint8_t>(static_cast<int8_t>(clampedDx));
-  const uint8_t packedDy = static_cast<uint8_t>(static_cast<int8_t>(clampedDy));
 
-  std::array<uint8_t, 8> frame = {
-      static_cast<uint8_t>(kUsbLinkMagic & 0xFF),
-      static_cast<uint8_t>((kUsbLinkMagic >> 8) & 0xFF),
-      kUsbLinkVersion,
-      kUsbFrameTypeHidMouseCompact,
-      packedDx,
-      packedDy,
-      0x00,
-      0x00,
-  };
 
-  const std::string frameHex = hexDump(frame.data(), frame.size(), 32);
-  LOG_DEBUG(
-      "CDC: TX compact mouse frame type=0x%02x dx=%d dy=%d bytes=%s", kUsbFrameTypeHidMouseCompact, clampedDx,
-      clampedDy, frameHex.c_str()
-  );
 
-  return writeAll(frame.data(), frame.size());
-}
 
-bool CdcTransport::sendKeyboardCompact(uint8_t modifiers, uint8_t keycode, bool isPress)
-{
-  if (!ensureOpen()) {
-    return false;
-  }
-
-  std::array<uint8_t, 8> frame = {
-      static_cast<uint8_t>(kUsbLinkMagic & 0xFF),
-      static_cast<uint8_t>((kUsbLinkMagic >> 8) & 0xFF),
-      kUsbLinkVersion,
-      kUsbFrameTypeHidKeyCompact,
-      modifiers,
-      keycode,
-      static_cast<uint8_t>(isPress ? 0x01 : 0x00),
-      0x00,
-  };
-
-  const std::string frameHex = hexDump(frame.data(), frame.size(), 32);
-  LOG_DEBUG(
-      "CDC: TX compact key frame type=0x%02x press=%d mods=0x%02x key=0x%02x bytes=%s", kUsbFrameTypeHidKeyCompact,
-      isPress ? 1 : 0, modifiers, keycode, frameHex.c_str()
-  );
-
-  return writeAll(frame.data(), frame.size());
-}
-
-bool CdcTransport::sendMouseButtonCompact(uint8_t buttons, bool isPress)
-{
-  if (!ensureOpen()) {
-    return false;
-  }
-
-  std::array<uint8_t, 8> frame = {
-      static_cast<uint8_t>(kUsbLinkMagic & 0xFF),
-      static_cast<uint8_t>((kUsbLinkMagic >> 8) & 0xFF),
-      kUsbLinkVersion,
-      kUsbFrameTypeHidMouseButtonCompact,
-      buttons,
-      0x00,
-      static_cast<uint8_t>(isPress ? 0x01 : 0x00),
-      0x00,
-  };
-
-  const std::string frameHex = hexDump(frame.data(), frame.size(), 32);
-  LOG_DEBUG(
-      "CDC: TX compact mouse button frame type=0x%02x press=%d buttons=0x%02x bytes=%s",
-      kUsbFrameTypeHidMouseButtonCompact, isPress ? 1 : 0, buttons, frameHex.c_str()
-  );
-
-  return writeAll(frame.data(), frame.size());
-}
-
-bool CdcTransport::sendMouseScrollCompact(int8_t delta)
-{
-  if (!ensureOpen()) {
-    return false;
-  }
-
-  std::array<uint8_t, 8> frame = {
-      static_cast<uint8_t>(kUsbLinkMagic & 0xFF),
-      static_cast<uint8_t>((kUsbLinkMagic >> 8) & 0xFF),
-      kUsbLinkVersion,
-      kUsbFrameTypeHidScrollCompact,
-      static_cast<uint8_t>(delta),
-      0x00,
-      0x00,
-      0x00,
-  };
-
-  const std::string frameHex = hexDump(frame.data(), frame.size(), 32);
-  LOG_DEBUG(
-      "CDC: TX compact scroll frame type=0x%02x delta=%d bytes=%s", kUsbFrameTypeHidScrollCompact, delta,
-      frameHex.c_str()
-  );
-
-  return writeAll(frame.data(), frame.size());
-}
 
 bool CdcTransport::sendUsbFrame(uint8_t type, uint8_t flags, const std::vector<uint8_t> &payload)
 {

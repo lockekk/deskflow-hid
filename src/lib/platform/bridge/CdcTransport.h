@@ -110,23 +110,7 @@ public:
    */
   bool sendHidEvent(const HidEventPacket &packet);
 
-  /**
-   * @brief Send a compact mouse movement frame
-   *
-   * Encodes the deltas directly in the USB link header so the on-wire
-   * frame is exactly eight bytes (header only, no payload).
-   */
-  bool sendMouseMoveCompact(int16_t dx, int16_t dy);
-  bool sendMouseButtonCompact(uint8_t buttons, bool isPress);
-  bool sendMouseScrollCompact(int8_t delta);
 
-  /**
-   * @brief Send a compact keyboard event frame
-   *
-   * Encodes the modifier/keycode pair and press/release state directly in the
-   * header so the on-wire frame is eight bytes with no payload.
-   */
-  bool sendKeyboardCompact(uint8_t modifiers, uint8_t keycode, bool isPress);
 
   bool fetchDeviceName(std::string &outName);
   bool setDeviceName(const std::string &name);
