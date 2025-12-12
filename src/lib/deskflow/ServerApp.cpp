@@ -405,7 +405,7 @@ deskflow::Screen *ServerApp::createScreen()
 {
 #if WINAPI_MSWINDOWS
   return new deskflow::Screen(
-      new MSWindowsScreen(true, !Settings::value(Settings::Core::UseHooks).toBool(), getEvents()), getEvents()
+      new MSWindowsScreen(true, Settings::value(Settings::Core::UseHooks).toBool(), getEvents()), getEvents()
   );
 #endif
 
