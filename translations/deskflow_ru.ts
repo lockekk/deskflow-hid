@@ -1561,6 +1561,35 @@ This action cannot be undone.</source>
         <source>Unpaired successfully.</source>
         <translation type="unfinished"></translation>
     </message>
+    <message>
+        <source>Mouse Only Mode</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Enable if keyboard compatibility issues occur</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Device is in use. Stop Bridge Client to change this setting.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Change HID Mode</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Changing the HID mode will cause the device to disconnect and re-enumerate.
+Are you sure you want to proceed?</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>HID Mode updated. Device will now disconnect.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Failed to set HID mode: %1</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>deskflow::gui::BridgeClientWidget</name>

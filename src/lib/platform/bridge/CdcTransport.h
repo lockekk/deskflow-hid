@@ -56,6 +56,7 @@ struct FirmwareConfig
   uint8_t firmwareVersionBcd = 0;
   uint8_t hardwareVersionBcd = 0;
   FirmwareMode firmwareMode = FirmwareMode::Unknown;
+  uint8_t hidMode = 0; // 0=Combo, 1=Mouse
   std::string deviceName;
 
   const char *activationStateString() const
@@ -138,6 +139,13 @@ public:
    * @return true if successful
    */
   bool unpairAll();
+
+  /**
+   * @brief Set HID mode (0: Combo, 1: Mouse Only)
+   * @param mode HID mode to set
+   * @return true if successful
+   */
+  bool setHidMode(uint8_t mode);
 
   /**
    * @brief Get last error message

@@ -115,6 +115,32 @@ BridgeClientConfigDialog::BridgeClientConfigDialog(
   m_checkBluetoothKeepAlive->setToolTip(tr("Send keep-alive commands to maintain Bluetooth connection"));
   advancedLayout->addRow(QString(), m_checkBluetoothKeepAlive);
 
+  // Mouse Only Mode (HID Mode)
+  m_checkMouseOnly = new QCheckBox(tr("Mouse Only Mode"), this);
+  m_checkMouseOnly->setToolTip(tr("Enable if keyboard compatibility issues occur"));
+  advancedLayout->addRow(QString(), m_checkMouseOnly);
+
+  if (!m_devicePath.isEmpty()) {
+    deskflow::bridge::CdcTransport transport(m_devicePath);
+    // Don't use allowInsecure=true unless necessary, but here we just want config
+    if (transport.open()) {
+      if (transport.hasDeviceConfig()) {
+        // HID Mode: 0=Combo, 1=Mouse
+        const bool isMouseOnly = (transport.deviceConfig().hidMode == 1);
+        m_checkMouseOnly->setChecked(isMouseOnly);
+        m_initialMouseOnlyState = isMouseOnly;
+      }
+      transport.close();
+    } else {
+      // Device busy/locked
+      m_checkMouseOnly->setEnabled(false);
+      m_checkMouseOnly->setToolTip(tr("Device is in use. Stop Bridge Client to change this setting."));
+    }
+  } else {
+    m_checkMouseOnly->setEnabled(false);
+  }
+  connect(m_checkMouseOnly, &QCheckBox::clicked, this, &BridgeClientConfigDialog::onMouseOnlyToggled);
+
   // Unpair Bluetooth Host Button
   auto *btnUnpairAll = new QPushButton(tr("Unpair Bluetooth Host"), this);
   btnUnpairAll->setToolTip(tr("Unpair bonded Bluetooth host"));
@@ -365,5 +391,54 @@ void BridgeClientConfigDialog::onUnpairAllClicked()
         this, tr("Failed"),
         tr("Failed to send unpair command.\nError: %1").arg(QString::fromStdString(transport.lastError()))
     );
+  }
+}
+
+void BridgeClientConfigDialog::onMouseOnlyToggled(bool checked)
+{
+  if (m_devicePath.isEmpty()) {
+    return;
+  }
+
+  // Warn user about disconnect (not reboot, per user instruction)
+  const auto reply = QMessageBox::warning(
+      this, tr("Change HID Mode"),
+      tr("Changing the HID mode will cause the device to disconnect and reconnect.\n"
+         "Are you sure you want to proceed?"),
+      QMessageBox::Yes | QMessageBox::No
+  );
+
+  if (reply != QMessageBox::Yes) {
+    // Revert without triggering signal again
+    QSignalBlocker blocker(m_checkMouseOnly);
+    m_checkMouseOnly->setChecked(!checked);
+    return;
+  }
+
+  deskflow::bridge::CdcTransport transport(m_devicePath);
+  if (!transport.open()) {
+    QMessageBox::critical(
+        this, tr("Error"),
+        tr("Failed to open device.\nPlease make sure the bridge client is NOT running for this device.")
+    );
+    QSignalBlocker blocker(m_checkMouseOnly);
+    m_checkMouseOnly->setChecked(!checked);
+    return;
+  }
+
+  // 1 = Mouse Only, 0 = Combo
+  uint8_t mode = checked ? 1 : 0;
+  if (transport.setHidMode(mode)) {
+    QMessageBox::information(this, tr("Success"), tr("HID Mode updated. Device will now disconnect."));
+    // Since device disconnects, we might want to close dialog or disable controls,
+    // but typically the main window will detect disconnect and close/reset things.
+    // For this dialog, we just accept the state change.
+    m_initialMouseOnlyState = checked;
+  } else {
+    QMessageBox::critical(
+        this, tr("Error"), tr("Failed to set HID mode: %1").arg(QString::fromStdString(transport.lastError()))
+    );
+    QSignalBlocker blocker(m_checkMouseOnly);
+    m_checkMouseOnly->setChecked(!checked);
   }
 }

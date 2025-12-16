@@ -52,6 +52,7 @@ constexpr uint8_t kUsbConfigSetDeviceName = 0x03;
 constexpr uint8_t kUsbConfigGetSerialNumber = 0x04;
 constexpr uint8_t kUsbConfigActivateDevice = 0x07;
 constexpr uint8_t kUsbConfigGotoFactory = 0x08;
+constexpr uint8_t kUsbConfigSetHidMode = 0x0B;
 constexpr uint8_t kUsbControlUnpairAll = 0x30;
 
 constexpr size_t kAckCoreLen = 16;
@@ -60,6 +61,7 @@ constexpr size_t kAckActivationStateIndex = 2;
 constexpr size_t kAckFirmwareVersionIndex = 3;
 constexpr size_t kAckHardwareVersionIndex = 4;
 constexpr size_t kAckFirmwareModeIndex = 5;
+constexpr size_t kAckHidModeIndex = 7;
 constexpr size_t kAckMinimumPayloadSize = 1 + kAckCoreLen;
 
 constexpr int kHandshakeTimeoutMs = 2000;
@@ -389,19 +391,21 @@ bool CdcTransport::performHandshake(bool allowInsecure)
         const uint8_t firmwareBcd = framePayload[kAckFirmwareVersionIndex];
         const uint8_t hardwareBcd = framePayload[kAckHardwareVersionIndex];
         const FirmwareMode firmwareMode = static_cast<FirmwareMode>(framePayload[kAckFirmwareModeIndex]);
+        const uint8_t hidMode = framePayload[kAckHidModeIndex];
 
         m_deviceConfig.protocolVersion = protocolVersion;
         m_deviceConfig.activationState = activationState;
         m_deviceConfig.firmwareVersionBcd = firmwareBcd;
         m_deviceConfig.hardwareVersionBcd = hardwareBcd;
         m_deviceConfig.firmwareMode = firmwareMode;
+        m_deviceConfig.hidMode = hidMode;
         m_hasDeviceConfig = true;
 
         LOG_INFO(
-            "CDC: handshake completed version=%u activation_state=%s(%u) fw_bcd=%u hw_bcd=%u fw_mode=%u",
+            "CDC: handshake completed version=%u activation_state=%s(%u) fw_bcd=%u hw_bcd=%u fw_mode=%u hid_mode=%u",
             protocolVersion, activationStateToString(activationState),
             static_cast<unsigned>(framePayload[kAckActivationStateIndex]), static_cast<unsigned>(firmwareBcd),
-            static_cast<unsigned>(hardwareBcd), static_cast<unsigned>(firmwareMode)
+            static_cast<unsigned>(hardwareBcd), static_cast<unsigned>(firmwareMode), static_cast<unsigned>(hidMode)
         );
 
         std::string fetchedName;
@@ -809,6 +813,46 @@ bool CdcTransport::unpairAll()
   }
 
   LOG_INFO("CDC: unpairAll success");
+  return true;
+}
+
+bool CdcTransport::setHidMode(uint8_t mode)
+{
+  if (!ensureOpen()) {
+    return false;
+  }
+
+  LOG_INFO("CDC: Sending setHidMode command (0x%02X) mode=%u", kUsbConfigSetHidMode, mode);
+
+  std::vector<uint8_t> payload(2);
+  payload[0] = kUsbConfigSetHidMode;
+  payload[1] = mode;
+
+  if (!sendUsbFrame(kUsbFrameTypeControl, 0, payload)) {
+    LOG_ERR("CDC: Failed to send setHidMode command");
+    return false;
+  }
+
+  uint8_t msgType = 0;
+  uint8_t status = 0;
+  std::vector<uint8_t> data;
+  if (!waitForConfigResponse(msgType, status, data, kConfigCommandTimeoutMs)) {
+    LOG_ERR("CDC: Timeout waiting for setHidMode response");
+    return false;
+  }
+
+  if (msgType != kUsbConfigSetHidMode) {
+    m_lastError = "Unexpected config response";
+    LOG_ERR("CDC: Unexpected response type 0x%02X for setHidMode", msgType);
+    return false;
+  }
+  if (status != 0) {
+    m_lastError = "Firmware error code " + std::to_string(status);
+    LOG_ERR("CDC: setHidMode firmware returned error=%u", status);
+    return false;
+  }
+
+  LOG_INFO("CDC: setHidMode success");
   return true;
 }
 

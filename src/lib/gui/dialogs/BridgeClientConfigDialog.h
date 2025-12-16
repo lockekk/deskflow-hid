@@ -37,6 +37,7 @@ Q_SIGNALS:
 private Q_SLOTS:
   void onAccepted();
   void onUnpairAllClicked();
+  void onMouseOnlyToggled(bool checked);
 
 private:
   void loadConfig();
@@ -57,7 +58,9 @@ private:
   QButtonGroup *m_orientationGroup = nullptr;
   QRadioButton *m_radioLandscape = nullptr;
   QRadioButton *m_radioPortrait = nullptr;
+  QCheckBox *m_checkMouseOnly = nullptr;
   QString m_originalDeviceName;
+  bool m_initialMouseOnlyState = false;
 };
 
 } // namespace deskflow::gui
