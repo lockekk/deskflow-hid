@@ -223,6 +223,11 @@ void DeskflowHidExtension::updateBridgeClientDeviceStates()
       widget->setDeviceName(
           cfg.value(Settings::Bridge::DeviceName, Settings::defaultValue(Settings::Bridge::DeviceName)).toString()
       );
+      widget->setActiveHostname(cfg.value(
+                                       Settings::Bridge::ActiveProfileHostname,
+                                       Settings::defaultValue(Settings::Bridge::ActiveProfileHostname)
+      )
+                                    .toString());
     }
 
     if (found) {
@@ -262,7 +267,23 @@ void DeskflowHidExtension::usbDeviceConnected(const UsbDeviceInfo &device)
     qInfo() << "New device detected, creating default config for serial:" << serialNumber;
 
     QString handshakeDeviceName;
-    fetchFirmwareDeviceName(device.devicePath, handshakeDeviceName);
+    bool isBleConnected = false;
+    // fetchFirmwareDeviceName combined with handshake
+    {
+      deskflow::bridge::CdcTransport transport(device.devicePath);
+      if (transport.open()) {
+        if (transport.hasDeviceConfig()) {
+          handshakeDeviceName = QString::fromStdString(transport.deviceConfig().deviceName);
+          isBleConnected = transport.deviceConfig().isBleConnected;
+        } else {
+          std::string name;
+          if (transport.fetchDeviceName(name)) {
+            handshakeDeviceName = QString::fromStdString(name);
+          }
+        }
+        transport.close();
+      }
+    }
 
     // Create new config
     QString configPath = BridgeClientConfigManager::createDefaultConfig(serialNumber, device.devicePath);
@@ -283,6 +304,7 @@ void DeskflowHidExtension::usbDeviceConnected(const UsbDeviceInfo &device)
       screenName = tr("Unknown Device");
 
     auto *widget = new BridgeClientWidget(screenName, device.devicePath, configPath, m_mainWindow);
+    widget->setBleConnected(isBleConnected);
 
     connect(widget, &BridgeClientWidget::connectToggled, this, &DeskflowHidExtension::bridgeClientConnectToggled);
     connect(widget, &BridgeClientWidget::configureClicked, this, &DeskflowHidExtension::bridgeClientConfigureClicked);
@@ -318,8 +340,39 @@ void DeskflowHidExtension::usbDeviceConnected(const UsbDeviceInfo &device)
       // Sync names
       {
         QSettings existingConfig(config, QSettings::IniFormat);
-        if (handshakeDeviceName.isEmpty())
-          fetchFirmwareDeviceName(device.devicePath, handshakeDeviceName);
+
+        bool isBleConnected = false;
+        if (handshakeDeviceName.isEmpty()) {
+          // If we haven't fetched it yet (e.g. valid match directly), try to fetch
+          // But wait, if we are here, we might not have opened transport yet for this device if we found match by
+          // serial only? usbDeviceConnected logic flow:
+          // 1. read serial (UsbDeviceHelper, no handshake?) - Wait, UsbDeviceHelper::readSerialNumber likely does
+          // handshake or string descriptor read.
+          // 2. If matching config found...
+          // We only called fetchFirmwareDeviceName if NO matching config was found initially?
+          // No, lines 264 logic is for new config.
+          // This block is for "Found existing config".
+          // handshakeDeviceName might be empty if we didn't go through the "new device" block.
+
+          // Let's check if we can fetch it now.
+          deskflow::bridge::CdcTransport transport(device.devicePath);
+          if (transport.open()) {
+            if (transport.hasDeviceConfig()) {
+              handshakeDeviceName = QString::fromStdString(transport.deviceConfig().deviceName);
+              isBleConnected = transport.deviceConfig().isBleConnected;
+            } else {
+              // Try to fetch name explicitly if handshake didn't give it (old fw?)
+              // But handshake usually gives config.
+              std::string name;
+              if (transport.fetchDeviceName(name)) {
+                handshakeDeviceName = QString::fromStdString(name);
+              }
+            }
+            transport.close();
+          }
+        }
+
+        widget->setBleConnected(isBleConnected);
 
         QString deviceNameValue = handshakeDeviceName.trimmed();
         if (deviceNameValue.isEmpty()) {
@@ -331,6 +384,9 @@ void DeskflowHidExtension::usbDeviceConnected(const UsbDeviceInfo &device)
           existingConfig.sync();
         }
         widget->setDeviceName(deviceNameValue);
+
+        QString hostnameValue = existingConfig.value(Settings::Bridge::ActiveProfileHostname).toString();
+        widget->setActiveHostname(hostnameValue);
 
         QString activationValue = existingConfig.value(Settings::Bridge::ActivationState).toString();
         widget->setActivationState(activationValue);
@@ -415,15 +471,48 @@ void DeskflowHidExtension::bridgeClientConnectToggled(
       return;
     }
 
-    // Read screen dimensions and orientation from config
+    // Read screen dimensions from active profile on device
     using namespace deskflow;
     QSettings config(configPath, QSettings::IniFormat);
-    const QVariant defaultWidth = Settings::defaultValue(Settings::Bridge::ScreenWidth);
-    const QVariant defaultHeight = Settings::defaultValue(Settings::Bridge::ScreenHeight);
-    int screenWidth = config.value(Settings::Bridge::ScreenWidth, defaultWidth).toInt();
-    int screenHeight = config.value(Settings::Bridge::ScreenHeight, defaultHeight).toInt();
-    const QVariant defaultOrientation = Settings::defaultValue(Settings::Bridge::ScreenOrientation);
-    QString screenOrientation = config.value(Settings::Bridge::ScreenOrientation, defaultOrientation).toString();
+
+    int screenWidth = 1920;
+    int screenHeight = 1080;
+    QString screenOrientation = QStringLiteral("landscape");
+
+    const QVariant defaultScrollSpeed = Settings::defaultValue(Settings::Client::ScrollSpeed);
+    int scrollSpeed = config.value(Settings::Client::ScrollSpeed, defaultScrollSpeed).toInt();
+    const QVariant defaultInvertScroll = Settings::defaultValue(Settings::Client::InvertScrollDirection);
+    bool invertScroll = config.value(Settings::Client::InvertScrollDirection, defaultInvertScroll).toBool();
+
+    if (!devicePath.isEmpty()) {
+      deskflow::bridge::CdcTransport transport(devicePath);
+      if (transport.open()) {
+        if (transport.hasDeviceConfig()) {
+          uint8_t activeProfile = transport.deviceConfig().activeProfile;
+          deskflow::bridge::DeviceProfile profile;
+          if (transport.getProfile(activeProfile, profile)) {
+            screenWidth = profile.screenWidth;
+            screenHeight = profile.screenHeight;
+            screenOrientation = (profile.rotation == 0) ? QStringLiteral("portrait") : QStringLiteral("landscape");
+
+            // Use profile values for speed and invert, handling default for speed=0
+            scrollSpeed = (profile.speed == 0) ? 120 : profile.speed;
+            invertScroll = (profile.invert != 0);
+
+            qInfo() << "Using device profile resolution:" << screenWidth << "x" << screenHeight
+                    << "orientation:" << screenOrientation << "speed:" << scrollSpeed << "invert:" << invertScroll;
+          }
+
+          if (targetWidget) {
+            targetWidget->setBleConnected(transport.deviceConfig().isBleConnected);
+          }
+        }
+        transport.close();
+      } else {
+        qWarning() << "Failed to fetch profile resolution from device, using defaults";
+      }
+    }
+
     const QString orientationLower = screenOrientation.trimmed().toLower();
     if (orientationLower == QStringLiteral("portrait")) {
       if (screenWidth > screenHeight) {
@@ -466,11 +555,6 @@ void DeskflowHidExtension::bridgeClientConnectToggled(
 
     // Get TLS/secure setting from server configuration
     bool tlsEnabled = Settings::value(Settings::Security::TlsEnabled).toBool();
-
-    const QVariant defaultScrollSpeed = Settings::defaultValue(Settings::Client::ScrollSpeed);
-    int scrollSpeed = config.value(Settings::Client::ScrollSpeed, defaultScrollSpeed).toInt();
-    const QVariant defaultInvertScroll = Settings::defaultValue(Settings::Client::InvertScrollDirection);
-    bool invertScroll = config.value(Settings::Client::InvertScrollDirection, defaultInvertScroll).toBool();
 
     // Build the command
     QStringList command;
@@ -742,6 +826,8 @@ void DeskflowHidExtension::bridgeClientProcessReadyRead(const QString &devicePat
         QSettings cfg(it.key(), QSettings::IniFormat);
         cfg.setValue(Settings::Bridge::DeviceName, deviceName);
         cfg.sync();
+        // Also ensure hostname is up to date (though unrelated to this regex match, good to sync)
+        it.value()->setActiveHostname(cfg.value(Settings::Bridge::ActiveProfileHostname).toString());
         break;
       }
     }

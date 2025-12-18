@@ -1,12 +1,16 @@
-#pragma once
-
 #include <QButtonGroup>
 #include <QCheckBox>
 #include <QDialog>
+#include <QGroupBox> // Added
 #include <QLineEdit>
+#include <QMap> // Added
 #include <QPushButton>
 #include <QRadioButton>
 #include <QSpinBox>
+#include <QTabBar> // Added
+#include <QVBoxLayout>
+
+#include "platform/bridge/CdcTransport.h" // Added for DeviceProfile
 
 namespace deskflow::gui {
 
@@ -25,6 +29,7 @@ public:
   {
     return m_configPath;
   }
+
   int scrollSpeed() const;
   bool invertScroll() const;
   QString deviceName() const;
@@ -36,13 +41,18 @@ Q_SIGNALS:
 
 private Q_SLOTS:
   void onAccepted();
-  void onUnpairAllClicked();
-  void onMouseOnlyToggled(bool checked);
+  void onProfileToggled(int id, bool checked);
+  void onProfileSaveClicked();
+  void onProfileActivateClicked();
+  void onProfileResetClicked();
 
 private:
   void loadConfig();
   void saveConfig();
   QString renameConfigFile(const QString &newScreenName);
+  void setupProfileUI(QVBoxLayout *mainLayout);
+  void loadProfilesFromDevice();
+  void updateProfileDetailUI(int index);
 
   QString m_configPath;
   QString m_devicePath;
@@ -50,17 +60,38 @@ private:
 
   QLineEdit *m_editScreenName;
   QLineEdit *m_editDeviceName;
-  QSpinBox *m_spinWidth;
-  QSpinBox *m_spinHeight;
   QSpinBox *m_spinScrollSpeed;
   QCheckBox *m_checkInvertScroll;
   QCheckBox *m_checkBluetoothKeepAlive;
-  QButtonGroup *m_orientationGroup = nullptr;
-  QRadioButton *m_radioLandscape = nullptr;
-  QRadioButton *m_radioPortrait = nullptr;
-  QCheckBox *m_checkMouseOnly = nullptr;
+
+  // Profile UI
+  QGroupBox *m_profileGroup = nullptr;
+  QTabBar *m_profileTabBar = nullptr; // Replaced QButtonGroup
+  QLineEdit *m_editProfileName = nullptr;
+  QSpinBox *m_spinProfileWidth = nullptr;
+  QSpinBox *m_spinProfileHeight = nullptr;
+  QButtonGroup *m_profileOrientationGroup = nullptr;
+  QRadioButton *m_radioProfileLandscape = nullptr;
+  QRadioButton *m_radioProfilePortrait = nullptr;
+  QButtonGroup *m_profileHidModeGroup = nullptr;
+  QRadioButton *m_radioProfileCombo = nullptr;
+  QRadioButton *m_radioProfileMouseOnly = nullptr;
+
+  QPushButton *m_btnProfileSave = nullptr;
+  QPushButton *m_btnProfileActivate = nullptr;
+  QPushButton *m_btnProfileReset = nullptr;
+
   QString m_originalDeviceName;
-  bool m_initialMouseOnlyState = false;
+
+  // Cache
+  QMap<int, deskflow::bridge::DeviceProfile> m_profileCache;
+  int m_selectedProfileIndex = -1;     // Currently viewed/edited in UI
+  int m_deviceActiveProfileIndex = -1; // Truly active on device
+  int m_totalProfiles = 0;
+
+  void onProfileTabChanged(int index);
+  void saveUiToCache(int index);
+  void updateTabLabels();
 };
 
 } // namespace deskflow::gui

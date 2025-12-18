@@ -52,8 +52,12 @@ constexpr uint8_t kUsbConfigSetDeviceName = 0x03;
 constexpr uint8_t kUsbConfigGetSerialNumber = 0x04;
 constexpr uint8_t kUsbConfigActivateDevice = 0x07;
 constexpr uint8_t kUsbConfigGotoFactory = 0x08;
-constexpr uint8_t kUsbConfigSetHidMode = 0x0B;
 constexpr uint8_t kUsbControlUnpairAll = 0x30;
+constexpr uint8_t kUsbControlSwitchProfile = 0x31;
+constexpr uint8_t kUsbControlGetProfile = 0x32;
+constexpr uint8_t kUsbControlSetProfile = 0x33;
+constexpr uint8_t kUsbControlEraseProfile = 0x34;
+constexpr uint8_t kUsbControlEraseAllProfiles = 0x35;
 
 constexpr size_t kAckCoreLen = 16;
 constexpr size_t kAckProtocolVersionIndex = 1;
@@ -61,7 +65,8 @@ constexpr size_t kAckActivationStateIndex = 2;
 constexpr size_t kAckFirmwareVersionIndex = 3;
 constexpr size_t kAckHardwareVersionIndex = 4;
 constexpr size_t kAckFirmwareModeIndex = 5;
-constexpr size_t kAckHidModeIndex = 7;
+constexpr size_t kAckHidModeIndex = 7; // Now Profile Info
+constexpr size_t kAckBleConnectionIndex = 8;
 constexpr size_t kAckMinimumPayloadSize = 1 + kAckCoreLen;
 
 constexpr int kHandshakeTimeoutMs = 2000;
@@ -398,14 +403,23 @@ bool CdcTransport::performHandshake(bool allowInsecure)
         m_deviceConfig.firmwareVersionBcd = firmwareBcd;
         m_deviceConfig.hardwareVersionBcd = hardwareBcd;
         m_deviceConfig.firmwareMode = firmwareMode;
-        m_deviceConfig.hidMode = hidMode;
+
+        // kAckHidModeIndex now contains Profile Info (Total << 4 | Active)
+        uint8_t profileInfo = framePayload[kAckHidModeIndex];
+        m_deviceConfig.activeProfile = profileInfo & 0x0F;
+        m_deviceConfig.totalProfiles = (profileInfo >> 4) & 0x0F;
+
+        m_deviceConfig.isBleConnected = (framePayload[kAckBleConnectionIndex] != 0);
+
         m_hasDeviceConfig = true;
 
         LOG_INFO(
-            "CDC: handshake completed version=%u activation_state=%s(%u) fw_bcd=%u hw_bcd=%u fw_mode=%u hid_mode=%u",
+            "CDC: handshake completed version=%u activation_state=%s(%u) fw_bcd=%u hw_bcd=%u fw_mode=%u "
+            "active_profile=%u total_profiles=%u ble=%s",
             protocolVersion, activationStateToString(activationState),
             static_cast<unsigned>(framePayload[kAckActivationStateIndex]), static_cast<unsigned>(firmwareBcd),
-            static_cast<unsigned>(hardwareBcd), static_cast<unsigned>(firmwareMode), static_cast<unsigned>(hidMode)
+            static_cast<unsigned>(hardwareBcd), static_cast<unsigned>(firmwareMode), m_deviceConfig.activeProfile,
+            m_deviceConfig.totalProfiles, m_deviceConfig.isBleConnected ? "YES" : "NO"
         );
 
         std::string fetchedName;
@@ -418,12 +432,15 @@ bool CdcTransport::performHandshake(bool allowInsecure)
 
         // Also fetch serial number during handshake
         std::string serialNumber;
+        LOG_INFO("DebugTrace: performHandshake calling fetchSerialNumber");
         if (fetchSerialNumber(serialNumber)) {
           LOG_INFO("CDC: firmware serial number='%s'", serialNumber.c_str());
+          LOG_INFO("DebugTrace: performHandshake fetchSerialNumber done");
         } else {
           LOG_WARN("CDC: failed to read serial number: %s", m_lastError.c_str());
           m_lastError.clear();
         }
+        LOG_INFO("DebugTrace: performHandshake finished success");
       } else {
         LOG_WARN("CDC: handshake ACK missing metadata (payload=%zu)", framePayload.size());
         LOG_INFO("CDC: handshake completed");
@@ -670,6 +687,7 @@ bool CdcTransport::fetchSerialNumber(std::string &outSerial)
     return false;
   }
 
+  LOG_INFO("DebugTrace: fetchSerialNumber entry");
   std::vector<uint8_t> payload(1);
   payload[0] = kUsbConfigGetSerialNumber;
   if (!sendUsbFrame(kUsbFrameTypeControl, 0, payload)) {
@@ -680,8 +698,10 @@ bool CdcTransport::fetchSerialNumber(std::string &outSerial)
   uint8_t status = 0;
   std::vector<uint8_t> data;
   if (!waitForConfigResponse(msgType, status, data, kConfigCommandTimeoutMs)) {
+    LOG_ERR("DebugTrace: fetchSerialNumber timeout");
     return false;
   }
+  LOG_INFO("DebugTrace: fetchSerialNumber got response type=0x%02X status=%u", msgType, status);
 
   if (msgType != kUsbConfigGetSerialNumber) {
     m_lastError = "Unexpected config response";
@@ -694,7 +714,9 @@ bool CdcTransport::fetchSerialNumber(std::string &outSerial)
   }
 
   // Firmware returns any readable string (null-terminated)
+  LOG_INFO("DebugTrace: fetchSerialNumber assigning data size=%zu", data.size());
   outSerial.assign(reinterpret_cast<const char *>(data.data()), data.size());
+  LOG_INFO("DebugTrace: fetchSerialNumber success");
   return true;
 }
 
@@ -816,43 +838,157 @@ bool CdcTransport::unpairAll()
   return true;
 }
 
-bool CdcTransport::setHidMode(uint8_t mode)
+bool CdcTransport::getProfile(uint8_t index, DeviceProfile &outProfile)
 {
   if (!ensureOpen()) {
     return false;
   }
 
-  LOG_INFO("CDC: Sending setHidMode command (0x%02X) mode=%u", kUsbConfigSetHidMode, mode);
-
   std::vector<uint8_t> payload(2);
-  payload[0] = kUsbConfigSetHidMode;
-  payload[1] = mode;
+  payload[0] = kUsbControlGetProfile;
+  payload[1] = index;
 
   if (!sendUsbFrame(kUsbFrameTypeControl, 0, payload)) {
-    LOG_ERR("CDC: Failed to send setHidMode command");
+    LOG_ERR("CDC: Failed to send getProfile command");
     return false;
   }
 
-  uint8_t msgType = 0;
-  uint8_t status = 0;
-  std::vector<uint8_t> data;
-  if (!waitForConfigResponse(msgType, status, data, kConfigCommandTimeoutMs)) {
-    LOG_ERR("CDC: Timeout waiting for setHidMode response");
+  std::vector<uint8_t> response;
+  if (!waitForControlMessage(kUsbControlAck, response, kConfigCommandTimeoutMs)) {
+    LOG_ERR("CDC: Timeout waiting for getProfile response");
     return false;
   }
 
-  if (msgType != kUsbConfigSetHidMode) {
-    m_lastError = "Unexpected config response";
-    LOG_ERR("CDC: Unexpected response type 0x%02X for setHidMode", msgType);
+  // Response: [Status(1), ProfileData(39)]
+  if (response.size() < 1 + sizeof(DeviceProfile)) {
+    m_lastError = "Invalid getProfile response size";
     return false;
   }
+
+  uint8_t status = response[0];
   if (status != 0) {
     m_lastError = "Firmware error code " + std::to_string(status);
-    LOG_ERR("CDC: setHidMode firmware returned error=%u", status);
     return false;
   }
 
-  LOG_INFO("CDC: setHidMode success");
+  std::memcpy(&outProfile, response.data() + 1, sizeof(DeviceProfile));
+  return true;
+}
+
+bool CdcTransport::setProfile(uint8_t index, const DeviceProfile &profile)
+{
+  if (!ensureOpen()) {
+    return false;
+  }
+
+  // Payload: [Cmd(1), Index(1), ProfileData(39)]
+  std::vector<uint8_t> payload(2 + sizeof(DeviceProfile));
+  payload[0] = kUsbControlSetProfile;
+  payload[1] = index;
+  std::memcpy(payload.data() + 2, &profile, sizeof(DeviceProfile));
+
+  if (!sendUsbFrame(kUsbFrameTypeControl, 0, payload)) {
+    LOG_ERR("CDC: Failed to send setProfile command");
+    return false;
+  }
+
+  std::vector<uint8_t> response;
+  if (!waitForControlMessage(kUsbControlAck, response, kConfigCommandTimeoutMs)) {
+    LOG_ERR("CDC: Timeout waiting for setProfile response");
+    return false;
+  }
+
+  if (response.empty() || response[0] != 0) {
+    m_lastError = response.empty() ? "Empty response" : "Firmware error code " + std::to_string(response[0]);
+    return false;
+  }
+
+  return true;
+}
+
+bool CdcTransport::switchProfile(uint8_t index)
+{
+  if (!ensureOpen()) {
+    return false;
+  }
+
+  std::vector<uint8_t> payload(2);
+  payload[0] = kUsbControlSwitchProfile;
+  payload[1] = index;
+
+  if (!sendUsbFrame(kUsbFrameTypeControl, 0, payload)) {
+    LOG_ERR("CDC: Failed to send switchProfile command");
+    return false;
+  }
+
+  std::vector<uint8_t> response;
+  if (!waitForControlMessage(kUsbControlAck, response, kConfigCommandTimeoutMs)) {
+    LOG_ERR("CDC: Timeout waiting for switchProfile response");
+    return false;
+  }
+
+  if (response.empty() || response[0] != 0) {
+    m_lastError = response.empty() ? "Empty response" : "Firmware error code " + std::to_string(response[0]);
+    return false;
+  }
+
+  return true;
+}
+
+bool CdcTransport::eraseProfile(uint8_t index)
+{
+  if (!ensureOpen()) {
+    return false;
+  }
+
+  std::vector<uint8_t> payload(2);
+  payload[0] = kUsbControlEraseProfile;
+  payload[1] = index;
+
+  if (!sendUsbFrame(kUsbFrameTypeControl, 0, payload)) {
+    LOG_ERR("CDC: Failed to send eraseProfile command");
+    return false;
+  }
+
+  std::vector<uint8_t> response;
+  if (!waitForControlMessage(kUsbControlAck, response, kConfigCommandTimeoutMs)) {
+    LOG_ERR("CDC: Timeout waiting for eraseProfile response");
+    return false;
+  }
+
+  if (response.empty() || response[0] != 0) {
+    m_lastError = response.empty() ? "Empty response" : "Firmware error code " + std::to_string(response[0]);
+    return false;
+  }
+
+  return true;
+}
+
+bool CdcTransport::eraseAllProfiles()
+{
+  if (!ensureOpen()) {
+    return false;
+  }
+
+  std::vector<uint8_t> payload(1);
+  payload[0] = kUsbControlEraseAllProfiles;
+
+  if (!sendUsbFrame(kUsbFrameTypeControl, 0, payload)) {
+    LOG_ERR("CDC: Failed to send eraseAllProfiles command");
+    return false;
+  }
+
+  std::vector<uint8_t> response;
+  if (!waitForControlMessage(kUsbControlAck, response, kConfigCommandTimeoutMs)) {
+    LOG_ERR("CDC: Timeout waiting for eraseAllProfiles response");
+    return false;
+  }
+
+  if (response.empty() || response[0] != 0) {
+    m_lastError = response.empty() ? "Empty response" : "Firmware error code " + std::to_string(response[0]);
+    return false;
+  }
+
   return true;
 }
 
@@ -906,6 +1042,7 @@ bool CdcTransport::readFrame(uint8_t &type, uint8_t &flags, std::vector<uint8_t>
       uint16_t length = static_cast<uint16_t>(m_rxBuffer[6]) | (static_cast<uint16_t>(m_rxBuffer[7]) << 8);
 
       const size_t frameSize = 8 + length;
+      // LOG_INFO("DebugTrace: readFrame magic=%04x len=%u size=%zu", magic, length, m_rxBuffer.size());
       if (m_rxBuffer.size() < frameSize) {
         // Need more data
       } else {

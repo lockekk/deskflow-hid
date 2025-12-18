@@ -104,6 +104,16 @@ public:
   void setDeviceName(const QString &deviceName);
 
   /**
+   * @brief Update active profile hostname label
+   */
+  void setActiveHostname(const QString &hostname);
+
+  /**
+   * @brief Update BLE connection status
+   */
+  void setBleConnected(bool connected);
+
+  /**
    * @brief Enable/disable controls when another config with the same serial is active
    * @param locked true to disable controls, false to allow interaction
    * @param reason Optional tooltip that explains why the controls are disabled
@@ -137,7 +147,6 @@ private Q_SLOTS:
   void onDeleteClicked();
 
 private:
-  void refreshOrientationLabel();
   void refreshActivationStateLabel();
   void refreshDeviceNameLabel();
   void refreshButtonStates();
@@ -155,11 +164,12 @@ private:
   QPushButton *m_btnDelete;
   QPushButton *m_btnFirmware;
   QLabel *m_deviceNameLabel;
+  QLabel *m_activeHostnameLabel;
   QLabel *m_activationStateLabel;
-  QLabel *m_orientationLabel;
   QString m_deviceName;
+  QString m_activeHostname;
   QString m_activationState;
-  QString m_orientation;
+  bool m_isBleConnected = false;
 };
 
 } // namespace deskflow::gui

@@ -56,23 +56,28 @@ BridgeClientWidget::BridgeClientWidget(
   m_deviceNameLabel->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Preferred);
   m_deviceNameLabel->setMinimumWidth(140);
 
+  m_activeHostnameLabel = new QLabel(this);
+  m_activeHostnameLabel->setAlignment(Qt::AlignVCenter | Qt::AlignLeft);
+  m_activeHostnameLabel->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Preferred);
+  m_activeHostnameLabel->setStyleSheet(
+      "color: gray;"
+  ); // Make it distinct, maybe? Or just normal. user said "next to", didn't specify style.
+
   // Activation state and orientation labels
   m_activationStateLabel = new QLabel(tr("unknown"), this);
   m_activationStateLabel->setAlignment(Qt::AlignVCenter | Qt::AlignLeft);
   m_activationStateLabel->setMinimumWidth(90);
 
-  m_orientationLabel = new QLabel(this);
-  m_orientationLabel->setAlignment(Qt::AlignVCenter | Qt::AlignLeft);
-  m_orientationLabel->setFixedSize(40, 30);
+  m_activationStateLabel->setMinimumWidth(90);
 
   // Add buttons and label to layout
   layout->addWidget(m_btnConnect);
   layout->addWidget(m_btnConfigure);
   layout->addWidget(m_btnDelete);
   layout->addSpacing(12);
-  layout->addWidget(m_deviceNameLabel, 1);
+  layout->addWidget(m_deviceNameLabel);        // Removed stretch, will share with hostname
+  layout->addWidget(m_activeHostnameLabel, 1); // Give stretch to hostname
   layout->addWidget(m_activationStateLabel);
-  layout->addWidget(m_orientationLabel);
 
   // Connect signals
   connect(m_btnConnect, &QPushButton::toggled, this, &BridgeClientWidget::onConnectToggled);
@@ -81,7 +86,6 @@ BridgeClientWidget::BridgeClientWidget(
 
   refreshDeviceNameLabel();
   refreshActivationStateLabel();
-  refreshOrientationLabel();
   refreshButtonStates();
 }
 
@@ -102,7 +106,7 @@ void BridgeClientWidget::updateConfig(const QString &screenName, const QString &
   m_configPath = configPath;
   setTitle(screenName); // Update the group box title
   refreshActivationStateLabel();
-  refreshOrientationLabel();
+  refreshDeviceNameLabel();
 }
 
 void BridgeClientWidget::setActivationState(const QString &activationState)
@@ -124,6 +128,27 @@ void BridgeClientWidget::setDeviceName(const QString &deviceName)
   m_deviceNameLabel->setText(display);
 }
 
+void BridgeClientWidget::setActiveHostname(const QString &hostname)
+{
+  m_activeHostname = hostname.trimmed();
+  m_activeHostnameLabel->setText(m_activeHostname);
+
+  if (m_isBleConnected) {
+    m_activeHostnameLabel->setStyleSheet(QStringLiteral("color: red; font-weight: normal;"));
+  } else {
+    m_activeHostnameLabel->setStyleSheet(QStringLiteral("color: gray; font-weight: normal;"));
+  }
+}
+
+void BridgeClientWidget::setBleConnected(bool connected)
+{
+  if (m_isBleConnected == connected)
+    return;
+
+  m_isBleConnected = connected;
+  setActiveHostname(m_activeHostname);
+}
+
 void BridgeClientWidget::refreshActivationStateLabel()
 {
   QString activationState = Settings::defaultValue(Settings::Bridge::ActivationState).toString();
@@ -137,33 +162,15 @@ void BridgeClientWidget::refreshActivationStateLabel()
 void BridgeClientWidget::refreshDeviceNameLabel()
 {
   QString name = Settings::defaultValue(Settings::Bridge::DeviceName).toString();
+  QString hostname = Settings::defaultValue(Settings::Bridge::ActiveProfileHostname).toString();
+
   if (!m_configPath.isEmpty()) {
     QSettings config(m_configPath, QSettings::IniFormat);
     name = config.value(Settings::Bridge::DeviceName, name).toString();
+    hostname = config.value(Settings::Bridge::ActiveProfileHostname, hostname).toString();
   }
   setDeviceName(name);
-}
-
-void BridgeClientWidget::refreshOrientationLabel()
-{
-  if (m_configPath.isEmpty()) {
-    m_orientationLabel->setPixmap(QPixmap(QString::fromLatin1(kLandscapeIconPath)));
-    m_orientationLabel->setToolTip(tr("Landscape"));
-    return;
-  }
-
-  QSettings config(m_configPath, QSettings::IniFormat);
-  const QString orientation =
-      config.value(Settings::Bridge::ScreenOrientation, Settings::defaultValue(Settings::Bridge::ScreenOrientation))
-          .toString();
-  m_orientation = orientation;
-  const QString normalized = orientation.trimmed().toLower();
-  QString display;
-  const bool portrait = (normalized == QStringLiteral("portrait"));
-  display = portrait ? tr("Portrait") : tr("Landscape");
-  const auto iconPath = portrait ? kPortraitIconPath : kLandscapeIconPath;
-  m_orientationLabel->setPixmap(QPixmap(QString::fromLatin1(iconPath)));
-  m_orientationLabel->setToolTip(display);
+  setActiveHostname(hostname);
 }
 
 void BridgeClientWidget::setDeviceAvailable(const QString &devicePath, bool available)

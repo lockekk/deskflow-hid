@@ -251,18 +251,6 @@ QVariant Settings::defaultValue(const QString &key)
     return QString(); // Empty by default, populated from CDC device
   }
 
-  if (key == Bridge::ScreenWidth) {
-    return 1080;
-  }
-
-  if (key == Bridge::ScreenHeight) {
-    return 2424;
-  }
-
-  if (key == Bridge::ScreenOrientation) {
-    return QString("portrait"); // Default orientation
-  }
-
   if (key == Bridge::HostOs) {
     return QStringLiteral("unknown");
   }
@@ -277,6 +265,10 @@ QVariant Settings::defaultValue(const QString &key)
 
   if (key == Bridge::BluetoothKeepAlive) {
     return false;
+  }
+
+  if (key == Bridge::ActiveProfileHostname) {
+    return QString();
   }
 
   return QVariant();
@@ -362,7 +354,6 @@ QString Settings::bridgeClientTlsDir()
 
   return bridgeDir.filePath(kTlsDirName);
 }
-
 
 QString Settings::tlsTrustedServersDb()
 {

@@ -1435,35 +1435,11 @@ If you choose &apos;No&apos;, the bridge client configuration will be kept and c
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>x</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Screen resolution:</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>Landscape</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Portrait</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Screen Orientation:</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Invert Direction</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Speed</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Scroll:</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -1495,45 +1471,11 @@ If you choose &apos;No&apos;, the bridge client configuration will be kept and c
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Device name may only use English letters, numbers, spaces, &apos;.&apos;, &apos;-&apos; or &apos;_&apos; and must be 22 characters or fewer.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Device is not connected</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>Error</source>
         <translation type="unfinished">エラー</translation>
     </message>
     <message>
-        <source>Device not found: %1</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Connection Failed</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Failed to open device.
-Please make sure the bridge client is NOT running for this device.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Confirm Unpair</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>Success</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Failed</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Failed to send unpair command.
-Error: %1</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -1541,49 +1483,104 @@ Error: %1</source>
         <translation type="unfinished">詳細設定</translation>
     </message>
     <message>
-        <source>Unpair Bluetooth Host</source>
+        <source>Profiles (Device)</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Unpair bonded Bluetooth host</source>
+        <source>Hostname:</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Are you sure you want to unpair bonded host?
-This action cannot be undone.</source>
+        <source>Resolution:</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Unpaired successfully.</source>
+        <source>Orientation:</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Mouse Only Mode</source>
+        <source>Combo</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Enable if keyboard compatibility issues occur</source>
+        <source>Mouse Only</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Device is in use. Stop Bridge Client to change this setting.</source>
+        <source>HID Mode:</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Change HID Mode</source>
+        <source>Reset</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Changing the HID mode will cause the device to disconnect and re-enumerate.
-Are you sure you want to proceed?</source>
+        <source>Activate</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>HID Mode updated. Device will now disconnect.</source>
+        <source>Profiles (Device Not Connected)</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Failed to set HID mode: %1</source>
+        <source>Profiles (Failed to Open Device)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Failed to open device</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Profile saved to device.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Failed to save profile: %1</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Switched to profile %1</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Failed to switch profile: %1</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Confirm Reset</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Are you sure you want to reset and erase this profile?</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Profile erased.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Failed to erase profile: %1</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Duplicate Configuration</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>A configuration for this device serial number already exists.
+Duplicate: %1</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Save to Device</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Invert scroll direction</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Scroll speed:</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -1624,14 +1621,6 @@ Are you sure you want to proceed?</source>
     <message>
         <source>Disconnect</source>
         <translation type="unfinished">切断</translation>
-    </message>
-    <message>
-        <source>Landscape</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Portrait</source>
-        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Device not connected</source>

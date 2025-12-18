@@ -47,6 +47,24 @@ inline const char *activationStateToString(ActivationState state)
 }
 
 /**
+ * @brief Device Profile structure (matches firmware layout)
+ */
+#pragma pack(push, 1)
+struct DeviceProfile
+{
+  char hostname[32];     // Null-terminated string
+  uint8_t slot;          // Slot Index (0-14)
+  uint8_t hidMode;       // 0: Combo, 1: Mouse
+  uint16_t screenWidth;  // Pixels (default 1080)
+  uint16_t screenHeight; // Pixels (default 2424)
+  uint8_t rotation;      // 0: Portrait, 1: Landscape
+  uint8_t invert;        // scroll direction 0: no invert, 1: invert
+  uint8_t speed;         // scroll speed  0: 120; default is 120
+  uint8_t reserved[11];  // reserved for future use, total size is 52 bytes
+};
+#pragma pack(pop)
+
+/**
  * @brief Firmware-reported configuration structure
  */
 struct FirmwareConfig
@@ -56,7 +74,9 @@ struct FirmwareConfig
   uint8_t firmwareVersionBcd = 0;
   uint8_t hardwareVersionBcd = 0;
   FirmwareMode firmwareMode = FirmwareMode::Unknown;
-  uint8_t hidMode = 0; // 0=Combo, 1=Mouse
+  uint8_t activeProfile = 0;
+  uint8_t totalProfiles = 0;
+  bool isBleConnected = false;
   std::string deviceName;
 
   const char *activationStateString() const
@@ -141,11 +161,40 @@ public:
   bool unpairAll();
 
   /**
-   * @brief Set HID mode (0: Combo, 1: Mouse Only)
-   * @param mode HID mode to set
+   * @brief Get a profile from the device
+   * @param index Profile index
+   * @param outProfile Output profile data
    * @return true if successful
    */
-  bool setHidMode(uint8_t mode);
+  bool getProfile(uint8_t index, DeviceProfile &outProfile);
+
+  /**
+   * @brief Set a profile on the device
+   * @param index Profile index
+   * @param profile Profile data to set
+   * @return true if successful
+   */
+  bool setProfile(uint8_t index, const DeviceProfile &profile);
+
+  /**
+   * @brief Switch to a specific profile
+   * @param index Profile index
+   * @return true if successful
+   */
+  bool switchProfile(uint8_t index);
+
+  /**
+   * @brief Erase a specific profile
+   * @param index Profile index
+   * @return true if successful
+   */
+  bool eraseProfile(uint8_t index);
+
+  /**
+   * @brief Erase all profiles
+   * @return true if successful
+   */
+  bool eraseAllProfiles();
 
   /**
    * @brief Get last error message

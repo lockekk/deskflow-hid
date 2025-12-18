@@ -21,8 +21,8 @@
 #define NOMINMAX
 #endif
 #define WIN32_LEAN_AND_MEAN
-#include <Windows.h>
 #include <SetupAPI.h>
+#include <Windows.h>
 #include <devguid.h>
 #include <initguid.h>
 #include <winreg.h>
@@ -170,19 +170,26 @@ QString UsbDeviceHelper::readSerialNumber(const QString &devicePath)
 
   try {
     // Create CDC transport instance
+    qInfo() << "DebugTrace: Creating transport for" << devicePath;
     deskflow::bridge::CdcTransport transport(devicePath);
 
     // Check if device is busy by attempting to open it
     // This will fail if the bridge client already has it open
+    qInfo() << "DebugTrace: Opening transport for" << devicePath;
+    qInfo() << "DebugTrace: Opening transport for" << devicePath;
     if (!transport.open()) {
       qDebug() << "Device is busy or not accessible (likely opened by bridge client):" << devicePath;
       return QString(); // Device is in use, don't block
     }
+    qInfo() << "DebugTrace: Transport opened successfully for" << devicePath;
 
     // Read serial number via CDC command
     std::string serial;
+    qInfo() << "DebugTrace: Fetching serial number for" << devicePath;
     if (transport.fetchSerialNumber(serial)) {
+      qInfo() << "DebugTrace: Closing transport for" << devicePath;
       transport.close();
+      qInfo() << "DebugTrace: Converting serial";
       QString qSerial = QString::fromStdString(serial);
       if (!qSerial.isEmpty()) {
         qDebug() << "Read serial number via CDC for" << devicePath << ":" << qSerial;

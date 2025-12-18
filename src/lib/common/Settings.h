@@ -99,12 +99,10 @@ public:
   struct Bridge
   {
     inline static const auto SerialNumber = QStringLiteral("bridge/sn");
-    inline static const auto ScreenWidth = QStringLiteral("bridge/screenWidth");
-    inline static const auto ScreenHeight = QStringLiteral("bridge/screenHeight");
-    inline static const auto ScreenOrientation = QStringLiteral("bridge/screenOrientation");
     inline static const auto HostOs = QStringLiteral("bridge/hostOs");
     inline static const auto ActivationState = QStringLiteral("bridge/activationState");
     inline static const auto DeviceName = QStringLiteral("bridge/deviceName");
+    inline static const auto ActiveProfileHostname = QStringLiteral("bridge/activeProfileHostname");
     inline static const auto BluetoothKeepAlive = QStringLiteral("bridge/bluetoothKeepAlive");
   };
 
