@@ -141,6 +141,11 @@ private:
   void createMenuBar();
   void setupTrayIcon();
   void applyConfig();
+
+public:
+  Q_SLOT void bridgeClientDeletedFromServerConfig(const QString &configPath);
+
+private:
   void setTrayIcon();
   void setStatus(const QString &status);
   void updateFromLogLine(const QString &line);

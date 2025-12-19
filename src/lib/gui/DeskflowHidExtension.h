@@ -42,7 +42,7 @@ private Q_SLOTS:
   void usbDeviceDisconnected(const deskflow::gui::UsbDeviceInfo &device);
   void bridgeClientConnectToggled(const QString &devicePath, const QString &configPath, bool shouldConnect);
   void bridgeClientConfigureClicked(const QString &devicePath, const QString &configPath);
-  void bridgeClientDeleteClicked(const QString &devicePath, const QString &configPath);
+
   void bridgeClientProcessReadyRead(const QString &devicePath);
   void bridgeClientProcessFinished(const QString &devicePath, int exitCode, QProcess::ExitStatus exitStatus);
   void bridgeClientConnectionTimeout(const QString &devicePath);

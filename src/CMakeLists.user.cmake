@@ -1,4 +1,5 @@
-option(BUILD_HID "Build ESP32 HID tools" OFF)
+# It should be ON for windows build
+option(BUILD_HID "Build ESP32 HID tools" ON)
 
 if(BUILD_HID)
   set(ESP32_HID_TOOLS_DIR "${CMAKE_SOURCE_DIR}/submodules/esp32-hid-tools")

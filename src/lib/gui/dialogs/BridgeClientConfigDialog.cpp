@@ -445,25 +445,13 @@ void BridgeClientConfigDialog::saveConfig()
   config.setValue(Settings::Core::ScreenName, m_editScreenName->text());
   // Removed global resolution/orientation
   config.setValue(Settings::Bridge::DeviceName, deviceName());
-  config.setValue(Settings::Bridge::DeviceName, deviceName());
-  // Save ACTIVE profile settings to global settings for compatibility
-  if (m_deviceActiveProfileIndex >= 0 && m_profileCache.contains(m_deviceActiveProfileIndex)) {
-    const auto &p = m_profileCache[m_deviceActiveProfileIndex];
-    config.setValue(Settings::Client::ScrollSpeed, p.speed);
-    config.setValue(Settings::Client::InvertScrollDirection, p.invert != 0);
 
-    // Save active profile hostname
-    // Use QByteArray to safely handle non-null-terminated strings
-    QByteArray nameBytes(p.hostname, sizeof(p.hostname));
-    int nullPos = nameBytes.indexOf('\0');
-    if (nullPos >= 0)
-      nameBytes.truncate(nullPos);
-    config.setValue(Settings::Bridge::ActiveProfileHostname, QString::fromUtf8(nameBytes));
-  } else {
-    // If no device/profile, maybe preserve existing? Or do nothing.
-    // We'll leave them as is if we can't update them reliably.
-  }
-  config.setValue(Settings::Bridge::BluetoothKeepAlive, m_checkBluetoothKeepAlive->isChecked());
+  // Remove keys that are now managed solely by the device profile
+  config.remove(Settings::Client::ScrollSpeed);
+  config.remove(Settings::Client::InvertScrollDirection);
+  config.remove(Settings::Bridge::ActiveProfileHostname);
+  config.remove(Settings::Bridge::ActiveProfileOrientation);
+
   config.setValue(Settings::Bridge::BluetoothKeepAlive, m_checkBluetoothKeepAlive->isChecked());
 
   config.sync();

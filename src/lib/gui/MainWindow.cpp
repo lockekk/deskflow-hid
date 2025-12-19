@@ -79,6 +79,13 @@
 
 using namespace deskflow::gui;
 
+void MainWindow::bridgeClientDeletedFromServerConfig(const QString &configPath)
+{
+  if (m_deskflowHidExtension) {
+    m_deskflowHidExtension->bridgeClientDeletedFromServerConfig(configPath);
+  }
+}
+
 using CoreConnectionState = CoreProcess::ConnectionState;
 using CoreProcessState = CoreProcess::ProcessState;
 

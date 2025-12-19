@@ -137,18 +137,17 @@ Q_SIGNALS:
    */
   Q_SIGNAL void connectToggled(const QString &devicePath, const QString &configPath, bool shouldConnect);
   Q_SIGNAL void configureClicked(const QString &devicePath, const QString &configPath);
-  Q_SIGNAL void deleteClicked(const QString &devicePath, const QString &configPath);
   Q_SIGNAL void refreshDevicesRequested();
 
 protected:
 private Q_SLOTS:
   void onConnectToggled(bool checked);
   void onConfigureClicked();
-  void onDeleteClicked();
 
 private:
   void refreshActivationStateLabel();
   void refreshDeviceNameLabel();
+  void refreshOrientationLabel();
   void refreshButtonStates();
 
   QString m_screenName;
@@ -161,7 +160,6 @@ private:
 
   QPushButton *m_btnConnect;
   QPushButton *m_btnConfigure;
-  QPushButton *m_btnDelete;
   QPushButton *m_btnFirmware;
   QLabel *m_deviceNameLabel;
   QLabel *m_activeHostnameLabel;
@@ -169,6 +167,8 @@ private:
   QString m_deviceName;
   QString m_activeHostname;
   QString m_activationState;
+  QString m_orientation;
+  QLabel *m_orientationLabel = nullptr;
   bool m_isBleConnected = false;
 };
 

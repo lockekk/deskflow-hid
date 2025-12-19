@@ -235,6 +235,10 @@ QVariant Settings::defaultValue(const QString &key)
     return QString();
   }
 
+  if (key == Bridge::ActiveProfileOrientation) {
+    return QStringLiteral("landscape");
+  }
+
   return QVariant();
 }
 

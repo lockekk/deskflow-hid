@@ -859,7 +859,7 @@ bool CdcTransport::getProfile(uint8_t index, DeviceProfile &outProfile)
     return false;
   }
 
-  // Response: [Status(1), ProfileData(39)]
+  // Response: [Status(1), ProfileData(52)]
   if (response.size() < 1 + sizeof(DeviceProfile)) {
     m_lastError = "Invalid getProfile response size";
     return false;

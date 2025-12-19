@@ -26,7 +26,7 @@ BridgeClientWidget::BridgeClientWidget(
       m_devicePath(devicePath),
       m_configPath(configPath)
 {
-  setMinimumWidth(650);
+  setMinimumWidth(100);
   setMaximumWidth(16777215); // QWIDGETSIZE_MAX
 
   // Create horizontal layout for buttons
@@ -46,15 +46,10 @@ BridgeClientWidget::BridgeClientWidget(
   m_btnConfigure->setMinimumSize(80, 32);
   m_btnConfigure->setToolTip(tr("Configure bridge client settings"));
 
-  // Create Delete button
-  m_btnDelete = new QPushButton(tr("Delete"), this);
-  m_btnDelete->setMinimumSize(80, 32);
-  m_btnDelete->setToolTip(tr("Delete this bridge client configuration"));
-
   m_deviceNameLabel = new QLabel(tr("--"), this);
   m_deviceNameLabel->setAlignment(Qt::AlignVCenter | Qt::AlignLeft);
   m_deviceNameLabel->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Preferred);
-  m_deviceNameLabel->setMinimumWidth(140);
+  m_deviceNameLabel->setMinimumWidth(100);
 
   m_activeHostnameLabel = new QLabel(this);
   m_activeHostnameLabel->setAlignment(Qt::AlignVCenter | Qt::AlignLeft);
@@ -70,22 +65,27 @@ BridgeClientWidget::BridgeClientWidget(
 
   m_activationStateLabel->setMinimumWidth(90);
 
+  m_orientationLabel = new QLabel(this);
+  m_orientationLabel->setAlignment(Qt::AlignVCenter | Qt::AlignLeft);
+  m_orientationLabel->setFixedSize(40, 30);
+
   // Add buttons and label to layout
   layout->addWidget(m_btnConnect);
   layout->addWidget(m_btnConfigure);
-  layout->addWidget(m_btnDelete);
+
   layout->addSpacing(12);
   layout->addWidget(m_deviceNameLabel);        // Removed stretch, will share with hostname
   layout->addWidget(m_activeHostnameLabel, 1); // Give stretch to hostname
   layout->addWidget(m_activationStateLabel);
+  layout->addWidget(m_orientationLabel);
 
   // Connect signals
   connect(m_btnConnect, &QPushButton::toggled, this, &BridgeClientWidget::onConnectToggled);
   connect(m_btnConfigure, &QPushButton::clicked, this, &BridgeClientWidget::onConfigureClicked);
-  connect(m_btnDelete, &QPushButton::clicked, this, &BridgeClientWidget::onDeleteClicked);
 
   refreshDeviceNameLabel();
   refreshActivationStateLabel();
+  refreshOrientationLabel();
   refreshButtonStates();
 }
 
@@ -105,8 +105,10 @@ void BridgeClientWidget::updateConfig(const QString &screenName, const QString &
   m_screenName = screenName;
   m_configPath = configPath;
   setTitle(screenName); // Update the group box title
+  setTitle(screenName); // Update the group box title
   refreshActivationStateLabel();
   refreshDeviceNameLabel();
+  refreshOrientationLabel();
 }
 
 void BridgeClientWidget::setActivationState(const QString &activationState)
@@ -173,6 +175,26 @@ void BridgeClientWidget::refreshDeviceNameLabel()
   setActiveHostname(hostname);
 }
 
+void BridgeClientWidget::refreshOrientationLabel()
+{
+  if (m_configPath.isEmpty()) {
+    m_orientationLabel->setPixmap(QPixmap(QString::fromLatin1(kLandscapeIconPath)));
+    m_orientationLabel->setToolTip(tr("Landscape"));
+    return;
+  }
+
+  QSettings config(m_configPath, QSettings::IniFormat);
+  const QString orientation = config.value(Settings::Bridge::ActiveProfileOrientation, "landscape").toString();
+  m_orientation = orientation;
+  const QString normalized = orientation.trimmed().toLower();
+  QString display;
+  const bool portrait = (normalized == QStringLiteral("portrait"));
+  display = portrait ? tr("Portrait") : tr("Landscape");
+  const auto iconPath = portrait ? kPortraitIconPath : kLandscapeIconPath;
+  m_orientationLabel->setPixmap(QPixmap(QString::fromLatin1(iconPath)));
+  m_orientationLabel->setToolTip(display);
+}
+
 void BridgeClientWidget::setDeviceAvailable(const QString &devicePath, bool available)
 {
   m_deviceAvailable = available;
@@ -210,11 +232,13 @@ void BridgeClientWidget::refreshButtonStates()
   }
   m_btnConnect->setToolTip(connectTooltip);
 
-  const bool configureEnabled = !m_isConnected && !m_groupLocked;
+  const bool configureEnabled = m_deviceAvailable && !m_isConnected && !m_groupLocked;
   m_btnConfigure->setEnabled(configureEnabled);
 
   QString configureTooltip;
-  if (m_isConnected) {
+  if (!m_deviceAvailable) {
+    configureTooltip = tr("Device not connected");
+  } else if (m_isConnected) {
     configureTooltip = tr("Disconnect before configuring");
   } else if (m_groupLocked) {
     configureTooltip =
@@ -223,20 +247,6 @@ void BridgeClientWidget::refreshButtonStates()
     configureTooltip = tr("Configure bridge client settings");
   }
   m_btnConfigure->setToolTip(configureTooltip);
-
-  const bool deleteEnabled = !m_isConnected && !m_groupLocked;
-  m_btnDelete->setEnabled(deleteEnabled);
-
-  QString deleteTooltip;
-  if (m_isConnected) {
-    deleteTooltip = tr("Disconnect before deleting");
-  } else if (m_groupLocked) {
-    deleteTooltip =
-        m_groupLockReason.isEmpty() ? tr("This profile is locked because another one is connected") : m_groupLockReason;
-  } else {
-    deleteTooltip = tr("Delete this bridge client configuration");
-  }
-  m_btnDelete->setToolTip(deleteTooltip);
 }
 
 void BridgeClientWidget::onConnectToggled(bool checked)
@@ -251,20 +261,6 @@ void BridgeClientWidget::onConnectToggled(bool checked)
 void BridgeClientWidget::onConfigureClicked()
 {
   Q_EMIT configureClicked(m_devicePath, m_configPath);
-}
-
-void BridgeClientWidget::onDeleteClicked()
-{
-  // Show warning and confirmation dialog
-  QMessageBox::StandardButton reply = QMessageBox::question(
-      this, tr("Delete Configuration"),
-      tr("Are you sure you want to delete this bridge client configuration?\n\nThis action cannot be undone."),
-      QMessageBox::Yes | QMessageBox::No, QMessageBox::No
-  );
-
-  if (reply == QMessageBox::Yes) {
-    Q_EMIT deleteClicked(m_devicePath, m_configPath);
-  }
 }
 
 } // namespace deskflow::gui

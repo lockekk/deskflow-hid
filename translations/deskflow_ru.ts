@@ -176,18 +176,6 @@ p, li { white-space: pre-wrap; }
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Bridge client configuration deleted</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Delete Failed</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Failed to delete config</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>Invalid device name</source>
         <translation type="unfinished"></translation>
     </message>
@@ -1607,14 +1595,6 @@ Duplicate: %1</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Delete</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Delete this bridge client configuration</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>--</source>
         <translation type="unfinished"></translation>
     </message>
@@ -1643,17 +1623,11 @@ Duplicate: %1</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Disconnect before deleting</source>
+        <source>Landscape</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Delete Configuration</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Are you sure you want to delete this bridge client configuration?
-
-This action cannot be undone.</source>
+        <source>Portrait</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -1684,27 +1658,7 @@ This action cannot be undone.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Factory Package:</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Flash Factory Firmware</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Download and Flash</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Copy Device Info</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>Factory Mode</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Online Upgrade</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -1720,23 +1674,11 @@ This action cannot be undone.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Download &amp; Flash</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Manual Upgrade</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>Path to upgrade.uzip</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <source>File:</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Flash Local File</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -2157,6 +2099,30 @@ This action cannot be undone.</source>
     </message>
     <message>
         <source>Activation failed.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Reading factory firmware from: %1</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Reading local firmware from: %1</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Online</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Flash</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Manual</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Copy Device Secret</source>
         <translation type="unfinished"></translation>
     </message>
 </context>

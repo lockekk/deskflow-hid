@@ -11,6 +11,7 @@
 #include <QGroupBox>
 #include <QHBoxLayout>
 #include <QMessageBox>
+#include <QScrollBar>
 #include <QVBoxLayout>
 #include <QtConcurrent>
 
@@ -56,23 +57,44 @@ Esp32HidToolsWidget::Esp32HidToolsWidget(const QString &devicePath, QWidget *par
   auto *factoryTab = new QWidget();
   auto *factoryLayout = new QVBoxLayout(factoryTab);
 
+  // --- Online Factory Group ---
+  auto *onlineFactoryGroup = new QGroupBox(tr("Online"));
+  auto *onlineFactoryLayout = new QVBoxLayout(onlineFactoryGroup);
+
+  m_downloadFlashBtn = new QPushButton(tr("Flash"));
+  auto *onlineFactoryBtnLayout = new QHBoxLayout();
+  onlineFactoryBtnLayout->addWidget(m_downloadFlashBtn);
+  onlineFactoryBtnLayout->addStretch();
+  onlineFactoryLayout->addLayout(onlineFactoryBtnLayout);
+
+  // --- Manual Factory Group ---
+  auto *manualFactoryGroup = new QGroupBox(tr("Manual"));
+  auto *manualFactoryLayout = new QVBoxLayout(manualFactoryGroup);
+
   auto *factoryInputLayout = new QHBoxLayout();
   m_factoryPathEdit = new QLineEdit();
   m_factoryPathEdit->setPlaceholderText(tr("Path to factory.fzip"));
   m_factoryBrowseBtn = new QPushButton(tr("Browse..."));
-  factoryInputLayout->addWidget(new QLabel(tr("Factory Package:")));
+  factoryInputLayout->addWidget(new QLabel(tr("File:")));
   factoryInputLayout->addWidget(m_factoryPathEdit);
   factoryInputLayout->addWidget(m_factoryBrowseBtn);
 
-  m_factoryFlashBtn = new QPushButton(tr("Flash Factory Firmware"));
-  m_downloadFlashBtn = new QPushButton(tr("Download and Flash"));
-  m_copyInfoBtn = new QPushButton(tr("Copy Device Info"));
+  m_factoryFlashBtn = new QPushButton(tr("Flash"));
 
-  factoryLayout->addLayout(factoryInputLayout);
-  factoryLayout->addWidget(m_factoryFlashBtn);
-  factoryLayout->addWidget(m_downloadFlashBtn);
-  factoryLayout->addWidget(m_copyInfoBtn);
+  auto *manualBtnLayout = new QHBoxLayout();
+  manualBtnLayout->addWidget(m_factoryFlashBtn);
+  manualBtnLayout->addStretch();
+
+  manualFactoryLayout->addLayout(factoryInputLayout);
+  manualFactoryLayout->addLayout(manualBtnLayout);
+
+  factoryLayout->addWidget(onlineFactoryGroup);
+  factoryLayout->addWidget(manualFactoryGroup);
   factoryLayout->addStretch();
+
+  // Common bottom controls
+  m_copyInfoBtn = new QPushButton(tr("Copy Device Secret"));
+  factoryLayout->addWidget(m_copyInfoBtn);
 
   tabWidget->addTab(factoryTab, tr("Factory Mode"));
 
@@ -81,7 +103,7 @@ Esp32HidToolsWidget::Esp32HidToolsWidget(const QString &devicePath, QWidget *par
   auto *upgradeLayout = new QVBoxLayout(upgradeTab);
 
   // --- Online Upgrade Group ---
-  auto *onlineGroup = new QGroupBox(tr("Online Upgrade"));
+  auto *onlineGroup = new QGroupBox(tr("Online"));
   auto *onlineLayout = new QVBoxLayout(onlineGroup);
 
   auto *verLayout = new QHBoxLayout();
@@ -94,7 +116,7 @@ Esp32HidToolsWidget::Esp32HidToolsWidget(const QString &devicePath, QWidget *par
 
   auto *onlineBtnLayout = new QHBoxLayout();
   m_checkUpgradeBtn = new QPushButton(tr("Check for Updates"));
-  m_flashOnlineBtn = new QPushButton(tr("Download & Flash"));
+  m_flashOnlineBtn = new QPushButton(tr("Flash"));
   m_flashOnlineBtn->setEnabled(false); // Enabled after check
   onlineBtnLayout->addWidget(m_checkUpgradeBtn);
   onlineBtnLayout->addWidget(m_flashOnlineBtn);
@@ -104,7 +126,7 @@ Esp32HidToolsWidget::Esp32HidToolsWidget(const QString &devicePath, QWidget *par
   onlineLayout->addLayout(onlineBtnLayout);
 
   // --- Manual Upgrade Group ---
-  auto *manualGroup = new QGroupBox(tr("Manual Upgrade"));
+  auto *manualGroup = new QGroupBox(tr("Manual"));
   auto *manualLayout = new QVBoxLayout(manualGroup);
 
   auto *manualInputLayout = new QHBoxLayout();
@@ -116,7 +138,7 @@ Esp32HidToolsWidget::Esp32HidToolsWidget(const QString &devicePath, QWidget *par
   manualInputLayout->addWidget(m_upgradeBrowseBtn);
 
   auto *manualActionLayout = new QHBoxLayout();
-  m_flashLocalBtn = new QPushButton(tr("Flash Local File"));
+  m_flashLocalBtn = new QPushButton(tr("Flash"));
   manualActionLayout->addWidget(m_flashLocalBtn);
   manualActionLayout->addStretch();
 
@@ -277,6 +299,8 @@ std::vector<uint8_t> Esp32HidToolsWidget::readFile(const QString &path)
 void Esp32HidToolsWidget::log(const QString &message)
 {
   m_logOutput->append(message);
+  QScrollBar *sb = m_logOutput->verticalScrollBar();
+  sb->setValue(sb->maximum());
 }
 
 void Esp32HidToolsWidget::setControlsEnabled(bool enabled)
@@ -326,11 +350,10 @@ void Esp32HidToolsWidget::onFlashFactory()
 
   std::vector<uint8_t> data;
   if (!path.isEmpty()) {
+    log(tr("Reading factory firmware from: %1").arg(path));
     data = readFile(path);
     if (data.empty()) {
       log(tr("Error: Failed to read file or file is empty: %1").arg(path));
-      // We don't return here yet, because we might not need the file if we are just verifying factory mode.
-      // But if we do need it later, we will check data.empty().
     }
   }
 
@@ -358,7 +381,7 @@ void Esp32HidToolsWidget::onFlashFactory()
     auto progress_cb = [this](size_t written, size_t total, size_t address) {
       // Just log every 10%
       static int last_percent = -1;
-      int percent = (int)(((float)written / total) * 100);
+      int percent = total > 0 ? (int)(((float)written / total) * 100) : 0;
       if (percent % 10 == 0 && percent != last_percent) {
         last_percent = percent;
         QString msg = QString("Flashing... %1%").arg(percent);
@@ -427,6 +450,7 @@ void Esp32HidToolsWidget::onFlashFactory()
       });
       return;
     }
+
     log(tr("Starting Factory Flash..."));
     FlashResult res = flash_factory(port, data, info, progress_cb, log_cb);
 
@@ -761,6 +785,7 @@ void Esp32HidToolsWidget::onFlashLocal()
     return;
   }
 
+  log(tr("Reading local firmware from: %1").arg(path));
   log(tr("Flashing local file: %1").arg(path));
   flashFirmware(data);
 }

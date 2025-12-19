@@ -108,11 +108,10 @@ void DeskflowHidExtension::setup()
 void DeskflowHidExtension::openEsp32HidTools()
 {
 #ifdef DESKFLOW_ENABLE_ESP32_HID_TOOLS
-  auto *widget = new Esp32HidToolsWidget(nullptr);
-  widget->setAttribute(Qt::WA_DeleteOnClose);
-  widget->setWindowTitle(tr("ESP32 HID Tools"));
-  widget->resize(800, 600);
-  widget->show();
+  Esp32HidToolsWidget widget(QString(), m_mainWindow);
+  widget.setWindowTitle(tr("ESP32 HID Tools"));
+  widget.resize(800, 600);
+  widget.exec();
 #else
   QMessageBox::information(
       m_mainWindow, tr("Feature Unavailable"), tr("The ESP32 HID Tools module is not available in this build.")
@@ -163,16 +162,15 @@ void DeskflowHidExtension::loadBridgeClientConfigs()
     // Connect signals
     connect(widget, &BridgeClientWidget::connectToggled, this, &DeskflowHidExtension::bridgeClientConnectToggled);
     connect(widget, &BridgeClientWidget::configureClicked, this, &DeskflowHidExtension::bridgeClientConfigureClicked);
-    connect(widget, &BridgeClientWidget::deleteClicked, this, &DeskflowHidExtension::bridgeClientDeleteClicked);
 
     connect(widget, &BridgeClientWidget::refreshDevicesRequested, this, [this]() {
       this->updateBridgeClientDeviceStates();
     });
 
-    // Add to grid layout (3 columns per row)
+    // Add to grid layout (1 column per row)
     int count = m_bridgeClientWidgets.size();
-    int row = count / 3;
-    int col = count % 3;
+    int row = count;
+    int col = 0;
     gridLayout->addWidget(widget, row, col);
 
     // Track widget by config path
@@ -190,6 +188,8 @@ void DeskflowHidExtension::updateBridgeClientDeviceStates()
   QMap<QString, QString> connectedDevices = UsbDeviceHelper::getConnectedDevices();
   qDebug() << "Found" << connectedDevices.size() << "connected USB CDC device(s)";
 
+  QSet<QString> configuredSerialNumbers;
+
   // For each widget, check if its device is connected
   for (auto it = m_bridgeClientWidgets.begin(); it != m_bridgeClientWidgets.end(); ++it) {
     QString configPath = it.key();
@@ -203,6 +203,8 @@ void DeskflowHidExtension::updateBridgeClientDeviceStates()
       widget->setDeviceAvailable(QString(), false);
       continue;
     }
+
+    configuredSerialNumbers.insert(configSerialNumber);
 
     // Check if this serial number is in the connected devices
     bool found = false;
@@ -236,6 +238,28 @@ void DeskflowHidExtension::updateBridgeClientDeviceStates()
       qDebug() << "Device available for config:" << configPath << "device:" << devicePath;
     } else {
       qDebug() << "Device NOT available for config:" << configPath;
+    }
+  }
+
+  // Check for connected devices that don't have a configuration
+  for (auto it = connectedDevices.begin(); it != connectedDevices.end(); ++it) {
+    const QString &devicePath = it.key();
+    const QString &serialNumber = it.value();
+
+    if (serialNumber.isEmpty() || serialNumber == "Unknown") {
+      continue;
+    }
+
+    if (!configuredSerialNumbers.contains(serialNumber)) {
+      qInfo() << "Found unconfigured device during initial scan:" << devicePath << "serial:" << serialNumber;
+
+      UsbDeviceInfo info;
+      info.devicePath = devicePath;
+      info.serialNumber = serialNumber;
+      info.vendorId = UsbDeviceHelper::kEspressifVendorId;
+      info.productId = UsbDeviceHelper::kEspressifProductId;
+
+      usbDeviceConnected(info);
     }
   }
 }
@@ -308,7 +332,6 @@ void DeskflowHidExtension::usbDeviceConnected(const UsbDeviceInfo &device)
 
     connect(widget, &BridgeClientWidget::connectToggled, this, &DeskflowHidExtension::bridgeClientConnectToggled);
     connect(widget, &BridgeClientWidget::configureClicked, this, &DeskflowHidExtension::bridgeClientConfigureClicked);
-    connect(widget, &BridgeClientWidget::deleteClicked, this, &DeskflowHidExtension::bridgeClientDeleteClicked);
 
     connect(widget, &BridgeClientWidget::refreshDevicesRequested, this, [this]() {
       this->updateBridgeClientDeviceStates();
@@ -322,8 +345,8 @@ void DeskflowHidExtension::usbDeviceConnected(const UsbDeviceInfo &device)
 
     if (gridLayout) {
       int count = m_bridgeClientWidgets.size();
-      int row = count / 3;
-      int col = count % 3;
+      int row = count;
+      int col = 0;
       gridLayout->addWidget(widget, row, col);
     }
     m_bridgeClientWidgets[configPath] = widget;
@@ -728,39 +751,6 @@ void DeskflowHidExtension::bridgeClientConfigureClicked(const QString &devicePat
   }
 }
 
-void DeskflowHidExtension::bridgeClientDeleteClicked(const QString &devicePath, const QString &configPath)
-{
-  auto it = m_bridgeClientWidgets.find(configPath);
-  if (it != m_bridgeClientWidgets.end()) {
-    BridgeClientWidget *widget = it.value();
-    if (widget->isConnected()) {
-      bridgeClientConnectToggled(devicePath, configPath, false);
-    }
-  }
-
-  QFile configFile(configPath);
-  if (configFile.remove()) {
-    if (it != m_bridgeClientWidgets.end()) {
-      BridgeClientWidget *widget = it.value();
-      m_bridgeClientWidgets.erase(it);
-
-      // Remove from UI
-      QWidget *bridgeClientsWidget = m_mainWindow->findChild<QWidget *>("widgetBridgeClients");
-      if (bridgeClientsWidget) {
-        if (auto *gl = bridgeClientsWidget->findChild<QGridLayout *>("gridLayoutBridgeClients")) {
-          gl->removeWidget(widget);
-        }
-      }
-      widget->deleteLater();
-    }
-    m_devicePathToSerialNumber.remove(devicePath);
-    if (m_mainWindow)
-      m_mainWindow->setStatus(tr("Bridge client configuration deleted"));
-  } else {
-    QMessageBox::critical(m_mainWindow, tr("Delete Failed"), tr("Failed to delete config"));
-  }
-}
-
 void DeskflowHidExtension::bridgeClientDeletedFromServerConfig(const QString &configPath)
 {
   // Logic to cleanup widget if deleted from server config
@@ -792,8 +782,8 @@ void DeskflowHidExtension::bridgeClientDeletedFromServerConfig(const QString &co
     // Reorganize
     int index = 0;
     for (auto widgetIt = m_bridgeClientWidgets.begin(); widgetIt != m_bridgeClientWidgets.end(); ++widgetIt) {
-      int row = index / 3;
-      int col = index % 3;
+      int row = index;
+      int col = 0;
       gridLayout->addWidget(widgetIt.value(), row, col);
       index++;
     }
