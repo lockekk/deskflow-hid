@@ -163,6 +163,10 @@ QVariant Settings::defaultValue(const QString &key)
   if (m_defaultTrueValues.contains(key))
     return true;
 
+  // Disable automatic update check by default
+  if (key == Gui::AutoUpdateCheck)
+    return false;
+
   if (key == Gui::WindowGeometry)
     return QRect();
 

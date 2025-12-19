@@ -81,7 +81,7 @@ endif()
 project(
   deskflow
   VERSION "${DESKFLOW_VERSION_MAJOR}.${DESKFLOW_VERSION_MINOR}.${DESKFLOW_VERSION_PATCH}.${DESKFLOW_VERSION_TWEAK}"
-  DESCRIPTION "Keyboard and mouse sharing utility"
+  DESCRIPTION "Keyboard and mouse sharing utility(HID version)"
   HOMEPAGE_URL "https://deskflow.org"
   LANGUAGES C CXX
 )

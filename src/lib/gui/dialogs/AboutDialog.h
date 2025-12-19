@@ -70,5 +70,8 @@ private:
 
       // Deskflow maintainers
       QStringLiteral("Chris Rizzitello"),
+
+      // Deskflow-HID maintainer
+      QStringLiteral("Locke Huang"),
   };
 };
