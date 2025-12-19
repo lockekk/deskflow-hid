@@ -79,7 +79,6 @@ if(WIN32)
       --no-opengl-sw
       --no-quick-import
       --dir "${QT_DEPENDS_DIR}"
-      --plugindir "${QT_DEPENDS_DIR}/plugins"
       $<TARGET_FILE:${target}>
     COMMAND ${CMAKE_COMMAND} -E copy_directory_if_different
       ${QT_DEPENDS_DIR}

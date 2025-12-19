@@ -1,24 +1,5 @@
 <CPackWiXPatch>
-  <CPackWiXFragment Id="CM_CP_deskflow_daemon.exe">
-    <ServiceInstall
-      Id="ServiceInstall"
-      Name="Deskflow"
-      DisplayName="Deskflow"
-      Description="Runs the Core process on secure desktops (UAC prompts, login screen, etc)."
-      ErrorControl="normal"
-      Start="auto"
-      Type="ownProcess">
-      <util:ServiceConfig
-        ResetPeriodInDays="1"
-        RestartServiceDelayInSeconds="1"
-        FirstFailureActionType="restart"
-        SecondFailureActionType="restart"
-        ThirdFailureActionType="none"
-      />
-    </ServiceInstall>
-    <ServiceControl Id="ServiceControl" Name="Deskflow" Remove="uninstall" Start="install" Stop="both"/>
-    <RemoveFile Id="RmOldLog" On="install" Name="deskflow-daemon.log"/>
-  </CPackWiXFragment>
+
 
   <CPackWiXFragment Id="CM_CP_deskflow_core.exe">
     <firewall:FirewallException Id="ServerFirewallException" Name="Deskflow Server" Program="[INSTALL_ROOT]deskflow-core.exe" Scope="any"/>

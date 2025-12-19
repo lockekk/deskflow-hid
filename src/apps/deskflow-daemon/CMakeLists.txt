@@ -27,18 +27,19 @@ if(WIN32)
     ${libs}
     Qt6::Core)
 
-  install(
-    TARGETS ${target}
-    RUNTIME_DEPENDENCY_SET deamonDeps
-    RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
-  )
-  install(RUNTIME_DEPENDENCY_SET daemonDeps
-    PRE_EXCLUDE_REGEXES
-      "api-ms-win-.*"
-      "ext-ms-.*"
-      "^hvsifiletrust\\.dll$"
-    POST_EXCLUDE_REGEXES
-      ".*system32.*"
-    RUNTIME DESTINATION ${CMAKE_INSTALL_LIBDIR}
-  )
+  # upstream change: remove daemon from MSI
+  #install(
+  #  TARGETS ${target}
+  #  RUNTIME_DEPENDENCY_SET deamonDeps
+  #  RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
+  #)
+  #install(RUNTIME_DEPENDENCY_SET daemonDeps
+  #  PRE_EXCLUDE_REGEXES
+  #    "api-ms-win-.*"
+  #    "ext-ms-.*"
+  #    "^hvsifiletrust\\.dll$"
+  #  POST_EXCLUDE_REGEXES
+  #    ".*system32.*"
+  #  RUNTIME DESTINATION ${CMAKE_INSTALL_LIBDIR}
+  #)
 endif()
