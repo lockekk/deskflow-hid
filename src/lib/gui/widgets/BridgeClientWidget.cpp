@@ -3,6 +3,7 @@
  */
 
 #include "BridgeClientWidget.h"
+#include <QEvent>
 
 #include "common/Settings.h"
 
@@ -19,10 +20,12 @@ constexpr auto kPortraitIconPath = ":/bridge-client/client/orientation_portrait.
 namespace deskflow::gui {
 
 BridgeClientWidget::BridgeClientWidget(
-    const QString &screenName, const QString &devicePath, const QString &configPath, QWidget *parent
+    const QString &screenName, const QString &serialNumber, const QString &devicePath, const QString &configPath,
+    QWidget *parent
 )
     : QGroupBox(screenName, parent),
       m_screenName(screenName),
+      m_serialNumber(serialNumber),
       m_devicePath(devicePath),
       m_configPath(configPath)
 {
@@ -54,8 +57,7 @@ BridgeClientWidget::BridgeClientWidget(
   m_activeHostnameLabel = new QLabel(this);
   m_activeHostnameLabel->setAlignment(Qt::AlignVCenter | Qt::AlignLeft);
   m_activeHostnameLabel->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Preferred);
-  m_activeHostnameLabel->setStyleSheet(
-      "color: gray;"
+  m_activeHostnameLabel->setStyleSheet("color: gray;"
   ); // Make it distinct, maybe? Or just normal. user said "next to", didn't specify style.
 
   // Activation state and orientation labels
@@ -97,6 +99,7 @@ void BridgeClientWidget::setConnected(bool connected)
     m_btnConnect->setChecked(connected);
   }
   m_btnConnect->setText(connected ? tr("Disconnect") : tr("Connect"));
+  setActiveHostname(m_activeHostname);
   refreshButtonStates();
 }
 
@@ -135,7 +138,7 @@ void BridgeClientWidget::setActiveHostname(const QString &hostname)
   m_activeHostname = hostname.trimmed();
   m_activeHostnameLabel->setText(m_activeHostname);
 
-  if (m_isBleConnected) {
+  if (m_isConnected && m_isBleConnected) {
     m_activeHostnameLabel->setStyleSheet(QStringLiteral("color: red; font-weight: normal;"));
   } else {
     m_activeHostnameLabel->setStyleSheet(QStringLiteral("color: gray; font-weight: normal;"));
@@ -261,6 +264,25 @@ void BridgeClientWidget::onConnectToggled(bool checked)
 void BridgeClientWidget::onConfigureClicked()
 {
   Q_EMIT configureClicked(m_devicePath, m_configPath);
+}
+
+void BridgeClientWidget::changeEvent(QEvent *event)
+{
+  QGroupBox::changeEvent(event);
+  if (event->type() == QEvent::LanguageChange) {
+    retranslateUi();
+  }
+}
+
+void BridgeClientWidget::retranslateUi()
+{
+  m_btnConnect->setText(m_isConnected ? tr("Disconnect") : tr("Connect"));
+  m_btnConfigure->setText(tr("Configure"));
+
+  refreshDeviceNameLabel();
+  refreshActivationStateLabel();
+  refreshButtonStates();
+  refreshOrientationLabel();
 }
 
 } // namespace deskflow::gui

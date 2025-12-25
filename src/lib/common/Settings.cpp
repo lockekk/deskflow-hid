@@ -232,7 +232,7 @@ QVariant Settings::defaultValue(const QString &key)
   }
 
   if (key == Bridge::BluetoothKeepAlive) {
-    return false;
+    return true;
   }
 
   if (key == Bridge::ActiveProfileHostname) {

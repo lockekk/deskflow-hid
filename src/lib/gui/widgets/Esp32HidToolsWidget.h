@@ -95,6 +95,7 @@ private:
   QPushButton *m_btnEmailOrder;
 
   // Common
+  QTabWidget *m_tabWidget;
   QTextEdit *m_logOutput;
 
   // State
@@ -109,6 +110,8 @@ private:
   void flashFirmware(const std::vector<uint8_t> &data);
   QString composeOrderContent(QString &outPrefix, int &outOption);
   void reject() override;
+  void changeEvent(QEvent *event) override;
+  void updateText();
 };
 
 } // namespace deskflow::gui

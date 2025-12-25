@@ -130,11 +130,8 @@ MainWindow::MainWindow()
       m_actionSettings{new QAction(this)},
       m_actionStartCore{new QAction(this)},
       m_actionRestartCore{new QAction(this)},
-      m_actionStopCore{new QAction(this)}
-#ifdef DESKFLOW_ENABLE_ESP32_HID_TOOLS
-      ,
+      m_actionStopCore{new QAction(this)},
       m_actionEsp32HidTools{new QAction(this)}
-#endif
 {
   ui->setupUi(this);
 
@@ -386,8 +383,11 @@ void MainWindow::connectSlots()
   connect(m_actionStartCore, &QAction::triggered, this, &MainWindow::startCore);
   connect(m_actionRestartCore, &QAction::triggered, this, &MainWindow::resetCore);
   connect(m_actionStopCore, &QAction::triggered, this, &MainWindow::stopCore);
-#ifdef DESKFLOW_ENABLE_ESP32_HID_TOOLS
+#if DESKFLOW_HID_ENABLE_ESP32_HID_TOOLS
   connect(m_actionEsp32HidTools, &QAction::triggered, this, &MainWindow::openEsp32HidTools);
+#else
+  m_actionEsp32HidTools->setEnabled(false);
+  m_actionEsp32HidTools->setToolTip(tr("ESP32 HID Tools are not available in this build (submodule missing)."));
 #endif
 
   connect(&m_versionChecker, &VersionChecker::updateFound, this, &MainWindow::versionCheckerUpdateFound);
@@ -619,12 +619,6 @@ void MainWindow::resetCore()
 void MainWindow::openEsp32HidTools()
 {
   if (m_deskflowHidExtension) {
-    if (m_deskflowHidExtension->hasActiveBridgeClients()) {
-      QMessageBox::warning(
-          this, tr("Bridge Clients Active"), tr("Please disconnect all bridge clients before using the Firmware tool.")
-      );
-      return;
-    }
     m_deskflowHidExtension->openEsp32HidTools();
   }
 }
@@ -814,7 +808,10 @@ void MainWindow::createMenuBar()
   m_menuFile->addAction(m_actionRestartCore);
   m_menuFile->addAction(m_actionStopCore);
   m_menuFile->addSeparator();
-#ifdef DESKFLOW_ENABLE_ESP32_HID_TOOLS
+#if DESKFLOW_HID_ENABLE_ESP32_HID_TOOLS
+  m_menuFile->addAction(m_actionEsp32HidTools);
+  m_menuFile->addSeparator();
+#else
   m_menuFile->addAction(m_actionEsp32HidTools);
   m_menuFile->addSeparator();
 #endif
@@ -887,7 +884,7 @@ void MainWindow::setTrayIcon()
     if (deskflow::platform::isMac())
       m_trayIcon->setIcon(QIcon::fromTheme(themeIcon));
     else
-      m_trayIcon->setIcon(QIcon(fallbackPath.arg(kAppId, QStringLiteral("dark"), themeIcon)));
+      m_trayIcon->setIcon(QIcon(fallbackPath.arg(QStringLiteral("deskflow"), QStringLiteral("dark"), themeIcon)));
     return;
   }
 
@@ -1199,8 +1196,10 @@ void MainWindow::updateText()
   m_actionStartCore->setText(tr("&Start"));
   m_actionRestartCore->setText(tr("Rest&art"));
   m_actionStopCore->setText(tr("S&top"));
-#ifdef DESKFLOW_ENABLE_ESP32_HID_TOOLS
+#if DESKFLOW_HID_ENABLE_ESP32_HID_TOOLS
   m_actionEsp32HidTools->setText(tr("Firmware"));
+#else
+  m_actionEsp32HidTools->setText(tr("Firmware (Unavailable)"));
 #endif
   //: %1 will be the replaced with the appname
   m_actionAbout->setText(tr("About %1...").arg(kAppName));

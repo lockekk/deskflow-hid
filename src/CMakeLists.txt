@@ -6,7 +6,7 @@
 include_directories(./lib)
 include_directories(${CMAKE_CURRENT_BINARY_DIR}/lib)
 
-# Include user-specific configuration early so options like BUILD_HID are available to all targets
+# Include user-specific configuration early so HID options are available to all targets
 include(CMakeLists.user.cmake OPTIONAL)
 
 add_subdirectory(lib)

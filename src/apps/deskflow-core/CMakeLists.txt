@@ -6,7 +6,7 @@
 set(target ${CMAKE_PROJECT_NAME}-core)
 
 add_executable(${target}
-  "${target}.cpp"
+  "deskflow-core.cpp"
   CoreArgs.h
   CoreArgParser.h
   CoreArgParser.cpp
@@ -19,7 +19,7 @@ if(WIN32)
   configure_file(${CMAKE_SOURCE_DIR}/src/apps/res/windows.rc.in ${target}.rc)
 
   target_sources(${target} PRIVATE
-    ${target}.exe.manifest
+    "deskflow-core.exe.manifest"
     ${CMAKE_SOURCE_DIR}/src/apps/res/deskflow.ico
     ${CMAKE_CURRENT_BINARY_DIR}/${target}.rc
   )

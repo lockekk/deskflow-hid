@@ -4,6 +4,10 @@ set_directory_properties(PROPERTIES CLEAN_NO_CUSTOM 1)
 option(CLEAN_TRS "Clean obsolete translations from tr files" OFF)
 find_package(Qt6 ${REQUIRED_QT_VERSION} REQUIRED NO_MODULE COMPONENTS LinguistTools)
 
+# Temporarily change project name to match original translation filenames
+set(ORIGINAL_PROJECT_NAME ${CMAKE_PROJECT_NAME})
+set(CMAKE_PROJECT_NAME "deskflow")
+
 # To add a new language Add 639 shortname
 set (${CMAKE_PROJECT_NAME}_TRS
   ${CMAKE_PROJECT_NAME}_es.ts
@@ -58,3 +62,6 @@ else()
     )
   endforeach()
 endif()
+
+# Restore project name
+set(CMAKE_PROJECT_NAME ${ORIGINAL_PROJECT_NAME})

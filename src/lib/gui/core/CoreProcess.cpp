@@ -18,8 +18,8 @@
 #include <QDir>
 #include <QFile>
 #include <QMutexLocker>
-#include <QSharedMemory>
 #include <QRegularExpression>
+#include <QSharedMemory>
 
 namespace deskflow::gui {
 
@@ -321,6 +321,12 @@ void CoreProcess::start(std::optional<ProcessMode> processModeOption)
   setConnectionState(ConnectionState::Connecting);
 
   if (processMode == ProcessMode::Desktop) {
+    if (m_process) {
+      qDebug("cleaning up existing process object before replacement");
+      m_process->disconnect(this);
+      m_process->deleteLater();
+      m_process = nullptr;
+    }
     m_process = new QProcess(this);
     connect(m_process, &QProcess::finished, this, &CoreProcess::onProcessFinished, Qt::UniqueConnection);
     connect(

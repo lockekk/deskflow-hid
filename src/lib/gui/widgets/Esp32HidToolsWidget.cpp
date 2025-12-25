@@ -6,6 +6,7 @@
 #include <QApplication>
 #include <QClipboard>
 #include <QDesktopServices>
+#include <QEvent>
 #include <QFile>
 #include <QFileDialog>
 #include <QFutureWatcher>
@@ -54,7 +55,7 @@ Esp32HidToolsWidget::Esp32HidToolsWidget(const QString &devicePath, QWidget *par
 
   mainLayout->addLayout(portLayout);
 
-  auto *tabWidget = new QTabWidget(this);
+  m_tabWidget = new QTabWidget(this);
 
   // --- Factory Tab ---
   auto *factoryTab = new QWidget();
@@ -99,7 +100,7 @@ Esp32HidToolsWidget::Esp32HidToolsWidget(const QString &devicePath, QWidget *par
   m_copyInfoBtn = new QPushButton(tr("Copy Device Secret"));
   factoryLayout->addWidget(m_copyInfoBtn);
 
-  tabWidget->addTab(factoryTab, tr("Factory Mode"));
+  m_tabWidget->addTab(factoryTab, tr("Factory Mode"));
 
   // --- Upgrade Tab ---
   auto *upgradeTab = new QWidget();
@@ -152,7 +153,7 @@ Esp32HidToolsWidget::Esp32HidToolsWidget(const QString &devicePath, QWidget *par
   upgradeLayout->addWidget(manualGroup);
   upgradeLayout->addStretch();
 
-  tabWidget->addTab(upgradeTab, tr("Upgrade Mode"));
+  m_tabWidget->addTab(upgradeTab, tr("Upgrade Mode"));
 
   // --- Activation Tab ---
   auto *activationTab = new QWidget();
@@ -192,7 +193,7 @@ Esp32HidToolsWidget::Esp32HidToolsWidget(const QString &devicePath, QWidget *par
   activationLayout->addWidget(m_groupActivationInput);
   activationLayout->addStretch();
 
-  tabWidget->addTab(activationTab, tr("Activation"));
+  m_tabWidget->addTab(activationTab, tr("Activation"));
 
   // --- Order Tab ---
   auto *orderTab = new QWidget();
@@ -209,7 +210,7 @@ Esp32HidToolsWidget::Esp32HidToolsWidget(const QString &devicePath, QWidget *par
   userInfoLayout->addWidget(m_orderEmail, 1, 1);
 
   // Options
-  auto *optionsGroup = new QGroupBox(tr("Request Options"));
+  auto *optionsGroup = new QGroupBox(tr("Order Options"));
   auto *optionsLayout = new QVBoxLayout(optionsGroup);
   m_orderOption1 = new QRadioButton(tr("Free trial for 7 days"));
   m_orderOption2 = new QRadioButton(tr("I am ok with free trial and want to buy full license"));
@@ -254,18 +255,18 @@ Esp32HidToolsWidget::Esp32HidToolsWidget(const QString &devicePath, QWidget *par
   orderLayout->addLayout(orderButtonLayout);
   orderLayout->addStretch();
 
-  tabWidget->addTab(orderTab, tr("Order"));
+  m_tabWidget->addTab(orderTab, tr("Order"));
 
   // --- Common Output ---
   m_logOutput = new QTextEdit();
   m_logOutput->setReadOnly(true);
 
-  mainLayout->addWidget(tabWidget);
+  mainLayout->addWidget(m_tabWidget);
   mainLayout->addWidget(new QLabel(tr("Log Output:")));
   mainLayout->addWidget(m_logOutput);
 
   // Connect Signals
-  connect(tabWidget, &QTabWidget::currentChanged, this, &Esp32HidToolsWidget::onTabChanged);
+  connect(m_tabWidget, &QTabWidget::currentChanged, this, &Esp32HidToolsWidget::onTabChanged);
 
   connect(m_factoryBrowseBtn, &QPushButton::clicked, this, &Esp32HidToolsWidget::onBrowseFactory);
   connect(m_factoryFlashBtn, &QPushButton::clicked, this, &Esp32HidToolsWidget::onFlashFactory);
@@ -995,6 +996,60 @@ void Esp32HidToolsWidget::reject()
   }
   QDialog::reject();
 }
+void Esp32HidToolsWidget::changeEvent(QEvent *event)
+{
+  QDialog::changeEvent(event);
+  if (event->type() == QEvent::LanguageChange) {
+    updateText();
+  }
+}
+
+void Esp32HidToolsWidget::updateText()
+{
+  if (m_devicePath.isEmpty()) {
+    setWindowTitle(tr("Firmware Flash Tool"));
+  } else {
+    setWindowTitle(tr("Firmware Flash Tool - %1").arg(m_devicePath));
+  }
+
+  m_refreshPortsBtn->setText(tr("Refresh"));
+
+  m_tabWidget->setTabText(0, tr("Factory Mode"));
+  m_tabWidget->setTabText(1, tr("Upgrade Mode"));
+  m_tabWidget->setTabText(2, tr("Activation"));
+  m_tabWidget->setTabText(3, tr("Order"));
+
+  m_factoryPathEdit->setPlaceholderText(tr("Path to factory.fzip"));
+  m_factoryBrowseBtn->setText(tr("Browse..."));
+  m_factoryFlashBtn->setText(tr("Flash"));
+  m_downloadFlashBtn->setText(tr("Flash"));
+  m_copyInfoBtn->setText(tr("Copy Device Secret"));
+
+  m_checkUpgradeBtn->setText(tr("Check for Updates"));
+  m_flashOnlineBtn->setText(tr("Flash"));
+  m_upgradePathEdit->setPlaceholderText(tr("Path to upgrade.uzip"));
+  m_upgradeBrowseBtn->setText(tr("Browse..."));
+  m_flashLocalBtn->setText(tr("Flash"));
+
+  m_btnCopySerial->setText(tr("Copy Serial"));
+  m_lineActivationKey->setPlaceholderText(tr("Paste Activation Key Here"));
+  m_btnActivate->setText(tr("Activate"));
+
+  m_orderOption1->setText(tr("Free trial for 7 days"));
+  m_orderOption2->setText(tr("I am ok with free trial and want to buy full license"));
+  m_orderOption3->setText(tr("Skip trial and buy Full licensed version"));
+  m_orderOption4->setText(tr("Already licensed, but want bump profiles"));
+
+  m_btnGenerateOrder->setText(tr("Generate Request File"));
+  m_btnCopyOrder->setText(tr("Copy content"));
+  m_btnEmailOrder->setText(tr("Email"));
+
+  // Update dynamic labels that might have "Unknown" or similar markers
+  m_lblCurrentVersion->setText(tr("Current Version: %1").arg(m_lblCurrentVersion->text().split(": ").last()));
+  m_lblLatestVersion->setText(tr("Latest Version: %1").arg(m_lblLatestVersion->text().split(": ").last()));
+  m_labelActivationState->setText(tr("State: %1").arg(m_labelActivationState->text().split(": ").last()));
+}
+
 } // namespace deskflow::gui
 
 void deskflow::gui::Esp32HidToolsWidget::setupUI()
@@ -1093,6 +1148,17 @@ void deskflow::gui::Esp32HidToolsWidget::refreshDeviceState()
         m_orderOption3->setEnabled(hasSecret);
         m_orderOption2->setEnabled(canBuyFull);
         m_orderOption4->setEnabled(isLicensed && result.totalProfiles == 2);
+
+        // Check the first valid (enabled) option
+        if (m_orderOption1->isEnabled()) {
+          m_orderOption1->setChecked(true);
+        } else if (m_orderOption2->isEnabled()) {
+          m_orderOption2->setChecked(true);
+        } else if (m_orderOption3->isEnabled()) {
+          m_orderOption3->setChecked(true);
+        } else if (m_orderOption4->isEnabled()) {
+          m_orderOption4->setChecked(true);
+        }
 
         // Total Profiles selection logic
         m_orderTotalProfiles->setEnabled(result.totalProfiles == 2);

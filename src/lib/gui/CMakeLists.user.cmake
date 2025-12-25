@@ -49,13 +49,13 @@ elseif(APPLE)
 endif()
 
 set(ESP32_HID_TOOLS_DIR "${CMAKE_SOURCE_DIR}/submodules/esp32-hid-tools")
-if(BUILD_HID AND EXISTS "${ESP32_HID_TOOLS_DIR}/CMakeLists.txt")
+if(HAS_ESP32_HID_TOOLS)
   message(STATUS "Enabling ESP32 HID Tools in GUI")
   list(APPEND bridge_sources
     widgets/Esp32HidToolsWidget.cpp
     widgets/Esp32HidToolsWidget.h
   )
-  target_compile_definitions(gui PRIVATE DESKFLOW_ENABLE_ESP32_HID_TOOLS)
+  target_compile_definitions(gui PRIVATE DESKFLOW_HID_ENABLE_ESP32_HID_TOOLS=1)
 
   target_include_directories(gui PRIVATE
     ${ESP32_HID_TOOLS_DIR}
@@ -65,6 +65,8 @@ if(BUILD_HID AND EXISTS "${ESP32_HID_TOOLS_DIR}/CMakeLists.txt")
     flash_tool_lib
     downloader_lib
   )
+else()
+  target_compile_definitions(gui PRIVATE DESKFLOW_HID_ENABLE_ESP32_HID_TOOLS=0)
 endif()
 
 target_sources(gui PRIVATE ${bridge_sources})

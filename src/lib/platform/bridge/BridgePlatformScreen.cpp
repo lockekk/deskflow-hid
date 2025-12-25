@@ -23,7 +23,7 @@ namespace deskflow::bridge {
 namespace {
 constexpr int kMinMouseDelta = -32767;
 constexpr int kMaxMouseDelta = 32767;
-constexpr std::chrono::seconds kKeepAliveInterval(60);
+constexpr std::chrono::seconds kKeepAliveInterval(30);
 constexpr double kKeepAliveIntervalSeconds = static_cast<double>(kKeepAliveInterval.count());
 
 std::string hexDump(const uint8_t *data, size_t length, size_t maxBytes = 32)

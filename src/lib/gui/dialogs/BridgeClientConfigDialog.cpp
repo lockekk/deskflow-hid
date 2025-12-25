@@ -64,8 +64,8 @@ BridgeClientConfigDialog::BridgeClientConfigDialog(
   auto *advancedLayout = new QVBoxLayout(advancedGroup);
 
   // Bluetooth Keep-Alive
-  m_checkBluetoothKeepAlive = new QCheckBox(tr("Bluetooth connection follow client"), this);
-  m_checkBluetoothKeepAlive->setToolTip(tr("Send keep-alive commands to maintain Bluetooth connection"));
+  m_checkBluetoothKeepAlive = new QCheckBox(tr("Automatically disconnect Bluetooth"), this);
+  m_checkBluetoothKeepAlive->setToolTip(tr("Disconnects from the host device when you stop using Deskflow."));
   advancedLayout->addWidget(m_checkBluetoothKeepAlive);
 
   mainLayout->addWidget(advancedGroup);

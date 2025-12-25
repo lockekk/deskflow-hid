@@ -146,19 +146,27 @@ p, li { white-space: pre-wrap; }
         <translation type="unfinished"></translation>
     </message>
     <message>
+        <source>Ready</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
         <source>Unknown Device</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Bridge client device connected: %1 (%2)</source>
+        <source>Bridge client device plugged in: %1</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Bridge client device disconnected: %1 (%2)</source>
+        <source>Bridge client device unplugged: %1</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Error: No configuration found for device: %1</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Already connected via another profile</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -419,6 +427,10 @@ Do you want to connect to the server?
         <translation type="unfinished">Ya está disponible una nueva versión v%1</translation>
     </message>
     <message>
+        <source>ESP32 HID Tools are not available in this build (submodule missing).</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
         <source>Address missing</source>
         <translation type="unfinished">Dirección faltante</translation>
     </message>
@@ -543,6 +555,10 @@ Do you want to connect to the server?
         <translation type="unfinished">%1 está desconectado</translation>
     </message>
     <message>
+        <source>Firmware (Unavailable)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
         <source>Ctrl+Q</source>
         <extracomment>Quit shortcut</extracomment>
         <translation type="unfinished">Ctrl+Q</translation>
@@ -610,14 +626,6 @@ Nombres válidos:
     </message>
     <message>
         <source>Firmware</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Bridge Clients Active</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Please disconnect all bridge clients before using the Firmware tool.</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -1434,14 +1442,6 @@ If you choose &apos;No&apos;, the bridge client configuration will be kept and c
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Bluetooth connection follow client</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Send keep-alive commands to maintain Bluetooth connection</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>Rename Failed</source>
         <translation type="unfinished"></translation>
     </message>
@@ -1472,6 +1472,14 @@ If you choose &apos;No&apos;, the bridge client configuration will be kept and c
     <message>
         <source>Advanced</source>
         <translation type="unfinished">Avanzado</translation>
+    </message>
+    <message>
+        <source>Automatically disconnect Bluetooth</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Disconnects from the host device when you stop using Deskflow.</source>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Profiles (Device)</source>
@@ -1726,10 +1734,6 @@ Duplicate: %1</source>
     </message>
     <message>
         <source>Email:</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Request Options</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -2241,6 +2245,10 @@ Your firmware will be back in 24 hours.</source>
     </message>
     <message>
         <source>State: Error</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Order Options</source>
         <translation type="unfinished"></translation>
     </message>
     <message>

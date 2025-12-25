@@ -4,16 +4,16 @@
 [Desktop Entry]
 Type=Application
 Version=1.0
-Name=Deskflow
+Name=Deskflow-HID
 Comment=Mouse and keyboard sharing utility
-Exec=deskflow
+Exec=deskflow-hid
 Icon=org.deskflow.deskflow
 Terminal=false
 Categories=Utility;
 Keywords=keyboard;mouse;sharing;network;share;
-Name[zh_CN]=Deskflow
+Name[zh_CN]=Deskflow-HID
 Comment[zh_CN]=键鼠共享工具
 Keywords[zh_CN]=键盘;鼠标;网络;共享;
-Name[ru]=Deskflow
+Name[ru]=Deskflow-HID
 Comment[ru]=Приложения чтобы использовать одну мышку и клавиатуру с разными устройствами
 Keywords[ru]=Передача;Трансляция;barrier;input-leap;

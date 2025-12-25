@@ -32,15 +32,15 @@ Build the main Deskflow application.
 cmake --build build -j$(sysctl -n hw.ncpu)
 ```
 
-**Note**: The binaries will be located in `build/bin/Deskflow.app`.
-- Main App: `build/bin/Deskflow.app/Contents/MacOS/Deskflow`
-- Core Service: `build/bin/Deskflow.app/Contents/MacOS/deskflow-core`
+**Note**: The binaries will be located in `build/bin/Deskflow-HID.app`.
+- Main App: `build/bin/Deskflow-HID.app/Contents/MacOS/Deskflow-HID`
+- Core Service: `build/bin/Deskflow-HID.app/Contents/MacOS/deskflow-core`
 
 ### 4. Deploy Qt Frameworks
 The application requires Qt frameworks to be bundled. Run the following command (ensure `CMAKE_PREFIX_PATH` is set as per step 1):
 
 ```bash
-$CMAKE_PREFIX_PATH/bin/macdeployqt build/bin/Deskflow.app
+$CMAKE_PREFIX_PATH/bin/macdeployqt build/bin/Deskflow-HID.app
 ```
 
 ### 5. Sign (Required for Privacy/Accessibility)
@@ -49,7 +49,7 @@ On macOS, the app must be signed to function correctly with system permissions.
 
 ```bash
 # Sign the entire bundle
-codesign --force --deep --sign "$APPLE_CODESIGN_DEV" build/bin/Deskflow.app
+codesign --force --deep --sign "$APPLE_CODESIGN_DEV" build/bin/Deskflow-HID.app
 ```
 
 ## 5. Launch
@@ -58,7 +58,7 @@ You can launch the app directly from the build directory:
 
 ```bash
 # Run the main GUI
-build/bin/Deskflow.app/Contents/MacOS/Deskflow
+build/bin/Deskflow-HID.app/Contents/MacOS/Deskflow-HID
 ```
 
 *Note: The GUI will automatically launch `deskflow-core` from the bundle.*
@@ -67,11 +67,11 @@ build/bin/Deskflow.app/Contents/MacOS/Deskflow
 
 - **Permissions**: If the app fails to capture input, try resetting accessibility permissions:
   ```bash
-  sudo tccutil reset Accessibility com.symless.deskflow
+  sudo tccutil reset Accessibility org.deskflow.deskflow-hid
   ```
 - **Leftover Processes**: If the server won't start, check for hung `deskflow-core` processes:
   ```bash
   pkill -9 -if deskflow
   ```
 - **Runtime Errors (dyld / missing core)**:
-  - If you see `core server binary does not exist`, ensure you built with `--target Deskflow deskflow-core`.
+  - If you see `core server binary does not exist`, ensure you built with `--target Deskflow-HID deskflow-hid-core`.

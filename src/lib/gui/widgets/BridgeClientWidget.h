@@ -37,7 +37,8 @@ public:
    * @param parent Parent widget
    */
   explicit BridgeClientWidget(
-      const QString &screenName, const QString &devicePath, const QString &configPath, QWidget *parent = nullptr
+      const QString &screenName, const QString &serialNumber, const QString &devicePath, const QString &configPath,
+      QWidget *parent = nullptr
   );
 
   ~BridgeClientWidget() override = default;
@@ -48,6 +49,14 @@ public:
   QString screenName() const
   {
     return m_screenName;
+  }
+
+  /**
+   * @brief Get serial number
+   */
+  QString serialNumber() const
+  {
+    return m_serialNumber;
   }
 
   /**
@@ -140,6 +149,8 @@ Q_SIGNALS:
   Q_SIGNAL void refreshDevicesRequested();
 
 protected:
+  void changeEvent(QEvent *event) override;
+
 private Q_SLOTS:
   void onConnectToggled(bool checked);
   void onConfigureClicked();
@@ -149,8 +160,10 @@ private:
   void refreshDeviceNameLabel();
   void refreshOrientationLabel();
   void refreshButtonStates();
+  void retranslateUi();
 
   QString m_screenName;
+  QString m_serialNumber;
   QString m_devicePath;
   QString m_configPath;
   bool m_isConnected = false;
