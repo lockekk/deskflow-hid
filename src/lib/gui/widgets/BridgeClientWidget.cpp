@@ -205,6 +205,11 @@ void BridgeClientWidget::setDeviceAvailable(const QString &devicePath, bool avai
 
   refreshButtonStates();
 
+  m_deviceNameLabel->setEnabled(available);
+  m_activeHostnameLabel->setEnabled(available);
+  m_orientationLabel->setEnabled(available);
+  m_activationStateLabel->setVisible(available);
+
   if (!available) {
     setStyleSheet("QGroupBox { color: gray; }");
   } else {
