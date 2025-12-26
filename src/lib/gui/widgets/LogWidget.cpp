@@ -11,6 +11,7 @@
 
 #include <QPlainTextEdit>
 #include <QVBoxLayout>
+#include <QScrollBar>
 
 LogWidget::LogWidget(QWidget *parent) : QWidget{parent}, m_textLog{new QPlainTextEdit(this)}
 {
@@ -33,11 +34,19 @@ LogWidget::LogWidget(QWidget *parent) : QWidget{parent}, m_textLog{new QPlainTex
   setLayout(layout);
 
   connect(
-      deskflow::gui::Logger::instance(), &deskflow::gui::Logger::newLine, m_textLog, &QPlainTextEdit::appendPlainText
+      deskflow::gui::Logger::instance(), &deskflow::gui::Logger::newLine, this, &LogWidget::appendLine
   );
 }
 
 void LogWidget::appendLine(const QString &msg)
 {
+  // Preserve horizontal scroll position to prevent auto-scrolling to the right on long lines
+  const auto hBar = m_textLog->horizontalScrollBar();
+  const int hval = hBar->value();
+
   m_textLog->appendPlainText(msg);
+
+  if (hBar->value() != hval) {
+      hBar->setValue(hval);
+  }
 }

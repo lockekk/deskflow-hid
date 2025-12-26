@@ -1,5 +1,6 @@
-// SPDX-FileCopyrightText: 2025 Deskflow Developers
-// SPDX-License-Identifier: MIT
+/*
+ * Deskflow-hid -- created by locke.huang@gmail.com
+ */
 
 #pragma once
 

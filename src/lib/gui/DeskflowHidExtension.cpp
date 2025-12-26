@@ -719,6 +719,32 @@ void DeskflowHidExtension::bridgeClientConnectToggled(
       deskflow::bridge::CdcTransport transport(devicePath);
       if (transport.open()) {
         if (transport.hasDeviceConfig()) {
+          if (transport.deviceConfig().activationState == deskflow::bridge::ActivationState::Inactive) {
+            transport.close();
+
+            const char *activationStateStr = transport.deviceConfig().activationStateString();
+            QString activationState = QString::fromLatin1(activationStateStr).trimmed();
+
+            // Ensure UI reflects the unlicensed state immediately
+            {
+              QSettings cfg(configPath, QSettings::IniFormat);
+              cfg.setValue(Settings::Bridge::ActivationState, activationState);
+              cfg.sync();
+            }
+
+            if (targetWidget) {
+              targetWidget->setActivationState(activationState);
+              targetWidget->setConnected(false);
+            }
+
+            QMessageBox::warning(
+                m_mainWindow, tr("Activation Required"),
+                tr("Free trial is expired. Please consider purchasing a license via \nFile -> Firmware -> Order.")
+            );
+            releaseBridgeSerialLock(serialNumber, configPath);
+            return;
+          }
+
           uint8_t activeProfile = transport.deviceConfig().activeProfile;
           deskflow::bridge::DeviceProfile profile;
           if (transport.getProfile(activeProfile, profile)) {

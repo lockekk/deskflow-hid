@@ -1,3 +1,7 @@
+/*
+ * Deskflow-hid -- created by locke.huang@gmail.com
+ */
+
 #include "BridgeClientConfigDialog.h"
 
 #include "common/Settings.h"
@@ -7,6 +11,7 @@
 #include <QDir>
 #include <QFileInfo>
 #include <QFormLayout>
+#include <QGridLayout>
 #include <QGroupBox>
 #include <QHBoxLayout>
 #include <QLabel>
@@ -22,8 +27,8 @@
 #include "platform/bridge/CdcTransport.h"
 
 namespace {
-constexpr auto kLandscapeIconPath = ":/bridge-client/client/orientation_landspace.png";
-constexpr auto kPortraitIconPath = ":/bridge-client/client/orientation_portrait.png";
+constexpr auto kLandscapeIconPath = ":/bridge-client/client/orientation_landscape.svg";
+constexpr auto kPortraitIconPath = ":/bridge-client/client/orientation_portrait.svg";
 } // namespace
 
 using namespace deskflow::gui;
@@ -39,22 +44,32 @@ BridgeClientConfigDialog::BridgeClientConfigDialog(
   setMinimumWidth(600);
 
   auto *mainLayout = new QVBoxLayout(this);
-  auto *formLayout = new QFormLayout();
+  auto *topLayout = new QGridLayout();
+  // topLayout->setContentsMargins(0, 0, 0, 0); // Optional: Match form layout defaults if needed
 
   // Screen Name
+  auto *lblScreenName = new QLabel(tr("Screen Name:"), this);
   m_editScreenName = new QLineEdit(this);
-  m_editScreenName->setMinimumHeight(30); // Ensure consistent height with Hostname
-  formLayout->addRow(tr("Screen Name:"), m_editScreenName);
+  m_editScreenName->setMinimumHeight(30);
 
+  topLayout->addWidget(lblScreenName, 0, 0, Qt::AlignLeft | Qt::AlignVCenter);
+  topLayout->addWidget(m_editScreenName, 0, 1);
+
+  // Device Name
+  auto *lblDeviceName = new QLabel(tr("Device name:"), this);
   m_editDeviceName = new QLineEdit(this);
   m_editDeviceName->setMaxLength(22);
   m_editDeviceName->setValidator(new QRegularExpressionValidator(
       QRegularExpression(QStringLiteral("^[A-Za-z0-9 _\\-\\.]{0,22}$")), m_editDeviceName
   ));
   m_editDeviceName->setPlaceholderText(tr("A-Z, 0-9, spaces, .-_ (max 22 chars)"));
-  formLayout->addRow(tr("Firmware Device Name:"), m_editDeviceName);
 
-  mainLayout->addLayout(formLayout);
+  topLayout->addWidget(lblDeviceName, 1, 0, Qt::AlignLeft | Qt::AlignVCenter);
+  topLayout->addWidget(m_editDeviceName, 1, 1);
+
+  topLayout->setColumnStretch(1, 1); // Ensure fields expand
+
+  mainLayout->addLayout(topLayout);
 
   // Profile Configuration Group (User requested this above Advanced)
   setupProfileUI(mainLayout);
@@ -78,6 +93,9 @@ BridgeClientConfigDialog::BridgeClientConfigDialog(
 
   // Load current config
   loadConfig();
+
+  // Prevent initial focus on inputs by focusing the dialog itself
+  this->setFocus();
 }
 
 void BridgeClientConfigDialog::setupProfileUI(QVBoxLayout *mainLayout)
@@ -95,71 +113,157 @@ void BridgeClientConfigDialog::setupProfileUI(QVBoxLayout *mainLayout)
 
   // Profile Details Form
   auto *detailsLayout = new QFormLayout();
-  detailsLayout->setContentsMargins(10, 15, 10, 15); // Add internal padding
-  detailsLayout->setVerticalSpacing(14);             // Reduced spacing between rows
+  detailsLayout->setContentsMargins(10, 15, 10, 15);
+  detailsLayout->setVerticalSpacing(14);
+  detailsLayout->setLabelAlignment(Qt::AlignLeft | Qt::AlignVCenter);
+  // QFormLayout manages columns automatically
 
-  m_editProfileName = new QLineEdit(this);
-  m_editProfileName->setMaxLength(31);     // 32 chars including null
-  m_editProfileName->setMinimumHeight(30); // Match Screen Name height
-  detailsLayout->addRow(tr("Hostname:"), m_editProfileName);
+  int row = 0; // Not strictly needed for QFormLayout addRow, but keeping if logic relied on it (it didn't really)
+
+  // Helper for consistent zero-margin HBoxes
+  auto createHBox = []() {
+    auto *l = new QHBoxLayout();
+    l->setContentsMargins(0, 0, 0, 0);
+    l->setSpacing(10); // Standard spacing between items
+    return l;
+  };
+
+  // Helper to add complex rows as a container widget
+  auto addComplexRow = [&](const QString &label, QLayout *layout) {
+    auto *container = new QWidget(this);
+    container->setLayout(layout);
+    detailsLayout->addRow(label, container);
+  };
+
+  // Hostname
+  {
+    auto *l = createHBox();
+    m_editProfileName = new QLineEdit(this);
+    m_editProfileName->setMaxLength(31); // 32 chars including null
+    m_editProfileName->setValidator(new QRegularExpressionValidator(
+        QRegularExpression(QStringLiteral("^[A-Za-z0-9 _\\-\\.]{0,31}$")), m_editProfileName
+    ));
+    m_editProfileName->setPlaceholderText(tr("A-Z, 0-9, spaces, .-_ (max 31 chars)"));
+    m_editProfileName->setMinimumHeight(30);
+    m_editProfileName->setMinimumWidth(400);
+    l->addWidget(m_editProfileName);
+    l->addStretch();
+
+    addComplexRow(tr("Hostname:"), l);
+
+    connect(m_editProfileName, &QLineEdit::textChanged, this, [this](const QString &text) {
+      if (m_selectedProfileIndex >= 0 && m_profileCache.contains(m_selectedProfileIndex)) {
+        auto &p = m_profileCache[m_selectedProfileIndex];
+        std::string s = text.toStdString();
+        std::strncpy(p.hostname, s.c_str(), sizeof(p.hostname));
+        if (sizeof(p.hostname) > 0)
+          p.hostname[sizeof(p.hostname) - 1] = '\0';
+        updateTabLabels();
+      }
+    });
+  }
 
   // Resolution
-  auto *resLayout = new QHBoxLayout();
-  m_spinProfileWidth = new QSpinBox(this);
-  m_spinProfileWidth->setRange(100, 10000);
-  m_spinProfileWidth->setMinimumWidth(100);
+  auto *resLayout = createHBox();
+
+  // Container for Width + 'x' to match 180px column alignment
+  auto *resContainer = new QWidget(this);
+  resContainer->setMinimumWidth(180);
+  {
+    auto *l = createHBox();
+    m_spinProfileWidth = new QSpinBox(this);
+    m_spinProfileWidth->setRange(100, 10000);
+    m_spinProfileWidth->setMinimumWidth(100);
+    l->addWidget(m_spinProfileWidth);
+
+    l->addStretch();
+    l->addWidget(new QLabel("x"));
+    l->addStretch();
+
+    resContainer->setLayout(l);
+  }
+
   m_spinProfileHeight = new QSpinBox(this);
   m_spinProfileHeight->setRange(100, 10000);
   m_spinProfileHeight->setMinimumWidth(100);
-  resLayout->addWidget(m_spinProfileWidth);
-  resLayout->addSpacing(5);
-  resLayout->addWidget(new QLabel("x"));
-  resLayout->addSpacing(5);
+
+  resLayout->addWidget(resContainer);
+  resLayout->addSpacing(10);
   resLayout->addWidget(m_spinProfileHeight);
   resLayout->addStretch();
-  detailsLayout->addRow(tr("Resolution:"), resLayout);
+
+  addComplexRow(tr("Resolution:"), resLayout);
 
   // Orientation
-  auto *orientLayout = new QHBoxLayout();
   m_profileOrientationGroup = new QButtonGroup(this);
-  m_radioProfileLandscape = new QRadioButton(tr("Landscape"), this);
-  m_radioProfileLandscape->setMinimumHeight(24); // Give radio buttons some breathing room
-  m_radioProfilePortrait = new QRadioButton(tr("Portrait"), this);
-  m_radioProfilePortrait->setMinimumWidth(100);
-  m_radioProfilePortrait->setMinimumHeight(24);
-  m_profileOrientationGroup->addButton(m_radioProfilePortrait, 0);  // 0 = Portrait
-  m_profileOrientationGroup->addButton(m_radioProfileLandscape, 1); // 1 = Landscape
-  orientLayout->addWidget(m_radioProfilePortrait);
-  orientLayout->addWidget(m_radioProfileLandscape);
-  orientLayout->addStretch();
-  detailsLayout->addRow(tr("Orientation:"), orientLayout);
+  m_radioProfileLandscape = new QRadioButton(this);
+  m_radioProfileLandscape->setIcon(QIcon(kLandscapeIconPath));
+  m_radioProfileLandscape->setIconSize(QSize(32, 32));
+  m_radioProfileLandscape->setToolTip(tr("Landscape"));
+  m_radioProfileLandscape->setMinimumHeight(32);
+
+  m_radioProfilePortrait = new QRadioButton(this);
+  m_radioProfilePortrait->setIcon(QIcon(kPortraitIconPath));
+  m_radioProfilePortrait->setIconSize(QSize(32, 32));
+  m_radioProfilePortrait->setToolTip(tr("Portrait"));
+  m_radioProfilePortrait->setMinimumHeight(32);
+  m_radioProfilePortrait->setMinimumWidth(180); // Fix alignment for 2nd column
+
+  m_profileOrientationGroup->addButton(m_radioProfilePortrait, 0);
+  m_profileOrientationGroup->addButton(m_radioProfileLandscape, 1);
+
+  {
+    auto *l = createHBox();
+    l->addWidget(m_radioProfilePortrait);
+    l->addSpacing(10);
+    l->addWidget(m_radioProfileLandscape);
+    l->addStretch();
+    addComplexRow(tr("Orientation:"), l);
+  }
 
   // HID Mode
-  auto *hidLayout = new QHBoxLayout();
   m_profileHidModeGroup = new QButtonGroup(this);
-  m_radioProfileCombo = new QRadioButton(tr("Combo"), this);
-  m_radioProfileCombo->setMinimumWidth(100);
+  m_radioProfileCombo = new QRadioButton(tr("Keyboard + Mouse"), this);
+  m_radioProfileCombo->setMinimumWidth(180); // Fix alignment for 2nd column
+
   m_radioProfileMouseOnly = new QRadioButton(tr("Mouse Only"), this);
-  m_profileHidModeGroup->addButton(m_radioProfileCombo, 0);     // 0 = Combo
-  m_profileHidModeGroup->addButton(m_radioProfileMouseOnly, 1); // 1 = Mouse Only
-  hidLayout->addWidget(m_radioProfileCombo);
-  hidLayout->addWidget(m_radioProfileMouseOnly);
-  hidLayout->addStretch();
-  detailsLayout->addRow(tr("HID Mode:"), hidLayout);
+
+  m_profileHidModeGroup->addButton(m_radioProfileCombo, 0);
+  m_profileHidModeGroup->addButton(m_radioProfileMouseOnly, 1);
+
+  {
+    auto *l = createHBox();
+    l->addWidget(m_radioProfileCombo);
+    l->addSpacing(10);
+    l->addWidget(m_radioProfileMouseOnly);
+    l->addStretch();
+    addComplexRow(tr("HID Mode:"), l);
+  }
 
   // Scroll Settings
-  auto *scrollLayout = new QHBoxLayout();
-  m_spinScrollSpeed = new QSpinBox(this);
-  m_spinScrollSpeed->setRange(0, 255);
-  m_spinScrollSpeed->setSingleStep(1);
-  scrollLayout->addWidget(m_spinScrollSpeed);
+  auto *scrollLayout = createHBox();
 
+  // Column 1: SpinBox wrapped to taking 180px to match column alignment
+  auto *spinContainer = new QWidget(this);
+  spinContainer->setMinimumWidth(180);
+  {
+    auto *spinLayout = createHBox();
+    m_spinScrollSpeed = new QSpinBox(this);
+    m_spinScrollSpeed->setRange(0, 255);
+    m_spinScrollSpeed->setSingleStep(1);
+    spinLayout->addWidget(m_spinScrollSpeed);
+    spinLayout->addStretch();
+    spinContainer->setLayout(spinLayout);
+  }
+  scrollLayout->addWidget(spinContainer);
+  scrollLayout->addSpacing(10);
+
+  m_checkInvertScroll = new QCheckBox(tr("Invert direction"), this);
+  m_checkInvertScroll->setMinimumWidth(150);
+  scrollLayout->addWidget(m_checkInvertScroll);
   scrollLayout->addStretch();
 
-  m_checkInvertScroll = new QCheckBox(tr("Invert scroll direction"), this);
-  scrollLayout->addWidget(m_checkInvertScroll);
-
-  detailsLayout->addRow(tr("Scroll speed:"), scrollLayout);
+  addComplexRow(tr("Scroll speed:"), scrollLayout);
 
   groupLayout->addLayout(detailsLayout);
 
@@ -206,6 +310,17 @@ void BridgeClientConfigDialog::loadConfig()
           .toBool();
   m_checkBluetoothKeepAlive->setChecked(bluetoothKeepAlive);
 
+  QString activationState =
+      config.value(Settings::Bridge::ActivationState, Settings::defaultValue(Settings::Bridge::ActivationState))
+          .toString();
+  if (activationState.compare("activated", Qt::CaseInsensitive) != 0) {
+    m_editDeviceName->setEnabled(false);
+    m_editDeviceName->setToolTip(tr("Device must be activated to change its name."));
+  } else {
+    m_editDeviceName->setEnabled(true);
+    m_editDeviceName->setToolTip(QString());
+  }
+
   // Load profiles from device
   QTimer::singleShot(0, this, &BridgeClientConfigDialog::loadProfilesFromDevice);
 }
@@ -246,7 +361,6 @@ void BridgeClientConfigDialog::loadProfilesFromDevice()
   for (int i = 0; i < m_totalProfiles; ++i) {
     m_profileTabBar->addTab(QString("Slot %1").arg(i));
   }
-  updateTabLabels();
 
   // Fetch profiles
   for (int i = 0; i < m_totalProfiles; ++i) {
@@ -258,6 +372,8 @@ void BridgeClientConfigDialog::loadProfilesFromDevice()
       m_profileCache[i] = profile;
     }
   }
+
+  updateTabLabels();
 
   m_profileGroup->setEnabled(true);
 
@@ -308,7 +424,20 @@ void BridgeClientConfigDialog::saveUiToCache(int index)
 void BridgeClientConfigDialog::updateTabLabels()
 {
   for (int i = 0; i < m_profileTabBar->count(); ++i) {
-    QString label = QString("Slot %1").arg(i);
+    QString label;
+    if (m_profileCache.contains(i)) {
+      const auto &p = m_profileCache[i];
+      QByteArray nameBytes(p.hostname, sizeof(p.hostname));
+      int nullPos = nameBytes.indexOf('\0');
+      if (nullPos >= 0)
+        nameBytes.truncate(nullPos);
+      label = QString::fromUtf8(nameBytes);
+    }
+
+    if (label.isEmpty()) {
+      label = QString("Slot %1").arg(i);
+    }
+
     if (i == m_deviceActiveProfileIndex) {
       label += " (Active)";
     }
@@ -388,6 +517,10 @@ void BridgeClientConfigDialog::onProfileActivateClicked()
   if (m_selectedProfileIndex < 0)
     return;
 
+  if (m_selectedProfileIndex == m_deviceActiveProfileIndex) {
+    return;
+  }
+
   deskflow::bridge::CdcTransport transport(m_devicePath);
   if (!transport.open()) {
     QMessageBox::critical(this, tr("Error"), tr("Failed to open device"));
@@ -397,7 +530,20 @@ void BridgeClientConfigDialog::onProfileActivateClicked()
   if (transport.switchProfile(m_selectedProfileIndex)) {
     m_deviceActiveProfileIndex = m_selectedProfileIndex;
     updateTabLabels();
-    QMessageBox::information(this, tr("Success"), tr("Switched to profile %1").arg(m_selectedProfileIndex));
+
+    QString profileName = QString("Slot %1").arg(m_selectedProfileIndex);
+    if (m_profileCache.contains(m_selectedProfileIndex)) {
+      const auto &p = m_profileCache[m_selectedProfileIndex];
+      QByteArray nameBytes(p.hostname, sizeof(p.hostname));
+      int nullPos = nameBytes.indexOf('\0');
+      if (nullPos >= 0)
+        nameBytes.truncate(nullPos);
+      QString name = QString::fromUtf8(nameBytes);
+      if (!name.isEmpty()) {
+        profileName = name;
+      }
+    }
+    QMessageBox::information(this, tr("Success"), tr("Switched to %1").arg(profileName));
   } else {
     QMessageBox::critical(
         this, tr("Error"), tr("Failed to switch profile: %1").arg(QString::fromStdString(transport.lastError()))

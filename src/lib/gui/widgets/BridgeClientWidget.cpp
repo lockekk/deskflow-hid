@@ -13,8 +13,8 @@
 #include <QSignalBlocker>
 
 namespace {
-constexpr auto kLandscapeIconPath = ":/bridge-client/client/orientation_landspace.png";
-constexpr auto kPortraitIconPath = ":/bridge-client/client/orientation_portrait.png";
+constexpr auto kLandscapeIconPath = ":/bridge-client/client/orientation_landscape.svg";
+constexpr auto kPortraitIconPath = ":/bridge-client/client/orientation_portrait.svg";
 } // namespace
 
 namespace deskflow::gui {
@@ -108,7 +108,7 @@ void BridgeClientWidget::updateConfig(const QString &screenName, const QString &
   m_screenName = screenName;
   m_configPath = configPath;
   setTitle(screenName); // Update the group box title
-  setTitle(screenName); // Update the group box title
+
   refreshActivationStateLabel();
   refreshDeviceNameLabel();
   refreshOrientationLabel();
@@ -116,9 +116,9 @@ void BridgeClientWidget::updateConfig(const QString &screenName, const QString &
 
 void BridgeClientWidget::setActivationState(const QString &activationState)
 {
-  QString normalized = activationState.trimmed().toLower();
+  QString normalized = activationState.trimmed();
   if (normalized.isEmpty()) {
-    normalized = Settings::defaultValue(Settings::Bridge::ActivationState).toString().toLower();
+    normalized = Settings::defaultValue(Settings::Bridge::ActivationState).toString();
   }
   m_activationState = normalized;
   m_activationStateLabel->setText(normalized);

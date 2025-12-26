@@ -1,5 +1,6 @@
-// SPDX-FileCopyrightText: 2025 Deskflow Developers
-// SPDX-License-Identifier: MIT
+/*
+ * Deskflow-hid -- created by locke.huang@gmail.com
+ */
 
 #pragma once
 
@@ -42,6 +43,13 @@ private:
   void processRemovedDevices(io_iterator_t iterator);
 
   UsbDeviceInfo extractDeviceInfo(io_service_t device);
+
+  enum class ConnectResult
+  {
+    Stop, // Failure or Success (stop processing)
+    Retry // Temporary failure (try again)
+  };
+  ConnectResult tryConnectDevice(io_service_t device, uint64_t entryID);
 
   IONotificationPortRef m_notifyPort = nullptr;
   io_iterator_t m_addedIter = 0;

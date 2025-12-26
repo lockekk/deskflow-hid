@@ -1,5 +1,6 @@
-// SPDX-FileCopyrightText: 2024 Deskflow Developers
-// SPDX-License-Identifier: MIT
+/*
+ * Deskflow-hid -- created by locke.huang@gmail.com
+ */
 
 #include <memory>
 #include <string>
@@ -138,8 +139,8 @@ void LinuxUdevMonitor::handleUdevEvent()
 
     // Only process if device has valid info and matches filters
     if (!info.devicePath.isEmpty() && matchesFilter(info)) {
-      qDebug() << "USB device event: add"
-               << "device:" << info.devicePath << "vendor:" << info.vendorId << "product:" << info.productId;
+      qInfo() << "LinuxUdevMonitor: Processing added device:" << info.vendorId << ":" << info.productId
+              << "Path:" << info.devicePath;
 
       // Track this device for removal events
       m_connectedDevices[info.devicePath] = info;

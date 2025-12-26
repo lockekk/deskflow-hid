@@ -432,15 +432,15 @@ bool CdcTransport::performHandshake(bool allowInsecure)
 
         // Also fetch serial number during handshake
         std::string serialNumber;
-        LOG_INFO("DebugTrace: performHandshake calling fetchSerialNumber");
+        LOG_DEBUG("CDC: performHandshake calling fetchSerialNumber");
         if (fetchSerialNumber(serialNumber)) {
           LOG_INFO("CDC: firmware serial number='%s'", serialNumber.c_str());
-          LOG_INFO("DebugTrace: performHandshake fetchSerialNumber done");
+          LOG_DEBUG("CDC: performHandshake fetchSerialNumber done");
         } else {
           LOG_WARN("CDC: failed to read serial number: %s", m_lastError.c_str());
           m_lastError.clear();
         }
-        LOG_INFO("DebugTrace: performHandshake finished success");
+        LOG_DEBUG("CDC: performHandshake finished success");
       } else {
         LOG_WARN("CDC: handshake ACK missing metadata (payload=%zu)", framePayload.size());
         LOG_INFO("CDC: handshake completed");
@@ -687,7 +687,7 @@ bool CdcTransport::fetchSerialNumber(std::string &outSerial)
     return false;
   }
 
-  LOG_INFO("DebugTrace: fetchSerialNumber entry");
+  LOG_DEBUG("CDC: fetchSerialNumber entry");
   std::vector<uint8_t> payload(1);
   payload[0] = kUsbConfigGetSerialNumber;
   if (!sendUsbFrame(kUsbFrameTypeControl, 0, payload)) {
@@ -698,10 +698,10 @@ bool CdcTransport::fetchSerialNumber(std::string &outSerial)
   uint8_t status = 0;
   std::vector<uint8_t> data;
   if (!waitForConfigResponse(msgType, status, data, kConfigCommandTimeoutMs)) {
-    LOG_ERR("DebugTrace: fetchSerialNumber timeout");
+    LOG_ERR("CDC: fetchSerialNumber timeout");
     return false;
   }
-  LOG_INFO("DebugTrace: fetchSerialNumber got response type=0x%02X status=%u", msgType, status);
+  LOG_DEBUG("CDC: fetchSerialNumber got response type=0x%02X status=%u", msgType, status);
 
   if (msgType != kUsbConfigGetSerialNumber) {
     m_lastError = "Unexpected config response";
@@ -714,9 +714,9 @@ bool CdcTransport::fetchSerialNumber(std::string &outSerial)
   }
 
   // Firmware returns any readable string (null-terminated)
-  LOG_INFO("DebugTrace: fetchSerialNumber assigning data size=%zu", data.size());
+  LOG_DEBUG("CDC: fetchSerialNumber assigning data size=%zu", data.size());
   outSerial.assign(reinterpret_cast<const char *>(data.data()), data.size());
-  LOG_INFO("DebugTrace: fetchSerialNumber success");
+  LOG_DEBUG("CDC: fetchSerialNumber success");
   return true;
 }
 
@@ -1042,7 +1042,7 @@ bool CdcTransport::readFrame(uint8_t &type, uint8_t &flags, std::vector<uint8_t>
       uint16_t length = static_cast<uint16_t>(m_rxBuffer[6]) | (static_cast<uint16_t>(m_rxBuffer[7]) << 8);
 
       const size_t frameSize = 8 + length;
-      // LOG_INFO("DebugTrace: readFrame magic=%04x len=%u size=%zu", magic, length, m_rxBuffer.size());
+      // LOG_INFO("CDC: readFrame magic=%04x len=%u size=%zu", magic, length, m_rxBuffer.size());
       if (m_rxBuffer.size() < frameSize) {
         // Need more data
       } else {

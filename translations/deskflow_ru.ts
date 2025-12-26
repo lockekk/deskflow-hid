@@ -5,18 +5,18 @@
     <name>AboutDialog</name>
     <message>
         <source>About Deskflow</source>
-        <translation>О Deskflow</translation>
+        <translation type="vanished">О Deskflow</translation>
     </message>
     <message>
         <source>&lt;!DOCTYPE HTML PUBLIC &quot;-//W3C//DTD HTML 4.0//EN&quot; &quot;http://www.w3.org/TR/REC-html40/strict.dtd&quot;&gt;
 &lt;html&gt;&lt;head&gt;&lt;meta name=&quot;qrichtext&quot; content=&quot;1&quot; /&gt;&lt;style type=&quot;text/css&quot;&gt;
 p, li { white-space: pre-wrap; }
-&lt;/style&gt;&lt;/head&gt;&lt;body style=&quot; font-family:&apos;Ubuntu&apos;; font-size:10pt; font-weight:400; font-style:normal;&quot;&gt;
+&lt;/style&gt;&lt;/head&gt;&lt;body style=&quot; font-size:10pt; font-weight:400; font-style:normal;&quot;&gt;
 &lt;p style=&quot; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;&lt;a href=&quot;https://www.gnu.org/licenses/old-licenses/gpl-2.0.html&quot;&gt;&lt;span style=&quot; text-decoration: underline; color:#508ed8;&quot;&gt;License: GNU GPL Version 2&lt;/a&gt;&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</source>
         <translation>&lt;!DOCTYPE HTML PUBLIC &quot;-//W3C//DTD HTML 4.0//EN&quot; &quot;http://www.w3.org/TR/REC-html40/strict.dtd&quot;&gt;
 &lt;html&gt;&lt;head&gt;&lt;meta name=&quot;qrichtext&quot; content=&quot;1&quot; /&gt;&lt;style type=&quot;text/css&quot;&gt;
 p, li { white-space: pre-wrap; }
-&lt;/style&gt;&lt;/head&gt;&lt;body style=&quot; font-family:&apos;Ubuntu&apos;; font-size:10pt; font-weight:400; font-style:normal;&quot;&gt;
+&lt;/style&gt;&lt;/head&gt;&lt;body style=&quot; font-size:10pt; font-weight:400; font-style:normal;&quot;&gt;
 &lt;p style=&quot; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;&lt;a href=&quot;https://www.gnu.org/licenses/old-licenses/gpl-2.0.html&quot;&gt;&lt;span style=&quot; text-decoration: underline; color:#508ed8;&quot;&gt;Лицензия: GNU GPL Версия 2&lt;/span&gt;&lt;/a&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</translation>
     </message>
     <message>
@@ -32,12 +32,12 @@ p, li { white-space: pre-wrap; }
         <source>&lt;!DOCTYPE HTML PUBLIC &quot;-//W3C//DTD HTML 4.0//EN&quot; &quot;http://www.w3.org/TR/REC-html40/strict.dtd&quot;&gt;
 &lt;html&gt;&lt;head&gt;&lt;meta name=&quot;qrichtext&quot; content=&quot;1&quot; /&gt;&lt;style type=&quot;text/css&quot;&gt;
 p, li { white-space: pre-wrap; }
-&lt;/style&gt;&lt;/head&gt;&lt;body style=&quot; font-family:&apos;Ubuntu&apos;; font-size:10pt; font-weight:400; font-style:normal;&quot;&gt;
+&lt;/style&gt;&lt;/head&gt;&lt;body style=&quot; font-size:10pt; font-weight:400; font-style:normal;&quot;&gt;
 &lt;p style=&quot; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;&lt;a href=&quot;https://github.com/deskflow/deskflow/graphs/contributors&quot;&gt;&lt;span style=&quot; text-decoration: underline; color:#508ed8;&quot;&gt;Code Contributors&lt;/span&gt;&lt;/a&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</source>
         <translation>&lt;!DOCTYPE HTML PUBLIC &quot;-//W3C//DTD HTML 4.0//EN&quot; &quot;http://www.w3.org/TR/REC-html40/strict.dtd&quot;&gt;
 &lt;html&gt;&lt;head&gt;&lt;meta name=&quot;qrichtext&quot; content=&quot;1&quot; /&gt;&lt;style type=&quot;text/css&quot;&gt;
 p, li { white-space: pre-wrap; }
-&lt;/style&gt;&lt;/head&gt;&lt;body style=&quot; font-family:&apos;Ubuntu&apos;; font-size:10pt; font-weight:400; font-style:normal;&quot;&gt;
+&lt;/style&gt;&lt;/head&gt;&lt;body style=&quot; font-size:10pt; font-weight:400; font-style:normal;&quot;&gt;
 &lt;p style=&quot; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;&lt;a href=&quot;https://github.com/deskflow/deskflow/graphs/contributors&quot;&gt;&lt;span style=&quot; text-decoration: underline; color:#508ed8;&quot;&gt;Авторы кода&lt;/span&gt;&lt;/a&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</translation>
     </message>
     <message>
@@ -52,6 +52,10 @@ p, li { white-space: pre-wrap; }
         <source>&amp;Close</source>
         <translatorcomment>закрыть &amp; ???</translatorcomment>
         <translation>&amp;Закрыть</translation>
+    </message>
+    <message>
+        <source>About Deskflow-HID</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -169,6 +173,15 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Already connected via another profile</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Activation Required</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Free trial is expired. Please consider purchasing a license via 
+File -&gt; Firmware -&gt; Order.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -1435,15 +1448,19 @@ If you choose &apos;No&apos;, the bridge client configuration will be kept and c
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Firmware Device Name:</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>Landscape</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Portrait</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Keyboard + Mouse</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Switched to %1</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -1479,6 +1496,10 @@ If you choose &apos;No&apos;, the bridge client configuration will be kept and c
         <translation type="unfinished">Расшириные</translation>
     </message>
     <message>
+        <source>Device name:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
         <source>Automatically disconnect Bluetooth</source>
         <translation type="unfinished"></translation>
     </message>
@@ -1488,6 +1509,10 @@ If you choose &apos;No&apos;, the bridge client configuration will be kept and c
     </message>
     <message>
         <source>Profiles (Device)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>A-Z, 0-9, spaces, .-_ (max 31 chars)</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -1503,10 +1528,6 @@ If you choose &apos;No&apos;, the bridge client configuration will be kept and c
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Combo</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>Mouse Only</source>
         <translation type="unfinished"></translation>
     </message>
@@ -1515,11 +1536,19 @@ If you choose &apos;No&apos;, the bridge client configuration will be kept and c
         <translation type="unfinished"></translation>
     </message>
     <message>
+        <source>Invert direction</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
         <source>Reset</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Activate</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Device must be activated to change its name.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -1540,10 +1569,6 @@ If you choose &apos;No&apos;, the bridge client configuration will be kept and c
     </message>
     <message>
         <source>Failed to save profile: %1</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Switched to profile %1</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -1577,10 +1602,6 @@ Duplicate: %1</source>
     </message>
     <message>
         <source>Save to Device</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Invert scroll direction</source>
         <translation type="unfinished"></translation>
     </message>
     <message>

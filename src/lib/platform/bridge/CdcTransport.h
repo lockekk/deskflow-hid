@@ -1,6 +1,5 @@
 /*
- * Deskflow -- mouse and keyboard sharing utility
- * SPDX-License-Identifier: GPL-2.0-only WITH LicenseRef-OpenSSL-Exception
+ * Deskflow-hid -- created by locke.huang@gmail.com
  */
 
 #pragma once
@@ -36,13 +35,13 @@ inline const char *activationStateToString(ActivationState state)
 {
   switch (state) {
   case ActivationState::Activated:
-    return "activated";
+    return "Activated";
   case ActivationState::FreeTrial:
-    return "free trial";
+    return "Free Trial";
   case ActivationState::Inactive:
-    return "unlicensed";
+    return "Unlicensed";
   default:
-    return "unknown";
+    return "Unknown";
   }
 }
 

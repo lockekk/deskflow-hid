@@ -1,3 +1,7 @@
+/*
+ * Deskflow-hid -- created by locke.huang@gmail.com
+ */
+
 #include <QButtonGroup>
 #include <QCheckBox>
 #include <QDialog>

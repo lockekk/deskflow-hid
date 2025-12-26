@@ -49,6 +49,7 @@ target_link_libraries(
   Qt6::Widgets
   Qt6::Network)
 
+
 install(
   TARGETS ${target}
   RUNTIME_DEPENDENCY_SET guiDeps

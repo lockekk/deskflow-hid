@@ -1,5 +1,6 @@
-// SPDX-FileCopyrightText: 2025 Deskflow Developers
-// SPDX-License-Identifier: MIT
+/*
+ * Deskflow-hid -- created by locke.huang@gmail.com
+ */
 
 #include "MacUsbMonitor.h"
 
@@ -79,7 +80,7 @@ bool MacUsbMonitor::startMonitoring()
       io_iterator_t iter = 0;
       kr = IOServiceAddMatchingNotification(m_notifyPort, kIOMatchedNotification, addDict, onDeviceAdded, this, &iter);
       if (kr == kIOReturnSuccess) {
-        qInfo() << "MacUsbMonitor: Registered add notification for class:" << className;
+        qDebug() << "MacUsbMonitor: Registered add notification for class:" << className;
         processAddedDevices(iter);
         if (!m_addedIter)
           m_addedIter = iter;
@@ -98,7 +99,7 @@ bool MacUsbMonitor::startMonitoring()
           m_notifyPort, kIOTerminatedNotification, remDict, onDeviceRemoved, this, &iter
       );
       if (kr == kIOReturnSuccess) {
-        qInfo() << "MacUsbMonitor: Registered removal notification for class:" << className;
+        qDebug() << "MacUsbMonitor: Registered removal notification for class:" << className;
         processRemovedDevices(iter);
         if (!m_removedIter)
           m_removedIter = iter;
@@ -111,7 +112,7 @@ bool MacUsbMonitor::startMonitoring()
   }
 
   m_monitoring = true;
-  qInfo() << "MacUsbMonitor: Monitoring fully started on Main RunLoop (CommonModes)";
+  qDebug() << "MacUsbMonitor: Monitoring fully started on Main RunLoop (CommonModes)";
   return true;
 }
 
@@ -152,18 +153,17 @@ QList<UsbDeviceInfo> MacUsbMonitor::enumerateDevices()
 
 void MacUsbMonitor::onDeviceAdded(void *refCon, io_iterator_t iterator)
 {
-  qInfo() << "MacUsbMonitor: onDeviceAdded callback triggered";
+  qDebug() << "MacUsbMonitor: onDeviceAdded callback triggered";
   auto *self = static_cast<MacUsbMonitor *>(refCon);
   self->processAddedDevices(iterator);
 }
 
 void MacUsbMonitor::onDeviceRemoved(void *refCon, io_iterator_t iterator)
 {
-  qInfo() << "MacUsbMonitor: onDeviceRemoved callback triggered";
+  qDebug() << "MacUsbMonitor: onDeviceRemoved callback triggered";
   auto *self = static_cast<MacUsbMonitor *>(refCon);
   self->processRemovedDevices(iterator);
 }
-
 // Find CDC ACM modem path for a USB device
 static QString findCdcModemPath(io_service_t usbDevice)
 {
@@ -221,7 +221,6 @@ UsbDeviceInfo MacUsbMonitor::extractDeviceInfo(io_service_t device)
 
   return info;
 }
-
 void MacUsbMonitor::processAddedDevices(io_iterator_t iterator)
 {
   io_service_t device;
@@ -235,7 +234,7 @@ void MacUsbMonitor::processAddedDevices(io_iterator_t iterator)
     // If we are already tracking this device, skip it.
     // This happens because some devices match both IOUSBDevice and IOUSBHostDevice.
     if (m_connectedDevices.contains(entryID)) {
-      qInfo() << "MacUsbMonitor: Already tracking ID:" << entryID << "- Skipping duplicate matching.";
+      qDebug() << "MacUsbMonitor: Already tracking ID:" << entryID << "- Skipping duplicate matching.";
       IOObjectRelease(device);
       continue;
     }
@@ -270,47 +269,43 @@ void MacUsbMonitor::processAddedDevices(io_iterator_t iterator)
 
     if (info.devicePath.isEmpty()) {
       qInfo() << "MacUsbMonitor: Device path empty, starting retry logic for ID:" << entryID;
-      IOObjectRetain(device); // Retain so the timer callback owns a reference
-      QTimer::singleShot(500, this, [this, device]() {
-        UsbDeviceInfo retryInfo = extractDeviceInfo(device);
-        if (!retryInfo.devicePath.isEmpty() && matchesFilter(retryInfo)) {
-          uint64_t retryEntryID = 0;
-          IORegistryEntryGetRegistryEntryID(device, &retryEntryID);
-          qInfo() << "MacUsbMonitor: Retry success (1st attempt), ID:" << retryEntryID
-                  << "Path:" << retryInfo.devicePath;
-          if (!m_connectedDevices.contains(retryEntryID)) {
-            m_connectedDevices.insert(retryEntryID, retryInfo);
-            Q_EMIT deviceConnected(retryInfo);
-          }
-        } else {
-          qInfo() << "MacUsbMonitor: Path still empty, retrying again in 1s for device...";
-          // Try one more time? Let's chain one more retry to be safe (total 1.5s delay max)
-          QTimer::singleShot(1000, this, [this, device]() {
-            UsbDeviceInfo finalInfo = extractDeviceInfo(device);
-            if (!finalInfo.devicePath.isEmpty() && matchesFilter(finalInfo)) {
-              uint64_t finalEntryID = 0;
-              IORegistryEntryGetRegistryEntryID(device, &finalEntryID);
-              qInfo() << "MacUsbMonitor: Retry success (2nd attempt), ID:" << finalEntryID
-                      << "Path:" << finalInfo.devicePath;
-              if (!m_connectedDevices.contains(finalEntryID)) {
-                m_connectedDevices.insert(finalEntryID, finalInfo);
-                Q_EMIT deviceConnected(finalInfo);
-              }
-            } else {
-              qInfo() << "MacUsbMonitor: Retry failed (2nd attempt) for device";
-            }
-            IOObjectRelease(device); // Release timer's reference
-          });
-          return; // Don't release device in this callback, the second timer owns it now
+
+      // Start retry chain (Attempt 1)
+      if (IOObjectRetain(device) != kIOReturnSuccess) {
+        qWarning() << "MacUsbMonitor: Failed to retain device for retry, skipping ID:" << entryID;
+        IOObjectRelease(device); // Release iterator's reference
+        continue;
+      }
+
+      QTimer::singleShot(500, this, [this, device, entryID]() {
+        ConnectResult res = tryConnectDevice(device, entryID);
+        if (res == ConnectResult::Stop) {
+          IOObjectRelease(device); // Release Timer 1 reference
+          return;
         }
-        IOObjectRelease(device); // Release timer's reference
+
+        // Attempt 2 (res == Retry)
+        qInfo() << "MacUsbMonitor: Retry 1 incomplete, scheduling Retry 2 for ID:" << entryID;
+
+        // We need to retain for the second timer
+        if (IOObjectRetain(device) != kIOReturnSuccess) {
+          IOObjectRelease(device); // Release Timer 1 reference
+          return;
+        }
+
+        QTimer::singleShot(1000, this, [this, device, entryID]() {
+          tryConnectDevice(device, entryID); // Final attempt
+          IOObjectRelease(device);           // Release Timer 2 reference
+        });
+
+        IOObjectRelease(device); // Release Timer 1 reference
       });
 
       IOObjectRelease(device); // Release the iterator's reference
       continue;
     }
 
-    qInfo() << "MacUsbMonitor: Device matches filter. Connecting ID:" << entryID;
+    qDebug() << "MacUsbMonitor: Device matches filter. Connecting ID:" << entryID;
     if (!m_connectedDevices.contains(entryID)) {
       m_connectedDevices.insert(entryID, info);
       Q_EMIT deviceConnected(info);
@@ -319,7 +314,7 @@ void MacUsbMonitor::processAddedDevices(io_iterator_t iterator)
     IOObjectRelease(device); // Release the iterator's reference
   }
   if (count == 0) {
-    qInfo() << "MacUsbMonitor: processAddedDevices called but no devices found in iterator";
+    qDebug() << "MacUsbMonitor: processAddedDevices called but no devices found in iterator";
   }
 }
 
@@ -344,6 +339,38 @@ void MacUsbMonitor::processRemovedDevices(io_iterator_t iterator)
       }
     }
   }
+}
+
+MacUsbMonitor::ConnectResult MacUsbMonitor::tryConnectDevice(io_service_t device, uint64_t entryID)
+{
+  if (!m_monitoring) {
+    return ConnectResult::Stop;
+  }
+
+  // Reuse validation block: Validate device is still alive in registry
+  if (IORegistryEntryGetRegistryEntryID(device, &entryID) != kIOReturnSuccess) {
+    qDebug() << "MacUsbMonitor: Device became invalid during retry check";
+    return ConnectResult::Stop;
+  }
+
+  UsbDeviceInfo info = extractDeviceInfo(device);
+
+  if (!info.devicePath.isEmpty()) {
+    if (matchesFilter(info)) {
+      qInfo() << "MacUsbMonitor: Device connection successful for ID:" << entryID << "Path:" << info.devicePath;
+      if (!m_connectedDevices.contains(entryID)) {
+        m_connectedDevices.insert(entryID, info);
+        Q_EMIT deviceConnected(info);
+      }
+      return ConnectResult::Stop; // Success -> Stop retrying
+    } else {
+      // Path found but not our device -> Stop retrying
+      return ConnectResult::Stop;
+    }
+  }
+
+  // Path empty -> Retry
+  return ConnectResult::Retry;
 }
 
 } // namespace deskflow::gui

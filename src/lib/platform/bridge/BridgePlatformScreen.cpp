@@ -1,4 +1,3 @@
-
 /*
  * Deskflow-hid -- created by locke.huang@gmail.com
  */

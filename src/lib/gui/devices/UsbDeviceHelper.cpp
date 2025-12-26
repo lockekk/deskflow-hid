@@ -179,26 +179,26 @@ QString UsbDeviceHelper::readSerialNumber(const QString &devicePath)
 
   try {
     // Create CDC transport instance
-    qInfo() << "DebugTrace: Creating transport for" << devicePath;
+    qDebug() << "DebugTrace: Creating transport for" << devicePath;
     deskflow::bridge::CdcTransport transport(devicePath);
 
     // Check if device is busy by attempting to open it
     // This will fail if the bridge client already has it open
-    qInfo() << "DebugTrace: Opening transport for" << devicePath;
-    qInfo() << "DebugTrace: Opening transport for" << devicePath;
+    qDebug() << "DebugTrace: Opening transport for" << devicePath;
+    qDebug() << "DebugTrace: Opening transport for" << devicePath;
     if (!transport.open()) {
       qDebug() << "Device is busy or not accessible (likely opened by bridge client):" << devicePath;
       return QString(); // Device is in use, don't block
     }
-    qInfo() << "DebugTrace: Transport opened successfully for" << devicePath;
+    qDebug() << "DebugTrace: Transport opened successfully for" << devicePath;
 
     // Read serial number via CDC command
     std::string serial;
-    qInfo() << "DebugTrace: Fetching serial number for" << devicePath;
+    qDebug() << "DebugTrace: Fetching serial number for" << devicePath;
     if (transport.fetchSerialNumber(serial)) {
-      qInfo() << "DebugTrace: Closing transport for" << devicePath;
+      qDebug() << "DebugTrace: Closing transport for" << devicePath;
       transport.close();
-      qInfo() << "DebugTrace: Converting serial";
+      qDebug() << "DebugTrace: Converting serial";
       QString qSerial = QString::fromStdString(serial);
       if (!qSerial.isEmpty()) {
         qDebug() << "Read serial number via CDC for" << devicePath << ":" << qSerial;
@@ -361,9 +361,8 @@ QMap<QString, QString> UsbDeviceHelper::getConnectedDevices(bool queryDevice)
           io_service_t child;
           while ((child = IOIteratorNext(childIter))) {
             if (IOObjectConformsTo(child, "IOSerialBSDClient")) {
-              CFStringRef pathRef = (CFStringRef)IORegistryEntryCreateCFProperty(
-                  child, CFSTR(kIOCalloutDeviceKey), kCFAllocatorDefault, 0
-              );
+              CFStringRef pathRef = (CFStringRef
+              )IORegistryEntryCreateCFProperty(child, CFSTR(kIOCalloutDeviceKey), kCFAllocatorDefault, 0);
               if (pathRef) {
                 const CFIndex kMaxPath = 1024;
                 char pathBuf[kMaxPath];
@@ -388,9 +387,8 @@ QMap<QString, QString> UsbDeviceHelper::getConnectedDevices(bool queryDevice)
           if (serialNumber.isEmpty()) {
             // Fallback to reading from IOKit if possible (though readSerialNumber tries CDC first)
             // IOKit serial is kUSBSerialNumberString
-            CFStringRef serialRef = (CFStringRef)IORegistryEntryCreateCFProperty(
-                device, CFSTR(kUSBSerialNumberString), kCFAllocatorDefault, 0
-            );
+            CFStringRef serialRef = (CFStringRef
+            )IORegistryEntryCreateCFProperty(device, CFSTR(kUSBSerialNumberString), kCFAllocatorDefault, 0);
             if (serialRef) {
               const CFIndex kMaxSerial = 256;
               char serialBuf[kMaxSerial];

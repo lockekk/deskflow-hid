@@ -1354,9 +1354,13 @@ void MainWindow::serverClientsChanged(const QStringList &clients)
 
 void MainWindow::daemonIpcClientConnectionFailed()
 {
-  if (deskflow::gui::messages::showDaemonOffline(this)) {
-    m_coreProcess.retryDaemon();
-  }
+  // Automatically disable background service (daemon) if it's offline,
+  // effectively simulating the user clicking "Disable" on the warning dialog.
+  Settings::setValue(Settings::Core::ProcessMode, Settings::ProcessMode::Desktop);
+  qInfo() << "Daemon offline, automatically falling back to Desktop mode";
+
+  // Restart the core immediately in the new mode
+  QTimer::singleShot(0, this, &MainWindow::startCore);
 }
 
 void MainWindow::toggleCanRunCore(bool enableButtons)
