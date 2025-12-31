@@ -62,6 +62,7 @@ private:
   void processConnectionRequests();
   void loadBridgeClientConfigs();
   void updateBridgeClientDeviceStates();
+  void applyProfileScreenBonding(const QString &configPath, int activeProfile);
   void stopBridgeClient(const QString &devicePath);
   void stopAllBridgeClients();
   bool applyFirmwareDeviceName(const QString &devicePath, const QString &deviceName);

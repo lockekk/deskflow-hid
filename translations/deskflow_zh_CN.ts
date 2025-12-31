@@ -1596,6 +1596,10 @@ If you choose &apos;No&apos;, the bridge client configuration will be kept and c
         <translation>设备插入时自动连接到 Deskflow 服务器。</translation>
     </message>
     <message>
+        <source>When enabled, the screen location will be saved and restored for the active profile.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
         <source>Profiles (Device)</source>
         <translation>配置文件 (设备)</translation>
     </message>
@@ -1634,6 +1638,10 @@ If you choose &apos;No&apos;, the bridge client configuration will be kept and c
     <message>
         <source>Activate</source>
         <translation>激活</translation>
+    </message>
+    <message>
+        <source>Automatically bond current screen location to active profile</source>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Device must be activated to change its name.</source>

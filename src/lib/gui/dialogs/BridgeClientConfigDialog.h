@@ -46,7 +46,7 @@ Q_SIGNALS:
 
 private Q_SLOTS:
   void onAccepted();
-  void onProfileToggled(int id, bool checked);
+
   void onProfileSaveClicked();
   void onProfileActivateClicked();
   void onProfileResetClicked();
@@ -86,6 +86,7 @@ private:
   QPushButton *m_btnProfileSave = nullptr;
   QPushButton *m_btnProfileActivate = nullptr;
   QPushButton *m_btnProfileReset = nullptr;
+  QCheckBox *m_checkBondLocation = nullptr;
 
   QString m_originalDeviceName;
 

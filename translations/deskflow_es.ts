@@ -1558,6 +1558,10 @@ If you choose &apos;No&apos;, the bridge client configuration will be kept and c
         <translation type="unfinished"></translation>
     </message>
     <message>
+        <source>When enabled, the screen location will be saved and restored for the active profile.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
         <source>Profiles (Device)</source>
         <translation type="unfinished"></translation>
     </message>
@@ -1595,6 +1599,10 @@ If you choose &apos;No&apos;, the bridge client configuration will be kept and c
     </message>
     <message>
         <source>Activate</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Automatically bond current screen location to active profile</source>
         <translation type="unfinished"></translation>
     </message>
     <message>

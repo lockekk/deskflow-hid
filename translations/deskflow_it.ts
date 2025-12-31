@@ -1596,6 +1596,10 @@ If you choose &apos;No&apos;, the bridge client configuration will be kept and c
         <translation>Connettiti automaticamente al server Deskflow quando il dispositivo è collegato.</translation>
     </message>
     <message>
+        <source>When enabled, the screen location will be saved and restored for the active profile.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
         <source>Profiles (Device)</source>
         <translation>Profili (Dispositivo)</translation>
     </message>
@@ -1634,6 +1638,10 @@ If you choose &apos;No&apos;, the bridge client configuration will be kept and c
     <message>
         <source>Activate</source>
         <translation>Attiva</translation>
+    </message>
+    <message>
+        <source>Automatically bond current screen location to active profile</source>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Device must be activated to change its name.</source>

@@ -4,6 +4,7 @@
 
 #pragma once
 
+#include <QPoint>
 #include <QString>
 #include <QStringList>
 
@@ -79,6 +80,36 @@ public:
    * @return Config file path if found, empty string otherwise
    */
   static QString findConfigByScreenName(const QString &screenName);
+
+public:
+  /**
+   * @brief Read bonded screen location for a specific profile
+   * @param configPath Path to config file
+   * @param profileId Profile Index (e.g. 0)
+   * @return QPoint(x, y) relative to server, or QPoint(0,0) if not found/invalid. Use hasProfileScreenLocation to check
+   * validity.
+   */
+  static QPoint readProfileScreenLocation(const QString &configPath, int profileId);
+
+  /**
+   * @brief Write bonded screen location for a specific profile
+   * @param configPath Path to config file
+   * @param profileId Profile Index
+   * @param location Relative location (e.g. QPoint(1, 0) for Right)
+   */
+  static void writeProfileScreenLocation(const QString &configPath, int profileId, const QPoint &location);
+
+  /**
+   * @brief Clear bonded screen location for a specific profile
+   * @param configPath Path to config file
+   * @param profileId Profile Index
+   */
+  static void clearProfileScreenLocation(const QString &configPath, int profileId);
+
+  /**
+   * @brief Check if a bonding exists for this profile
+   */
+  static bool hasProfileScreenLocation(const QString &configPath, int profileId);
 
 private:
   /**

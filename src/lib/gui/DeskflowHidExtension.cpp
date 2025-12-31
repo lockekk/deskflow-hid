@@ -38,6 +38,7 @@
 #include <QGridLayout>
 #include <QMenu>
 #include <QMessageBox>
+#include <QPoint>
 #include <QPointer>
 #include <QProcess>
 #include <QRegularExpression>
@@ -347,12 +348,57 @@ bool DeskflowHidExtension::syncDeviceConfigFromDevice(
 
   config.sync();
   qDebug() << "Successfully synced config for" << devicePath << "Activation State:" << activationState;
+
+  applyProfileScreenBonding(configPath, activeProfile);
+
   return true;
+}
+
+void DeskflowHidExtension::applyProfileScreenBonding(const QString &configPath, int activeProfile)
+{
+  if (!m_mainWindow)
+    return;
+
+  // Check global bonding setting
+  bool bondEnabled = false;
+  {
+    QSettings cfg(configPath, QSettings::IniFormat);
+    bondEnabled = cfg.value("BondScreenLocation", false).toBool();
+  }
+
+  if (!bondEnabled) {
+
+    return;
+  }
+
+  if (BridgeClientConfigManager::hasProfileScreenLocation(configPath, activeProfile)) {
+    QPoint relPos = BridgeClientConfigManager::readProfileScreenLocation(configPath, activeProfile);
+    QString screenName = BridgeClientConfigManager::readScreenName(configPath);
+
+    if (m_mainWindow && !screenName.isEmpty()) {
+      int moveResult = m_mainWindow->serverConfig().moveScreenRelativeToServer(screenName, relPos);
+      if (moveResult == 1) {
+        if (m_mainWindow->m_coreProcess.isStarted()) {
+          qInfo() << "Screen location changed. Restarting core process to apply changes.";
+          m_mainWindow->m_coreProcess.restart();
+        } else {
+          qInfo() << "Screen location changed. Core process is not running, so no restart needed yet.";
+        }
+      } else if (moveResult == 0) {
+        // No-op, already at correct position
+        // The moveScreenRelativeToServer already logs "[Bonding] Screen ... is already at the correct relative
+        // position..."
+      } else {
+        qWarning() << "[Bonding] Failed to move screen" << screenName;
+      }
+    } else {
+      qWarning() << "[Bonding] MainWindow or ScreenName invalid. Cannot move screen.";
+    }
+  }
 }
 
 void DeskflowHidExtension::updateBridgeClientDeviceStates()
 {
-  qDebug() << "Updating bridge client device states...";
 
   // Get all currently connected USB CDC devices with their serial numbers
   QMap<QString, QString> connectedDevices = UsbDeviceHelper::getConnectedDevices();
@@ -783,6 +829,7 @@ void DeskflowHidExtension::usbDeviceDisconnected(const UsbDeviceInfo &device)
 
   if (!serialNumber.isEmpty()) {
     m_resumeConnectionAfterServerRestart.remove(device.devicePath);
+    m_manuallyDisconnectedSerials.remove(serialNumber);
   }
 
   bool found = false;
@@ -814,7 +861,6 @@ void DeskflowHidExtension::usbDeviceDisconnected(const UsbDeviceInfo &device)
       }
     }
   }
-  m_manuallyDisconnectedSerials.remove(serialNumber);
 
   // Also clear connection attempts if we didn't find it in pending but it was active
   if (!serialNumber.isEmpty()) {
@@ -1303,6 +1349,7 @@ void DeskflowHidExtension::bridgeClientProcessReadyRead(const QString &devicePat
   );
   static const QRegularExpression deviceNameRegex(R"(CDC:\s+firmware device name='([^']+)')");
   static const QRegularExpression activationRegex(R"(CDC:\s+handshake completed.*activation_state=(.*?)(?=\s+\w+=|$))");
+  static const QRegularExpression activeProfileRegex(R"(active_profile=(\d+))");
   static const QRegularExpression bleRegex(R"(ble=(YES|NO))");
   static const QRegularExpression handshakeFailRegex(R"(ERROR: CDC: Handshake authentication failed.)");
   static const QRegularExpression handshakeTimeoutRegex(R"(ERROR: CDC: Timed out waiting for handshake ACK)");
@@ -1361,20 +1408,36 @@ void DeskflowHidExtension::bridgeClientProcessReadyRead(const QString &devicePat
     QRegularExpressionMatch activationMatch = activationRegex.match(line);
     if (activationMatch.hasMatch()) {
       QString activationState = activationMatch.captured(1);
-      // Remove (0) or similar (N) suffix if present
+
+      // Extract profile index from "active_profile=N"
+      QRegularExpressionMatch profileMatch = activeProfileRegex.match(line);
+      int activeProfile = -1;
+      if (profileMatch.hasMatch()) {
+        activeProfile = profileMatch.captured(1).toInt();
+      } else {
+        qWarning() << "Detected activation but failed to parse active_profile index. Line:" << line;
+        break;
+      }
+
+      // Remove (N) suffix from activation state if present
       static const QRegularExpression parenRegex(R"(\(\d+\))");
       activationState.remove(parenRegex);
       activationState = activationState.trimmed();
 
-      qInfo() << "Bridge client detected activation state:" << activationState;
+      qInfo() << "Bridge client detected activation state:" << activationState << "Profile:" << activeProfile;
       for (auto it = m_bridgeClientWidgets.begin(); it != m_bridgeClientWidgets.end(); ++it) {
         if (it.value()->devicePath() == devicePath) {
           it.value()->setActivationState(activationState);
           {
             QSettings cfg(it.key(), QSettings::IniFormat);
             cfg.setValue(Settings::Bridge::ActivationState, activationState);
+            cfg.setValue("activeProfileIndex", activeProfile);
             cfg.sync();
           }
+
+          // Apply bonded screen location if available
+          applyProfileScreenBonding(it.key(), activeProfile);
+
           break;
         }
       }
@@ -1440,6 +1503,13 @@ void DeskflowHidExtension::bridgeClientProcessFinished(
       w->setConnected(false);
       w->setBleConnected(false);
       w->resetConnectionStatus();
+    }
+
+    // Clear active profile index on disconnect to avoid stale state
+    {
+      QSettings cfg(configPath, QSettings::IniFormat);
+      cfg.remove("activeProfileIndex");
+      cfg.sync();
     }
 
     // Handle retries if this was an abnormal exit
@@ -1566,9 +1636,6 @@ void DeskflowHidExtension::stopAllBridgeClients()
   m_bridgeClientDeviceToConfig.clear();
   m_bridgeClientConnectionTimers.clear();
   m_devicePathToSerialNumber.clear();
-
-  // Clear tracking maps
-  m_manuallyDisconnectedSerials.clear();
   m_connectionAttempts.clear();
 }
 

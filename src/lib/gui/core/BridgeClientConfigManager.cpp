@@ -58,6 +58,11 @@ QStringList BridgeClientConfigManager::findConfigsBySerialNumber(const QString &
 
 QString BridgeClientConfigManager::createDefaultConfig(const QString &serialNumber, const QString &devicePath)
 {
+  // Double-check: ensure we don't create a duplicate if one already exists
+  QStringList existing = findConfigsBySerialNumber(serialNumber);
+  if (!existing.isEmpty()) {
+    return existing.first();
+  }
   // Default screen name uses device basename with Bridge- prefix
   const QString deviceBaseName = QFileInfo(devicePath).fileName();
   const QString defaultScreenName = QStringLiteral("Bridge-%1").arg(deviceBaseName);
@@ -213,6 +218,71 @@ QString BridgeClientConfigManager::findConfigByScreenName(const QString &screenN
   }
 
   return QString();
+}
+
+QPoint BridgeClientConfigManager::readProfileScreenLocation(const QString &configPath, int profileId)
+{
+  if (profileId < 0) {
+    return QPoint(0, 0);
+  }
+  QSettings config(configPath, QSettings::IniFormat);
+  config.beginGroup(QStringLiteral("profile_%1").arg(profileId));
+  QString rel = config.value(QStringLiteral("link_relativity")).toString();
+  config.endGroup();
+
+  if (rel.isEmpty()) {
+    return QPoint(0, 0);
+  }
+
+  QStringList parts = rel.split(",");
+  if (parts.size() == 2) {
+    bool okX, okY;
+    int x = parts[0].toInt(&okX);
+    int y = parts[1].toInt(&okY);
+    if (okX && okY) {
+      return QPoint(x, y);
+    }
+  }
+  return QPoint(0, 0);
+}
+
+void BridgeClientConfigManager::writeProfileScreenLocation(
+    const QString &configPath, int profileId, const QPoint &location
+)
+{
+  if (profileId < 0) {
+    return;
+  }
+  QSettings config(configPath, QSettings::IniFormat);
+  config.beginGroup(QStringLiteral("profile_%1").arg(profileId));
+  // Format: "x,y"
+  config.setValue(QStringLiteral("link_relativity"), QStringLiteral("%1,%2").arg(location.x()).arg(location.y()));
+  config.endGroup();
+  config.sync();
+}
+
+void BridgeClientConfigManager::clearProfileScreenLocation(const QString &configPath, int profileId)
+{
+  if (profileId < 0) {
+    return;
+  }
+  QSettings config(configPath, QSettings::IniFormat);
+  config.beginGroup(QStringLiteral("profile_%1").arg(profileId));
+  config.remove(QStringLiteral("link_relativity"));
+  config.endGroup();
+  config.sync();
+}
+
+bool BridgeClientConfigManager::hasProfileScreenLocation(const QString &configPath, int profileId)
+{
+  if (profileId < 0) {
+    return false;
+  }
+  QSettings config(configPath, QSettings::IniFormat);
+  config.beginGroup(QStringLiteral("profile_%1").arg(profileId));
+  bool exists = config.contains(QStringLiteral("link_relativity"));
+  config.endGroup();
+  return exists;
 }
 
 } // namespace deskflow::gui

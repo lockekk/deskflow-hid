@@ -14,6 +14,7 @@
 #include "gui/config/ScreenList.h"
 
 #include <QList>
+#include <QPoint>
 
 const auto kDefaultColumns = 5;
 const auto kDefaultRows = 3;
@@ -152,6 +153,7 @@ public:
   QString getClientAddress() const;
   void setClientAddress(const QString &address);
   bool renameScreen(const QString &oldName, const QString &newName);
+  int moveScreenRelativeToServer(const QString &screenName, const QPoint &relativePos);
 
 private:
   void recall();

@@ -24,6 +24,8 @@
 #include <QTimer>
 #include <QVBoxLayout>
 
+#include "gui/MainWindow.h"
+#include "gui/config/ServerConfig.h"
 #include "platform/bridge/CdcTransport.h"
 
 namespace {
@@ -86,7 +88,15 @@ BridgeClientConfigDialog::BridgeClientConfigDialog(
   // Auto-connect
   m_checkAutoConnect = new QCheckBox(tr("Auto-connect when USB device plugged in"), this);
   m_checkAutoConnect->setToolTip(tr("Automatically connect to the Deskflow server when the device is plugged in."));
+
   advancedLayout->addWidget(m_checkAutoConnect);
+
+  // Global Bonding Location (Moved from Profile Group)
+  m_checkBondLocation = new QCheckBox(tr("Automatically bond current screen location to active profile"), this);
+  m_checkBondLocation->setToolTip(
+      tr("When enabled, the screen location will be saved and restored for the active profile.")
+  );
+  advancedLayout->addWidget(m_checkBondLocation);
 
   mainLayout->addWidget(advancedGroup);
 
@@ -274,18 +284,19 @@ void BridgeClientConfigDialog::setupProfileUI(QVBoxLayout *mainLayout)
 
   // Buttons
   auto *btnLayout = new QHBoxLayout();
-  m_btnProfileReset = new QPushButton(tr("Reset"), this);
-  m_btnProfileSave = new QPushButton(tr("Save to Device"), this); // Clarified label
+  m_btnProfileSave = new QPushButton(tr("Save to Device"), this);
   m_btnProfileActivate = new QPushButton(tr("Activate"), this);
+  m_btnProfileReset = new QPushButton(tr("Reset"), this);
 
-  connect(m_btnProfileReset, &QPushButton::clicked, this, &BridgeClientConfigDialog::onProfileResetClicked);
   connect(m_btnProfileSave, &QPushButton::clicked, this, &BridgeClientConfigDialog::onProfileSaveClicked);
   connect(m_btnProfileActivate, &QPushButton::clicked, this, &BridgeClientConfigDialog::onProfileActivateClicked);
+  connect(m_btnProfileReset, &QPushButton::clicked, this, &BridgeClientConfigDialog::onProfileResetClicked);
 
   btnLayout->addWidget(m_btnProfileReset);
   btnLayout->addStretch();
   btnLayout->addWidget(m_btnProfileSave);
   btnLayout->addWidget(m_btnProfileActivate);
+
   groupLayout->addLayout(btnLayout);
 
   mainLayout->addWidget(m_profileGroup);
@@ -332,6 +343,10 @@ void BridgeClientConfigDialog::loadConfig()
 
   // Load profiles from device
   QTimer::singleShot(0, this, &BridgeClientConfigDialog::loadProfilesFromDevice);
+
+  // Load global bonding setting
+  bool bondLocation = config.value("BondScreenLocation", false).toBool();
+  m_checkBondLocation->setChecked(bondLocation);
 }
 
 void BridgeClientConfigDialog::loadProfilesFromDevice()
@@ -489,12 +504,6 @@ void BridgeClientConfigDialog::updateProfileDetailUI(int index)
   blockSignals(blocked);
 }
 
-void BridgeClientConfigDialog::onProfileToggled(int id, bool checked)
-{
-  // This method is no longer used with QTabBar, but kept for compilation if still referenced elsewhere.
-  // The logic is now handled by onProfileTabChanged.
-}
-
 void BridgeClientConfigDialog::onProfileSaveClicked()
 {
   if (m_selectedProfileIndex < 0 || m_selectedProfileIndex >= m_totalProfiles)
@@ -619,6 +628,7 @@ void BridgeClientConfigDialog::saveConfig()
 
   config.setValue(Settings::Bridge::BluetoothKeepAlive, m_checkBluetoothKeepAlive->isChecked());
   config.setValue(Settings::Bridge::AutoConnect, m_checkAutoConnect->isChecked());
+  config.setValue("BondScreenLocation", m_checkBondLocation->isChecked());
 
   config.sync();
 }
@@ -702,6 +712,57 @@ void BridgeClientConfigDialog::onAccepted()
         );
         return; // Abort save
       }
+    }
+  }
+
+  // Snapshot Bonding Locations
+  if (auto *mw = qobject_cast<MainWindow *>(parent())) {
+    const auto &config = mw->serverConfig();
+    const auto &screens = config.screens();
+    const int cols = config.numColumns();
+    const QString serverName = config.getServerName();
+
+    int serverIndex = -1;
+    int clientIndex = -1;
+
+    for (int i = 0; i < screens.size(); ++i) {
+      if (serverIndex < 0 && screens[i].name() == serverName)
+        serverIndex = i;
+      if (clientIndex < 0 && screens[i].name() == m_originalScreenName) // Note: uses m_originalScreenName
+        clientIndex = i;
+
+      if (serverIndex >= 0 && clientIndex >= 0)
+        break;
+    }
+
+    bool canBond = (serverIndex >= 0 && clientIndex >= 0 && cols > 0);
+    QPoint relPos(0, 0);
+    if (canBond) {
+      int sx = serverIndex % cols;
+      int sy = serverIndex / cols;
+      int cx = clientIndex % cols;
+      int cy = clientIndex / cols;
+      relPos = QPoint(cx - sx, cy - sy);
+      qInfo() << "[BondingDebug] Snapshot Calculation: Server(" << sx << "," << sy << ") Client(" << cx << "," << cy
+              << ") Rel(" << relPos.x() << "," << relPos.y() << ") Name:" << m_originalScreenName;
+    } else {
+      qWarning() << "[BondingDebug] Cannot bond. ServerIdx:" << serverIndex << "ClientIdx:" << clientIndex
+                 << "Cols:" << cols << "Name:" << m_originalScreenName;
+    }
+
+    // Read active profile index from config (saved by DeskflowHidExtension)
+    int activeProfileIndex = -1;
+    {
+      QSettings wrapperCfg(m_configPath, QSettings::IniFormat);
+      if (wrapperCfg.contains("activeProfileIndex")) {
+        activeProfileIndex = wrapperCfg.value("activeProfileIndex").toInt();
+      }
+    }
+
+    // Save snapshot if bonding is enabled globally
+    if (m_checkBondLocation->isChecked() && canBond && activeProfileIndex >= 0) {
+
+      BridgeClientConfigManager::writeProfileScreenLocation(m_configPath, activeProfileIndex, relPos);
     }
   }
 

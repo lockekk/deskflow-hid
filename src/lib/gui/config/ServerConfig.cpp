@@ -470,5 +470,51 @@ size_t ServerConfig::setClipboardSharingSize(size_t size)
 
 QSettingsProxy &ServerConfig::settings()
 {
+
   return Settings::proxy();
+}
+
+int ServerConfig::moveScreenRelativeToServer(const QString &screenName, const QPoint &relativePos)
+{
+  int index = -1;
+  if (!findScreenName(screenName, index)) {
+    return -1;
+  }
+
+  int serverIndex = -1;
+  if (!findScreenName(getServerName(), serverIndex)) {
+    return -1;
+  }
+
+  int sx = serverIndex % m_Columns;
+  int sy = serverIndex / m_Columns;
+
+  int tx = sx + relativePos.x();
+  int ty = sy + relativePos.y();
+
+  if (tx < 0 || tx >= m_Columns || ty < 0 || ty >= m_Rows) {
+    qWarning() << "[Bonding] Target position out of bounds for moveScreenRelativeToServer:"
+               << "Server(" << sx << "," << sy << ")"
+               << "+ Offset(" << relativePos.x() << "," << relativePos.y() << ")"
+               << "= Target(" << tx << "," << ty << ")"
+               << "Grid(" << m_Columns << "x" << m_Rows << ")";
+    return -1;
+  }
+
+  int targetIndex = tx + ty * m_Columns;
+  if (targetIndex == index) {
+    qInfo() << "[Bonding] Screen" << screenName << "is already at the correct relative position (" << relativePos.x()
+            << "," << relativePos.y() << "). No move needed.";
+    return 0; // No changes
+  }
+
+  // Swap logic
+  using std::swap;
+  swap(m_Screens[index], m_Screens[targetIndex]);
+
+  qInfo() << "[Bonding] Successfully moved screen" << screenName << "from index" << index << "to" << targetIndex
+          << "(Relative:" << relativePos.x() << "," << relativePos.y() << ")";
+
+  commit();
+  return 1; // Changed
 }
