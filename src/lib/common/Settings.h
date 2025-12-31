@@ -17,6 +17,10 @@
 class Settings : public QObject
 {
   Q_OBJECT
+  inline static const QString kTlsDirName = QStringLiteral("tls");
+  inline static const QString kTlsCertificateFilename = QStringLiteral("deskflow.pem");
+  inline static const QString kTlsFingerprintTrustedServersFilename = QStringLiteral("trusted-servers");
+
 public:
 #if defined(Q_OS_WIN)
   inline const static auto UserDir = QStringLiteral("%1/AppData/Roaming/%2").arg(QDir::homePath(), kAppName);
@@ -49,7 +53,6 @@ public:
     inline static const auto PreventSleep = QStringLiteral("core/preventSleep");
     inline static const auto ProcessMode = QStringLiteral("core/processMode");
     inline static const auto ScreenName = QStringLiteral("core/screenName");
-    inline static const auto UpdateUrl = QStringLiteral("core/updateUrl");
     inline static const auto Display = QStringLiteral("core/display");
     inline static const auto UseHooks = QStringLiteral("core/useHooks");
     inline static const auto Language = QStringLiteral("core/language");
@@ -68,6 +71,7 @@ public:
     inline static const auto Autohide = QStringLiteral("gui/autoHide");
     inline static const auto AutoStartCore = QStringLiteral("gui/startCoreWithGui");
     inline static const auto AutoUpdateCheck = QStringLiteral("gui/enableUpdateCheck");
+    inline static const auto UpdateCheckUrl = QStringLiteral("gui/updateCheckUrl");
     inline static const auto CloseReminder = QStringLiteral("gui/closeReminder");
     inline static const auto CloseToTray = QStringLiteral("gui/closeToTray");
     inline static const auto LogExpanded = QStringLiteral("gui/logExpanded");
@@ -209,7 +213,6 @@ private:
     , Settings::Core::PreventSleep
     , Settings::Core::ProcessMode
     , Settings::Core::ScreenName
-    , Settings::Core::UpdateUrl
     , Settings::Core::Display
     , Settings::Core::UseHooks
     , Settings::Core::UseWlClipboard
@@ -224,6 +227,7 @@ private:
     , Settings::Gui::Autohide
     , Settings::Gui::AutoStartCore
     , Settings::Gui::AutoUpdateCheck
+    , Settings::Gui::UpdateCheckUrl
     , Settings::Gui::CloseReminder
     , Settings::Gui::CloseToTray
     , Settings::Gui::LogExpanded

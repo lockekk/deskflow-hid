@@ -27,7 +27,9 @@
 #include <iterator>
 #include <memory>
 #include <openssl/err.h>
+#include <openssl/pem.h>
 #include <openssl/ssl.h>
+#include <openssl/x509.h>
 
 //
 // SecureSocket
@@ -644,6 +646,33 @@ bool SecureSocket::verifyCertFingerprint(const QString &FingerprintDatabasePath)
 
   // Gui Must Parse this line, DO NOT CHANGE
   LOG_IPC("peer fingerprint: %s", qPrintable(deskflow::formatSSLFingerprint(sha256.data, false)));
+
+  // Auto-trust if it matches our own certificate
+  const auto ourCertPath = Settings::value(Settings::Security::Certificate).toString();
+  if (!ourCertPath.isEmpty() && QFile::exists(ourCertPath)) {
+    try {
+      QFile certFile(ourCertPath);
+      if (certFile.open(QIODevice::ReadOnly)) {
+        const auto certData = certFile.readAll();
+        BIO *bio = BIO_new_mem_buf(certData.data(), static_cast<int>(certData.size()));
+        if (bio) {
+          X509 *ourCert = PEM_read_bio_X509(bio, nullptr, nullptr, nullptr);
+          if (ourCert) {
+            const auto ourSha256 = deskflow::sslCertFingerprint(ourCert, QCryptographicHash::Sha256);
+            X509_free(ourCert);
+            if (ourSha256.isValid() && ourSha256.data == sha256.data) {
+              LOG_INFO("peer fingerprint matches our local certificate, auto-trusting");
+              BIO_free(bio);
+              return true;
+            }
+          }
+          BIO_free(bio);
+        }
+      }
+    } catch (...) {
+      // Ignore errors in auto-trust and fall back to database
+    }
+  }
 
   QFile file(FingerprintDatabasePath);
   const auto &path = FingerprintDatabasePath;

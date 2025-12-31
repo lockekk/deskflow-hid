@@ -17,11 +17,8 @@
 #endif
 // clang-format on
 
-
-
 #include "Diagnostic.h"
 #include "StyleUtils.h"
-#include "VersionInfo.h"
 
 #include "dialogs/AboutDialog.h"
 #include "dialogs/BridgeClientConfigDialog.h"
@@ -32,6 +29,7 @@
 #include "common/PlatformInfo.h"
 #include "common/Settings.h"
 #include "common/UrlConstants.h"
+#include "common/VersionInfo.h"
 #include "gui/Messages.h"
 #include "gui/TlsUtility.h"
 #include "gui/core/BridgeClientConfigManager.h"
@@ -44,14 +42,6 @@
 #endif
 #include "gui/widgets/LogDock.h"
 #include "net/FingerprintDatabase.h"
-#include "platform/bridge/CdcTransport.h"
-
-#if defined(Q_OS_LINUX)
-#include "Config.h"
-#include "devices/LinuxUdevMonitor.h"
-#elif defined(Q_OS_WIN)
-#include "devices/WindowsUsbMonitor.h"
-#endif
 
 #include <QCloseEvent>
 #include <QCoreApplication>
@@ -136,7 +126,9 @@ MainWindow::MainWindow()
       m_actionStartCore{new QAction(this)},
       m_actionRestartCore{new QAction(this)},
       m_actionStopCore{new QAction(this)},
-      m_actionEsp32HidTools{new QAction(this)}
+      m_actionEsp32HidTools{new QAction(this)},
+      m_networkMonitor{new NetworkMonitor(this)},
+      m_currentIPValid(true)
 {
   ui->setupUi(this);
 
@@ -219,6 +211,11 @@ MainWindow::MainWindow()
 }
 MainWindow::~MainWindow()
 {
+  // Stop network monitoring
+  if (m_networkMonitor) {
+    m_networkMonitor->stopMonitoring();
+  }
+
   m_guiDupeChecker->close();
 #if defined(Q_OS_WIN)
   if (auto hwnd = reinterpret_cast<HWND>(winId())) {
@@ -265,8 +262,6 @@ void MainWindow::setupControls()
 #endif
 
   ui->btnConfigureServer->setIcon(QIcon::fromTheme(QStringLiteral("configure")));
-
-  updateNetworkInfo();
 
   if (Settings::value(Settings::Core::LastVersion).toString() != kVersion) {
     Settings::setValue(Settings::Core::LastVersion, kVersion);
@@ -447,6 +442,8 @@ void MainWindow::connectSlots()
   connect(ui->btnEditName, &QPushButton::clicked, this, &MainWindow::showHostNameEditor);
 
   connect(ui->lineEditName, &QLineEdit::editingFinished, this, &MainWindow::setHostName);
+
+  connect(m_networkMonitor, &NetworkMonitor::ipAddressesChanged, this, &MainWindow::updateIpLabel);
 }
 
 void MainWindow::toggleLogVisible(bool visible)
@@ -556,6 +553,12 @@ void MainWindow::coreProcessError(CoreProcess::Error error)
 
 void MainWindow::startCore()
 {
+  // Save current IP state when server starts
+  if (m_coreProcess.mode() == CoreMode::Server) {
+    m_serverStartIPs = m_networkMonitor->getAvailableIPv4Addresses();
+    m_serverStartSuggestedIP = m_networkMonitor->getSuggestedIPv4Address();
+  }
+
   m_coreProcess.start();
   m_actionStartCore->setVisible(false);
   m_actionRestartCore->setVisible(true);
@@ -659,7 +662,6 @@ void MainWindow::coreModeToggled()
 
 void MainWindow::updateModeControls(bool serverMode)
 {
-  ui->lblIpAddresses->setVisible(serverMode);
   ui->serverOptions->setVisible(serverMode);
   ui->clientOptions->setVisible(!serverMode);
   ui->lblNoMode->setVisible(false);
@@ -672,6 +674,15 @@ void MainWindow::updateModeControls(bool serverMode)
   updateModeControlLabels();
 
   toggleCanRunCore((!serverMode && !ui->lineHostname->text().isEmpty()) || serverMode);
+
+  ui->lblIpAddresses->setVisible(serverMode);
+  if (serverMode) {
+    // Initialize network monitoring
+    updateNetworkInfo();
+    m_networkMonitor->startMonitoring();
+  } else {
+    m_networkMonitor->stopMonitoring();
+  }
 }
 
 void MainWindow::updateModeControlLabels()
@@ -728,43 +739,7 @@ void MainWindow::updateSecurityIcon(bool visible)
 
 void MainWindow::updateNetworkInfo()
 {
-  static const auto colorText = QStringLiteral(R"(<span style="color:%1;">%2</span>)");
-
-  QStringList ipList;
-  QString suggestedAddress;
-
-  bool hinted = false;
-
-  const auto addresses = QNetworkInterface::allAddresses();
-  for (const auto &address : addresses) {
-    if (address.protocol() == QAbstractSocket::IPv4Protocol && address != QHostAddress(QHostAddress::LocalHost) &&
-        !address.isInSubnet(QHostAddress::parseSubnet("169.254.0.0/16"))) {
-      // usually 192.168.x.x is a useful ip for the user, so indicate
-      // this by coloring it in the "link" color
-      if (!hinted && address.isInSubnet(QHostAddress::parseSubnet("192.168/16"))) {
-        suggestedAddress = address.toString();
-        ipList.append(colorText.arg(palette().link().color().name(), suggestedAddress));
-        hinted = true;
-      } else {
-        ipList.append(address.toString());
-      }
-    }
-  }
-
-  if (ipList.isEmpty()) {
-    ui->lblIpAddresses->setText(colorText.arg(palette().linkVisited().color().name(), tr("No IP Detected")));
-    ui->lblIpAddresses->setToolTip(tr("Unable to detect an IP address. Check your network connection is active."));
-    return;
-  }
-
-  ui->lblIpAddresses->setText(tr("Suggested IP: %1").arg(suggestedAddress.isEmpty() ? ipList.first() : suggestedAddress)
-  );
-
-  if (auto toolTipBase = tr("<p>If connecting via the hostname fails, try %1</p>"); ipList.count() < 2) {
-    ui->lblIpAddresses->setToolTip(toolTipBase.arg(tr("the suggested IP.")));
-  } else {
-    ui->lblIpAddresses->setToolTip(toolTipBase.arg(tr("one of the following IPs:<br/>%1").arg(ipList.join("<br/>"))));
-  }
+  updateIpLabel(m_networkMonitor->getAvailableIPv4Addresses());
 }
 
 void MainWindow::serverConnectionConfigureClient(const QString &clientName)
@@ -802,7 +777,7 @@ void MainWindow::open()
   if (Settings::value(Settings::Gui::AutoUpdateCheck).toBool()) {
     m_versionChecker.checkLatest();
   } else {
-    qDebug() << "update check disabled";
+    qDebug() << "skipping check for new version, disabled";
   }
 
   if (Settings::value(Settings::Gui::AutoStartCore).toBool()) {
@@ -983,6 +958,11 @@ void MainWindow::checkFingerprint(const QString &line)
   FingerprintDatabase db;
   db.read(trustedFingerprintDatabase());
 
+  if (sha256.data == m_fingerprint.data) {
+    qDebug("fingerprint matches our own, auto-trusting");
+    return;
+  }
+
   if (db.isTrusted(sha256)) {
     qDebug("fingerprint is trusted");
     return;
@@ -1082,10 +1062,12 @@ void MainWindow::updateStatus()
     break;
 
   case Stopped:
+    updateNetworkInfo();
     setStatus(tr("%1 is not running").arg(kAppName));
     break;
 
   case Started: {
+    updateNetworkInfo();
     switch (connection) {
       using enum CoreConnectionState;
 
@@ -1329,11 +1311,12 @@ void MainWindow::setHostName()
     if (existingScreen) {
       body = tr("Screen name already exists");
     } else {
-      body = tr("The name you have chosen is invalid.\n\n"
-                "Valid names:\n"
-                "• Use letters and numbers\n"
-                "• May also use _ or -\n"
-                "• Are between 1 and 255 characters");
+      body =
+          tr("The name you have chosen is invalid.\n\n"
+             "Valid names:\n"
+             "• Use letters and numbers\n"
+             "• May also use _ or -\n"
+             "• Are between 1 and 255 characters");
     }
     QMessageBox::information(this, title, body);
     return;
@@ -1418,10 +1401,7 @@ void MainWindow::remoteHostChanged(const QString &newRemoteHost)
 
 void MainWindow::showClientError(deskflow::client::ErrorType error, const QString &address)
 {
-  if (!Settings::value(Settings::Gui::ShowGenericClientFailureDialog).toBool())
-    return;
-
-  if (m_clientErrorVisible)
+  if (!Settings::value(Settings::Gui::ShowGenericClientFailureDialog).toBool() || !isVisible() || m_clientErrorVisible)
     return;
 
   m_clientErrorVisible = true;
@@ -1435,4 +1415,93 @@ void MainWindow::handleNewClientPromptRequest(const QString &clientName, bool us
   showAndActivate();
   bool result = deskflow::gui::messages::showNewClientPrompt(this, clientName, usePeerAuth);
   m_serverConnection.handleNewClientResult(clientName, result);
+}
+
+void MainWindow::updateIpLabel(const QList<QHostAddress> &addresses)
+{
+  if (m_coreProcess.mode() != CoreMode::Server) {
+    return;
+  }
+
+  static const auto colorText = QStringLiteral(R"(<span style="color:%1;">%2</span>)");
+
+  if (addresses.isEmpty()) {
+    ui->lblIpAddresses->setText(colorText.arg(palette().linkVisited().color().name(), tr("No IP Detected")));
+    ui->lblIpAddresses->setToolTip(tr("Unable to detect an IP address. Check your network connection is active."));
+    return;
+  }
+
+  // Get all available IPs for tooltip
+  QStringList ipList;
+  for (const auto &address : addresses) {
+    ipList.append(address.toString());
+  }
+
+  QString labelText;
+  QString toolTipText;
+
+  // If we have a fixed IP we will use it
+  if (const auto ip = Settings::value(Settings::Core::Interface).toString(); !ip.isEmpty()) {
+    labelText = tr("Using IP: ");
+    toolTipText = tr("Selected as the interface in settings.");
+    if (ipList.contains(ip, Qt::CaseInsensitive)) {
+      labelText.append(ip);
+    } else {
+      labelText.append(colorText.arg(palette().linkVisited().color().name(), ip));
+      toolTipText.append(tr("\nInterface is not active. Unable to start server."));
+    }
+  } else {
+    labelText = tr("Suggested IP: ");
+    toolTipText = tr("<p>If connecting via the hostname fails, try %1</p>");
+    static auto s_toolTipSuggestIP = tr("the suggested IP.");
+    static auto s_toolTipIpList = tr("one of the following IPs:<br/>%1");
+
+    // Determine which IP to show and tooltip based on server state
+    if (m_coreProcess.isStarted()) {
+      // ipList should only include valid ip from servers start
+      ipList.clear();
+      for (const auto &address : std::as_const(m_serverStartIPs)) {
+        if (addresses.contains(address))
+          ipList.append(address.toString());
+      }
+
+      QString suggestedIP = m_serverStartSuggestedIP.toString();
+      if ((suggestedIP != m_currentIpAddress.toString()) || !addresses.contains(m_serverStartSuggestedIP)) {
+        m_currentIPValid = false;
+        for (const auto &address : std::as_const(m_serverStartIPs)) {
+          if (addresses.contains(address)) {
+            suggestedIP = address.toString();
+            m_currentIpAddress = address;
+            m_currentIPValid = true;
+            break;
+          }
+        }
+      } else {
+        m_currentIPValid = true;
+      }
+
+      if (m_currentIPValid) {
+        labelText.append(suggestedIP);
+      } else {
+        labelText.append(colorText.arg(palette().linkVisited().color().name(), suggestedIP));
+        toolTipText.append(tr("\nA bound IP is now invalid, you may need to restart the server."));
+      }
+    } else {
+      // Server is not running - update normally
+      const auto suggestedIp = m_networkMonitor->getSuggestedIPv4Address();
+      QString displayIP = !suggestedIp.isNull() ? suggestedIp.toString() : ipList.first();
+      m_currentIpAddress = !suggestedIp.isNull() ? suggestedIp : QHostAddress();
+      m_currentIPValid = !suggestedIp.isNull();
+      labelText.append(displayIP);
+    }
+
+    if (ipList.count() < 2) {
+      toolTipText = toolTipText.arg(s_toolTipSuggestIP);
+    } else {
+      toolTipText = toolTipText.arg(s_toolTipIpList.arg(ipList.join("<br/>")));
+    }
+  }
+
+  ui->lblIpAddresses->setText(labelText);
+  ui->lblIpAddresses->setToolTip(toolTipText);
 }

@@ -538,8 +538,12 @@ Do you want to connect to the server?
         <translation>Не получаеться найти Ip адресc. Проверте подключение к сети.</translation>
     </message>
     <message>
-        <source>Suggested IP: %1</source>
-        <translation>Ваш (рекомендованый) IP адресс: %1</translation>
+        <source>Using IP: </source>
+        <translation type="unfinished">Использование IP-адреса: </translation>
+    </message>
+    <message>
+        <source>Selected as the interface in settings.</source>
+        <translation type="unfinished">Выбран в качестве интерфейса в настройках.</translation>
     </message>
     <message>
         <source>&lt;p&gt;If connecting via the hostname fails, try %1&lt;/p&gt;</source>
@@ -552,6 +556,12 @@ Do you want to connect to the server?
     <message>
         <source>one of the following IPs:&lt;br/&gt;%1</source>
         <translation>один из следующих IP-адресов:&lt;br/&gt;%1</translation>
+    </message>
+    <message>
+        <source>
+A bound IP is now invalid, you may need to restart the server.</source>
+        <translation type="unfinished">
+Привязанный IP-адрес теперь недействителен, возможно, потребуется перезапустить сервер.</translation>
     </message>
     <message>
         <source>%1 is starting...</source>
@@ -704,6 +714,16 @@ Valid names:
  %1</translation>
     </message>
     <message>
+        <source>
+Interface is not active. Unable to start server.</source>
+        <translation type="unfinished">
+Интерфейс неактивен. Невозможно запустить сервер.</translation>
+    </message>
+    <message>
+        <source>Suggested IP: </source>
+        <translation type="unfinished">Ваш (рекомендованый) IP адресс: </translation>
+    </message>
+    <message>
         <source>The Core executable could not be successfully started, although it does exist. Please check if you have sufficient permissions to run this program.</source>
         <translation type="unfinished">Не удалось запустить исполняемый файл Core, хотя он существует. Проверьте, есть ли у вас достаточные права для запуска этой программы.</translation>
     </message>
@@ -753,14 +773,6 @@ Valid names:
         <translation>ошибка</translation>
     </message>
     <message>
-        <source>&lt;p&gt;Please &lt;a href=&quot;%1&quot; style=&quot;color: %2&quot;&gt;report a bug&lt;/a&gt; and copy/paste the following error:&lt;/p&gt;&lt;pre&gt;v%3
-%4
-%5&lt;/pre&gt;</source>
-        <translation>&lt;p&gt;Пожалуйста &lt;a href=&quot;%1&quot; style=&quot;color: %2&quot;&gt;сообщите об ошибке&lt;/a&gt;и скопируйте/вставьте следующее сообщение об ошибке:&lt;/p&gt;&lt;pre&gt;v%3
-%4
-%5&lt;/pre&gt;</translation>
-    </message>
-    <message>
         <source>&lt;p&gt;Sorry, a fatal error has occurred and the application must now exit.&lt;/p&gt;
 </source>
         <translation>&lt;p&gt;Извините, возникла критическая ошибка и приложение сейчас завершит работу.&lt;/p&gt;
@@ -777,8 +789,16 @@ Valid names:
         <translation>&lt;p&gt;%1 продолжит работу в фоновом режиме и может быть развернуто через %1 иконку на вашей панели уведомлений. Эту настройку можно отключить.&lt;/p&gt;</translation>
     </message>
     <message>
-        <source>&lt;p&gt;On Linux systems using GNOME 3, the notification area might be disabled. You may need to &lt;a href=&quot;%1&quot; %2&gt;enable an extension&lt;/a&gt; to see the %3 tray icon.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;На Linux (пингвинчики) системах, использующих GNOME 3, панель уведомлений может быть отключена. Вам может понадобиться &lt;a href=&quot;%1&quot; %2&gt;подключить расширение&lt;/a&gt;, чтобы увидеть %3 иконку.&lt;/p&gt;</translation>
+        <source>&lt;p&gt;Please &lt;a href=&quot;%1&quot;&gt;report a bug&lt;/a&gt; and copy/paste the following error:&lt;/p&gt;&lt;pre&gt;v%2
+%3
+%4&lt;/pre&gt;</source>
+        <translation>&lt;p&gt;Пожалуйста &lt;a href=&quot;%1&quot;&gt;сообщите об ошибке&lt;/a&gt;и скопируйте/вставьте следующее сообщение об ошибке:&lt;/p&gt;&lt;pre&gt;v%2
+%3
+%4&lt;/pre&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;On Linux systems using GNOME 3, the notification area might be disabled. You may need to &lt;a href=&quot;%1&quot;&gt;enable an extension&lt;/a&gt; to see the %2 tray icon.&lt;/p&gt;</source>
+        <translation>&lt;p&gt;На Linux (пингвинчики) системах, использующих GNOME 3, панель уведомлений может быть отключена. Вам может понадобиться &lt;a href=&quot;%1&quot;&gt;подключить расширение&lt;/a&gt;, чтобы увидеть %2 иконку.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>%1 Server</source>
@@ -873,8 +893,8 @@ Valid names:
         <translation>&lt;p&gt;Вам разрешено только чтение настроек из-за ограничения доступа к файлу:&lt;/p&gt;&lt;p&gt;%1&lt;/p&gt;</translation>
     </message>
     <message>
-        <source>&lt;p&gt;Sorry, while this version of %1 does support Wayland, this build was not linked with one or more of the required libraries.&lt;/p&gt;&lt;p&gt;Please either switch to X from your login screen or use a build that uses the correct libraries.&lt;/p&gt;&lt;p&gt;If you think this is incorrect, please &lt;a href=&quot;%2&quot; style=&quot;color: %3&quot;&gt;report a bug&lt;/a&gt;.&lt;/p&gt;&lt;p&gt;Please check the logs for more information.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Извините, пока эта версия %1 поддерживает Wayland, эта сборка не связана с одной или несколькими необходимыми библиотеками.&lt;/p&gt;&lt;p&gt;Пожалуйста, либо перейдите в X, либо используйте сборку, которая поддерживает необходимые библиотеки.&lt;/p&gt;&lt;p&gt;Если Вы считаете, что это не работает, пожалуйста &lt;a href=&quot;%2&quot; style=&quot;color: %3&quot;&gt;сообщите о баге&lt;/a&gt;.&lt;/p&gt;&lt;p&gt;Проверьте лог для большей информации.&lt;/p&gt;</translation>
+        <source>&lt;p&gt;Sorry, while this version of %1 does support Wayland, this build was not linked with one or more of the required libraries.&lt;/p&gt;&lt;p&gt;Please either switch to X from your login screen or use a build that uses the correct libraries.&lt;/p&gt;&lt;p&gt;If you think this is incorrect, please &lt;a href=&quot;%2&quot;&gt;report a bug&lt;/a&gt;.&lt;/p&gt;&lt;p&gt;Please check the logs for more information.&lt;/p&gt;</source>
+        <translation>&lt;p&gt;Извините, пока эта версия %1 поддерживает Wayland, эта сборка не связана с одной или несколькими необходимыми библиотеками.&lt;/p&gt;&lt;p&gt;Пожалуйста, либо перейдите в X, либо используйте сборку, которая поддерживает необходимые библиотеки.&lt;/p&gt;&lt;p&gt;Если Вы считаете, что это не работает, пожалуйста &lt;a href=&quot;%2&quot;&gt;сообщите о баге&lt;/a&gt;.&lt;/p&gt;&lt;p&gt;Проверьте лог для большей информации.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>No thanks</source>
@@ -1516,6 +1536,10 @@ If you choose &apos;No&apos;, the bridge client configuration will be kept and c
     <message>
         <source>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Requires the wl-clipboard package&lt;/p&gt;&lt;p&gt;When using wl-clipboard v2.2.1, there is a focus stealing bug that may make Deskflow harder to use. This has been fixed when using the wl-clipboard master branch, unless your Compositor lacks wlroots-data-control protocol support.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</source>
         <translation>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Для этого необходим пакет wl-clipboard.&lt;/p&gt;&lt;p&gt;Когда ты используешь wl-clipboard v2.2.1. Возникает ошибка перехвата фокуса, которая мешает использовать deskflowю. Это фиксется если использовать wl-clipboard из ветки master, если только ваш Compositor не поддерживает протокол wlroots-data-control.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</translation>
+    </message>
+    <message>
+        <source>Automatic</source>
+        <translation type="unfinished">Автоматический</translation>
     </message>
 </context>
 <context>

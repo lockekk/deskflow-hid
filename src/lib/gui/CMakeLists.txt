@@ -34,7 +34,6 @@ add_library(${target} STATIC
   Messages.h
   ScreenSetupModel.cpp
   ScreenSetupModel.h
-  Styles.h
   StyleUtils.h
   TlsUtility.cpp
   TlsUtility.h
@@ -55,6 +54,8 @@ add_library(${target} STATIC
   core/CommandProcess.h
   core/CoreProcess.cpp
   core/CoreProcess.h
+  core/NetworkMonitor.cpp
+  core/NetworkMonitor.h
   core/ServerConnection.cpp
   core/ServerConnection.h
   core/ServerMessage.cpp

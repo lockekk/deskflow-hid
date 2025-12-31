@@ -547,8 +547,16 @@ Do you want to connect to the server?
         <translation type="unfinished">No se puede detectar una dirección IP. Compruebe que su conexión de red esté activa.</translation>
     </message>
     <message>
-        <source>Suggested IP: %1</source>
-        <translation type="unfinished">IP sugerida: %1</translation>
+        <source>Using IP: </source>
+        <translation type="unfinished">Usando IP: </translation>
+    </message>
+    <message>
+        <source>Selected as the interface in settings.</source>
+        <translation type="unfinished">Seleccionado como la interfaz en la configuración.</translation>
+    </message>
+    <message>
+        <source>Suggested IP: </source>
+        <translation type="unfinished">IP sugerida: </translation>
     </message>
     <message>
         <source>&lt;p&gt;If connecting via the hostname fails, try %1&lt;/p&gt;</source>
@@ -561,6 +569,12 @@ Do you want to connect to the server?
     <message>
         <source>one of the following IPs:&lt;br/&gt;%1</source>
         <translation type="unfinished">una de las siguientes IP:&lt;br/&gt;%1</translation>
+    </message>
+    <message>
+        <source>
+A bound IP is now invalid, you may need to restart the server.</source>
+        <translation type="unfinished">
+La dirección IP asignada ahora no es válida; es posible que deba reiniciar el servidor.</translation>
     </message>
     <message>
         <source>&amp;File</source>
@@ -585,6 +599,12 @@ Do you want to connect to the server?
     <message>
         <source>invalid certificate, generating a new one</source>
         <translation type="unfinished">certificado no válido, generando uno nuevo</translation>
+    </message>
+    <message>
+        <source>
+Interface is not active. Unable to start server.</source>
+        <translation type="unfinished">
+La interfaz no está activa. No se puede iniciar el servidor.</translation>
     </message>
     <message>
         <source>%1 will retry in a moment...</source>
@@ -712,14 +732,6 @@ Nombres válidos:
         <translation type="unfinished">error</translation>
     </message>
     <message>
-        <source>&lt;p&gt;Please &lt;a href=&quot;%1&quot; style=&quot;color: %2&quot;&gt;report a bug&lt;/a&gt; and copy/paste the following error:&lt;/p&gt;&lt;pre&gt;v%3
-%4
-%5&lt;/pre&gt;</source>
-        <translation type="unfinished">&lt;p&gt;Por favor, &lt;a href=&quot;%1&quot; style=&quot;color: %2&quot;&gt;informa de un error&lt;/a&gt; y copia y pega el siguiente error:&lt;/p&gt;&lt;pre&gt;v%3
-%4
-%5&lt;/pre&gt;</translation>
-    </message>
-    <message>
         <source>&lt;p&gt;Sorry, a fatal error has occurred and the application must now exit.&lt;/p&gt;
 </source>
         <translation type="unfinished">&lt;p&gt;Lo sentimos, se ha producido un error fatal y la aplicación debe salir ahora.&lt;/p&gt;
@@ -736,8 +748,16 @@ Nombres válidos:
         <translation type="unfinished">&lt;p&gt;%1 seguirá ejecutándose en segundo plano y se podrá acceder a él mediante el icono %1 en el área de notificaciones del sistema. Esta configuración se puede desactivar.&lt;/p&gt;</translation>
     </message>
     <message>
-        <source>&lt;p&gt;On Linux systems using GNOME 3, the notification area might be disabled. You may need to &lt;a href=&quot;%1&quot; %2&gt;enable an extension&lt;/a&gt; to see the %3 tray icon.&lt;/p&gt;</source>
-        <translation type="unfinished">&lt;p&gt;En sistemas Linux que usan GNOME 3, el área de notificaciones podría estar deshabilitada. Quizás necesite &lt;a href=&quot;%1&quot; %2&gt;habilitar una extensión&lt;/a&gt; para ver el icono de la bandeja %3.&lt;/p&gt;</translation>
+        <source>&lt;p&gt;Please &lt;a href=&quot;%1&quot;&gt;report a bug&lt;/a&gt; and copy/paste the following error:&lt;/p&gt;&lt;pre&gt;v%2
+%3
+%4&lt;/pre&gt;</source>
+        <translation>&lt;p&gt;Por favor, &lt;a href=&quot;%1&quot;&gt;informa de un error&lt;/a&gt; y copia y pega el siguiente error:&lt;/p&gt;&lt;pre&gt;v%2
+%3
+%4&lt;/pre&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;On Linux systems using GNOME 3, the notification area might be disabled. You may need to &lt;a href=&quot;%1&quot;&gt;enable an extension&lt;/a&gt; to see the %2 tray icon.&lt;/p&gt;</source>
+        <translation>&lt;p&gt;En sistemas Linux que usan GNOME 3, el área de notificaciones podría estar deshabilitada. Quizás necesite &lt;a href=&quot;%1&quot;&gt;habilitar una extensión&lt;/a&gt; para ver el icono de la bandeja %2.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>%1 Server</source>
@@ -832,8 +852,8 @@ Nombres válidos:
         <translation type="unfinished">&lt;p&gt;Las configuraciones son de solo lectura porque solo tiene acceso de lectura al archivo:&lt;/p&gt;&lt;p&gt;%1&lt;/p&gt;</translation>
     </message>
     <message>
-        <source>&lt;p&gt;Sorry, while this version of %1 does support Wayland, this build was not linked with one or more of the required libraries.&lt;/p&gt;&lt;p&gt;Please either switch to X from your login screen or use a build that uses the correct libraries.&lt;/p&gt;&lt;p&gt;If you think this is incorrect, please &lt;a href=&quot;%2&quot; style=&quot;color: %3&quot;&gt;report a bug&lt;/a&gt;.&lt;/p&gt;&lt;p&gt;Please check the logs for more information.&lt;/p&gt;</source>
-        <translation type="unfinished">&lt;p&gt;Lo sentimos, aunque esta versión de %1 es compatible con Wayland, esta compilación no se vinculó con una o más de las bibliotecas requeridas.&lt;/p&gt;&lt;p&gt;Cambie a X desde su pantalla de inicio de sesión o use una compilación que use las bibliotecas correctas.&lt;/p&gt;&lt;p&gt;Si cree que esto es incorrecto, &lt;a href=&quot;%2&quot; style=&quot;color: %3&quot;&gt;informe un error&lt;/a&gt;.&lt;/p&gt;&lt;p&gt;Consulte los registros para obtener más información.&lt;/p&gt;</translation>
+        <source>&lt;p&gt;Sorry, while this version of %1 does support Wayland, this build was not linked with one or more of the required libraries.&lt;/p&gt;&lt;p&gt;Please either switch to X from your login screen or use a build that uses the correct libraries.&lt;/p&gt;&lt;p&gt;If you think this is incorrect, please &lt;a href=&quot;%2&quot;&gt;report a bug&lt;/a&gt;.&lt;/p&gt;&lt;p&gt;Please check the logs for more information.&lt;/p&gt;</source>
+        <translation>&lt;p&gt;Lo sentimos, aunque esta versión de %1 es compatible con Wayland, esta compilación no se vinculó con una o más de las bibliotecas requeridas.&lt;/p&gt;&lt;p&gt;Cambie a X desde su pantalla de inicio de sesión o use una compilación que use las bibliotecas correctas.&lt;/p&gt;&lt;p&gt;Si cree que esto es incorrecto, &lt;a href=&quot;%2&quot;&gt;informe un error&lt;/a&gt;.&lt;/p&gt;&lt;p&gt;Consulte los registros para obtener más información.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>No thanks</source>
@@ -1473,6 +1493,10 @@ If you choose &apos;No&apos;, the bridge client configuration will be kept and c
     <message>
         <source>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Requires the wl-clipboard package&lt;/p&gt;&lt;p&gt;When using wl-clipboard v2.2.1, there is a focus stealing bug that may make Deskflow harder to use. This has been fixed when using the wl-clipboard master branch, unless your Compositor lacks wlroots-data-control protocol support.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</source>
         <translation type="unfinished">&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Requiere el paquete wl-clipboard&lt;/p&gt;&lt;p&gt;Al usar wl-clipboard v2.2.1, existe un error que provoca la pérdida del foco y que puede dificultar el uso de Deskflow. Este error se ha corregido al usar la rama principal de wl-clipboard, a menos que su Compositor no sea compatible con el protocolo wlroots-data-control.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</translation>
+    </message>
+    <message>
+        <source>Automatic</source>
+        <translation type="unfinished">Automática</translation>
     </message>
 </context>
 <context>

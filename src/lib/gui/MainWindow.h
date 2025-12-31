@@ -9,6 +9,7 @@
 #pragma once
 
 #include <QHash>
+#include <QHostAddress>
 #include <QMainWindow>
 #include <QMutex>
 #include <QProcess>
@@ -21,6 +22,7 @@
 #include "config/ServerConfig.h"
 #include "gui/core/ClientConnection.h"
 #include "gui/core/CoreProcess.h"
+#include "gui/core/NetworkMonitor.h"
 #include "gui/core/ServerConnection.h"
 #include "gui/core/WaylandWarnings.h"
 #include "net/Fingerprint.h"
@@ -69,6 +71,7 @@ class MainWindow : public QMainWindow
 {
   using CoreMode = Settings::CoreMode;
   using CoreProcess = deskflow::gui::CoreProcess;
+  using NetworkMonitor = deskflow::gui::NetworkMonitor;
 
   Q_OBJECT
 
@@ -174,6 +177,8 @@ private:
   void toggleCanRunCore(bool enableButtons);
   void remoteHostChanged(const QString &newRemoteHost);
   void handleNewClientPromptRequest(const QString &clientName, bool usePeerAuth);
+  void updateIpLabel(const QList<QHostAddress> &addresses);
+
   /**
    * @brief showClientError
    * @param error Error Type
@@ -243,4 +248,13 @@ private:
   QAction *m_actionRestartCore = nullptr;
   QAction *m_actionStopCore = nullptr;
   QAction *m_actionEsp32HidTools = nullptr;
+
+  // Network monitoring
+  NetworkMonitor *m_networkMonitor = nullptr;
+  QHostAddress m_currentIpAddress;
+
+  // Server IP strategy optimization
+  QList<QHostAddress> m_serverStartIPs;
+  QHostAddress m_serverStartSuggestedIP;
+  bool m_currentIPValid;
 };
