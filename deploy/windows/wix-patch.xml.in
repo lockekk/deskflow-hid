@@ -1,7 +1,7 @@
 <CPackWiXPatch>
 
 
-  <CPackWiXFragment Id="CM_CP_deskflow-hid-core.exe">
+  <CPackWiXFragment Id="CM_CP_deskflow_hid_core.exe">
     <firewall:FirewallException Id="ServerFirewallException" Name="Deskflow Server" Program="[INSTALL_ROOT]deskflow-hid-core.exe" Scope="any"/>
     <firewall:FirewallException Id="ClientFirewallException" Name="Deskflow Client" Program="[INSTALL_ROOT]deskflow-hid-core.exe" Scope="any"/>
   </CPackWiXFragment>

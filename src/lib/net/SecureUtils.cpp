@@ -66,13 +66,11 @@ void generatePemSelfSignedCert(const QString &path, int keyLength)
 {
   auto expirationDays = 365;
 
-  auto *privateKey = EVP_PKEY_new();
+  auto *privateKey = EVP_RSA_gen(keyLength);
   if (!privateKey) {
     throw std::runtime_error("could not allocate private key for certificate");
   }
   auto privateKeyFree = finally([privateKey]() { EVP_PKEY_free(privateKey); });
-
-  privateKey = EVP_RSA_gen(keyLength);
 
   auto *cert = X509_new();
   if (!cert) {
@@ -83,19 +81,23 @@ void generatePemSelfSignedCert(const QString &path, int keyLength)
   ASN1_INTEGER_set(X509_get_serialNumber(cert), 1);
   X509_gmtime_adj(X509_get_notBefore(cert), 0);
   X509_gmtime_adj(X509_get_notAfter(cert), expirationDays * 24 * 3600);
-  X509_set_pubkey(cert, privateKey);
+  if (!X509_set_pubkey(cert, privateKey)) {
+     throw std::runtime_error("failed to set public key on certificate");
+  }
 
   auto *name = X509_get_subject_name(cert);
   X509_NAME_add_entry_by_txt(name, "CN", MBSTRING_ASC, reinterpret_cast<const unsigned char *>("Deskflow"), -1, -1, 0);
   X509_set_issuer_name(cert, name);
 
-  X509_sign(cert, privateKey, EVP_sha256());
+  if (!X509_sign(cert, privateKey, EVP_sha256())) {
+      throw std::runtime_error("failed to sign certificate");
+  }
 
   const std::filesystem::path fsPath = path.toStdString();
-#if SYSAPI_WIN32
-  auto fp = _wfopen(fsPath.native().c_str(), L"w");
+#ifdef SYSAPI_WIN32
+  auto fp = _wfopen(fsPath.native().c_str(), L"wb");
 #else
-  auto fp = std::fopen(fsPath.native().c_str(), "w");
+  auto fp = std::fopen(fsPath.native().c_str(), "wb");
 #endif
 
   if (!fp) {
@@ -103,8 +105,12 @@ void generatePemSelfSignedCert(const QString &path, int keyLength)
   }
   auto fileClose = finally([fp]() { std::fclose(fp); });
 
-  PEM_write_PrivateKey(fp, privateKey, nullptr, nullptr, 0, nullptr, nullptr);
-  PEM_write_X509(fp, cert);
+  if (!PEM_write_PrivateKey(fp, privateKey, nullptr, nullptr, 0, nullptr, nullptr)) {
+      throw std::runtime_error("failed to write private key");
+  }
+  if (!PEM_write_X509(fp, cert)) {
+      throw std::runtime_error("failed to write certificate");
+  }
 }
 
 QString formatSSLFingerprintColumns(const QByteArray &fingerprint)
