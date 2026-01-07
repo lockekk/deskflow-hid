@@ -349,11 +349,13 @@ QMap<QString, QString> UsbDeviceHelper::getConnectedDevices(bool queryDevice)
   LOG_DEBUG("Enumerated %d bridge-capable USB CDC device(s) on Windows", devices.size());
 #elif defined(Q_OS_MAC)
   // macOS implementation using IOKit
+  // We check IOUSBHostDevice (newer/iPad/Apple Silicon) only, dropping legacy IOUSBDevice
+  const char *className = "IOUSBHostDevice";
+
   io_iterator_t iter = 0;
-  kern_return_t kr =
-      IOServiceGetMatchingServices(kIOMasterPortDefault, IOServiceMatching(kIOUSBDeviceClassName), &iter);
+  kern_return_t kr = IOServiceGetMatchingServices(kIOMasterPortDefault, IOServiceMatching(className), &iter);
   if (kr != kIOReturnSuccess) {
-    LOG_WARN("Failed to iterate USB devices on macOS");
+    LOG_WARN("Failed to iterate USB devices for class %s on macOS", className);
     return devices;
   }
 
@@ -432,7 +434,9 @@ QMap<QString, QString> UsbDeviceHelper::getConnectedDevices(bool queryDevice)
           if (serialNumber.isEmpty()) {
             LOG_DEBUG("Device %s has no serial (yet), including for monitoring", qPrintable(devicePath));
           }
-          devices[devicePath] = serialNumber;
+          if (!devices.contains(devicePath)) {
+            devices[devicePath] = serialNumber;
+          }
         }
       }
     }

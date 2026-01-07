@@ -167,44 +167,43 @@ bool MacUsbMonitor::startMonitoring()
 
   // We want to monitor all USB devices to be broad and robust.
   // We'll filter in processAddedDevices in C++.
-  const char *classes[] = {"IOUSBDevice", "IOUSBHostDevice"};
+  // We specify IOUSBHostDevice only for modern macOS support.
+  const char *className = "IOUSBHostDevice";
   kern_return_t kr;
 
-  for (const char *className : classes) {
-    // Addition matching
-    CFMutableDictionaryRef addDict = IOServiceMatching(className);
-    if (addDict) {
-      io_iterator_t iter = 0;
-      kr = IOServiceAddMatchingNotification(m_notifyPort, kIOMatchedNotification, addDict, onDeviceAdded, this, &iter);
-      if (kr == kIOReturnSuccess) {
-        LOG_DEBUG("MacUsbMonitor: Registered add notification for class: %s", className);
-        processAddedDevices(iter);
-        if (!m_addedIter)
-          m_addedIter = iter;
-        else
-          IOObjectRelease(iter);
-      } else {
-        LOG_WARN("MacUsbMonitor: Failed to register add notification for class: %s", className);
-      }
+  // Addition matching
+  CFMutableDictionaryRef addDict = IOServiceMatching(className);
+  if (addDict) {
+    io_iterator_t iter = 0;
+    kr = IOServiceAddMatchingNotification(m_notifyPort, kIOMatchedNotification, addDict, onDeviceAdded, this, &iter);
+    if (kr == kIOReturnSuccess) {
+      LOG_DEBUG("MacUsbMonitor: Registered add notification for class: %s", className);
+      processAddedDevices(iter);
+      if (!m_addedIter)
+        m_addedIter = iter;
+      else
+        IOObjectRelease(iter);
+    } else {
+      LOG_WARN("MacUsbMonitor: Failed to register add notification for class: %s", className);
     }
+  }
 
-    // Removal matching
-    CFMutableDictionaryRef remDict = IOServiceMatching(className);
-    if (remDict) {
-      io_iterator_t iter = 0;
-      kr = IOServiceAddMatchingNotification(
-          m_notifyPort, kIOTerminatedNotification, remDict, onDeviceRemoved, this, &iter
-      );
-      if (kr == kIOReturnSuccess) {
-        LOG_DEBUG("MacUsbMonitor: Registered removal notification for class: %s", className);
-        processRemovedDevices(iter);
-        if (!m_removedIter)
-          m_removedIter = iter;
-        else
-          IOObjectRelease(iter);
-      } else {
-        LOG_WARN("MacUsbMonitor: Failed to register removal notification for class: %s", className);
-      }
+  // Removal matching
+  CFMutableDictionaryRef remDict = IOServiceMatching(className);
+  if (remDict) {
+    io_iterator_t iter = 0;
+    kr = IOServiceAddMatchingNotification(
+        m_notifyPort, kIOTerminatedNotification, remDict, onDeviceRemoved, this, &iter
+    );
+    if (kr == kIOReturnSuccess) {
+      LOG_DEBUG("MacUsbMonitor: Registered removal notification for class: %s", className);
+      processRemovedDevices(iter);
+      if (!m_removedIter)
+        m_removedIter = iter;
+      else
+        IOObjectRelease(iter);
+    } else {
+      LOG_WARN("MacUsbMonitor: Failed to register removal notification for class: %s", className);
     }
   }
 

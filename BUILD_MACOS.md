@@ -2,17 +2,57 @@
 
 This guide provides the exact steps to build, sign, and launch Deskflow from a clean state.
 
-## 1. Environment Variables
+## 1. Prerequisites: Code Signing
 
-Ensure these variables are set in your terminal session. Replace the paths if yours are different.
+To run the app with Accessibility permissions, you need a valid signing identity.
+The easiest way is to use Xcode to generate a free "Apple Development" certificate.
+
+1. **Open Xcode**:
+   ```bash
+   open -a Xcode
+   ```
+2. Go to **Xcode** menu (top bar) → **Settings** (or Preferences).
+3. Click the **Accounts** tab.
+4. Add your **Apple ID** if not listed (click `+` in bottom left).
+5. Select your account (Team) → Click **Manage Certificates...**
+6. Click the **+** button (bottom left) → Select **Apple Development**.
+7. Click **Done**.
+
+Verify it exists by running:
+```bash
+security find-identity -p codesigning -v
+```
+*You should see a line like: `"Apple Development: your.email@example.com (TEAMID)"`*
+
+### Troubleshooting: Invalid Identity?
+If `security find-identity` shows the certificate but says **0 valid identities**, run this to trust it:
 
 ```bash
-export CMAKE_PREFIX_PATH="/Users/lockehuang/Qt/6.10.1/macos"
+# 1. Export the certificate (replace with your email found above)
+security find-certificate -c "locke.huang@gmail.com" -p > /tmp/mycert.pem
+
+# 2. Add to trusted store (will ask for password)
+security add-trusted-cert -r trustRoot -k "$HOME/Library/Keychains/login.keychain-db" /tmp/mycert.pem
+```
+
+## 2. Environment Variables
+
+Add these to your `~/.zshrc` (recommended) or export them in your current session.
+
+> **Important**: Replace `YOUR_IDENTITY_STRING_HERE` with the exact string found in the verification step above (including quotes if it has spaces).
+
+```bash
+export CMAKE_PREFIX_PATH="$HOME/Qt/6.10.1/macos"
 export CMAKE_OSX_SYSROOT="/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk"
 export APPLE_CODESIGN_DEV="Apple Development: locke.huang@gmail.com (8479KTS8YJ)"
 ```
 
-## 2. Clean and Configure
+Then source your config:
+```bash
+source ~/.zshrc
+```
+
+## 3. Clean and Configure
 
 If you want a truly clean build, remove the `build` directory first.
 
@@ -21,10 +61,12 @@ rm -rf build
 cmake -B build -G "Unix Makefiles" \
   -DCMAKE_PREFIX_PATH="$CMAKE_PREFIX_PATH" \
   -DCMAKE_OSX_SYSROOT="$CMAKE_OSX_SYSROOT" \
-  -DCMAKE_BUILD_TYPE=Release
+  -DCMAKE_BUILD_TYPE=Release \
+  -DBUILD_TESTS=OFF \
+  -DSKIP_BUILD_TESTS=ON
 ```
 
-## 3. Build
+## 4. Build
 
 Build the main Deskflow application.
 
@@ -71,7 +113,7 @@ build/bin/Deskflow-HID.app/Contents/MacOS/Deskflow-HID
   ```
 - **Leftover Processes**: If the server won't start, check for hung `deskflow-core` processes:
   ```bash
-  pkill -9 -if deskflow
+  pkill -9 -if deskflow-hid
   ```
 - **Runtime Errors (dyld / missing core)**:
   - If you see `core server binary does not exist`, ensure you built with `--target Deskflow-HID deskflow-hid-core`.

@@ -458,7 +458,7 @@ void Esp32HidToolsWidget::refreshPorts()
         displayPath = displayPath.mid(4);
       }
 
-      if (serial == "Unknown") {
+      if (serial.isEmpty()) {
         LOG_INFO("Adding device: %s", qPrintable(path));
         m_portCombo->addItem(displayPath, path);
       } else if (serial == displayPath) {
