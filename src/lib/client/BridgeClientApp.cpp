@@ -61,6 +61,15 @@ void BridgeClientApp::handleScreenError() const
   throw ExitAppException(s_exitFailed);
 }
 
+void BridgeClientApp::handleClientConnected() const
+{
+  ClientApp::handleClientConnected();
+  LOG_INFO("BridgeClientApp: Pre-connecting to bridge device...");
+  if (m_transport && !m_transport->open()) {
+    LOG_WARN("BridgeClientApp: Failed to pre-connect to bridge device (%s)", m_transport->lastError().c_str());
+  }
+}
+
 void BridgeClientApp::handleClientFailed(const Event &e)
 {
   LOG_WARN("Server connection failed. Exiting for restart.");
