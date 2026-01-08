@@ -426,8 +426,9 @@ bool CdcTransport::performHandshake(bool allowInsecure)
     return false;
   }
 
-  quint64 randomValue = QRandomGenerator::global()->generate64();
-  std::memcpy(m_hostNonce.data(), &randomValue, kAuthNonceBytes);
+  quint32 tempNonce[kAuthNonceBytes / sizeof(quint32)];
+  QRandomGenerator::global()->fillRange(tempNonce);
+  std::memcpy(m_hostNonce.data(), tempNonce, kAuthNonceBytes);
   m_hasHostNonce = true;
 
   std::vector<uint8_t> payload(1 + kHelloPayloadLen);
