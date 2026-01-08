@@ -7,7 +7,6 @@
 #include "base/Log.h"
 
 #include <QByteArray>
-#include <QMessageAuthenticationCode>
 #include <QRandomGenerator>
 #include <algorithm>
 #include <array>
@@ -17,6 +16,15 @@
 #include <random>
 #include <sstream>
 #include <thread>
+
+#include <openssl/core_names.h>
+#include <openssl/err.h>
+#include <openssl/evp.h>
+#include <openssl/obj_mac.h>
+#include <openssl/param_build.h>
+#include <openssl/params.h>
+#include <openssl/x509.h>
+#include <vector>
 
 #if defined(Q_OS_UNIX)
 #include <cerrno>
@@ -33,7 +41,8 @@ namespace {
 constexpr uint16_t kUsbLinkMagic = 0xC35A; // USB Control Link Constants
 constexpr uint8_t kUsbLinkVersion = 0x01;
 constexpr uint8_t kAuthModeNone = 0x00;
-constexpr uint8_t kAuthModeHmacSha256 = 0x01;
+
+constexpr uint8_t kAuthModeEcdsa = 0x02; // New mode
 constexpr uint8_t kUsbFrameTypeHid = 0x01;
 constexpr uint8_t kUsbFrameTypeHidMouseCompact = 0x02;
 constexpr uint8_t kUsbFrameTypeHidKeyCompact = 0x03;
@@ -74,9 +83,10 @@ constexpr int kReadPollIntervalMs = 10;
 constexpr int kConfigCommandTimeoutMs = 1000;
 constexpr int kKeepAliveTimeoutMs = 1000;
 constexpr size_t kMaxDeviceNameBytes = 22;
-constexpr size_t kAuthKeyBytes = 32;
-constexpr size_t kAuthNonceBytes = 8;
-constexpr size_t kAuthTagBytes = 32;
+
+constexpr size_t kAuthNonceBytes = 32;
+constexpr size_t kAuthTagBytes = 64; // Signature size (R+S)
+
 constexpr size_t kHelloPayloadLen = 1 + 1 + kAuthNonceBytes + kAuthTagBytes;
 constexpr size_t kAckPayloadLen = kAckCoreLen + kAuthNonceBytes + kAuthTagBytes;
 constexpr size_t kAckTotalPayloadWithId = 1 + kAckPayloadLen;
@@ -86,12 +96,16 @@ constexpr size_t kAckTagOffset = kAckDeviceNonceOffset + kAuthNonceBytes;
 const uint8_t kHelloLabel[] = {'D', 'F', 'H', 'E', 'L', 'L', 'O'};
 const uint8_t kAckLabel[] = {'D', 'F', 'A', 'C', 'K'};
 
-const std::array<uint8_t, kAuthKeyBytes> kDefaultAuthKey = {
-#ifdef DESKFLOW_USE_GENERATED_AUTH_KEY
-#include "deskflow_auth_key.inc"
+// ECDSA Public Key (X || Y)
+static const uint8_t kDevicePublicKey[] = {
+#ifdef DESKFLOW_USE_GENERATED_PUBLIC_KEY
+#include "deskflow_public_key.inc"
 #else
-    0x9C, 0x3B, 0x1F, 0x04, 0xFE, 0x55, 0x80, 0x12, 0xD9, 0x47, 0x2A, 0x6C, 0x3F, 0xE5, 0x9B, 0x01,
-    0x75, 0xA1, 0x47, 0x33, 0x2D, 0x84, 0x5F, 0x66, 0x08, 0xBB, 0x3D, 0x12, 0x6A, 0x90, 0x4E, 0xD5,
+    // Public Key from firmware certs/cdc_auth/cdc_auth_public_key.bin
+    0x04, 0xf0, 0xbd, 0xff, 0x02, 0xb7, 0xd1, 0xcc, 0x26, 0x98, 0x99, 0xa6, 0x04, 0x2b, 0xb3, 0x51, 0xa6,
+    0x72, 0x1a, 0xc5, 0x8d, 0xa1, 0x1b, 0xbe, 0x8e, 0xc9, 0x3c, 0xd1, 0xcf, 0xf6, 0x32, 0xf9,            // X
+    0x72, 0x5b, 0x08, 0x12, 0x47, 0x8f, 0x94, 0x70, 0x1c, 0x4e, 0x51, 0xa7, 0xa3, 0xb1, 0xc4, 0xa2,      // Y part 1
+    0x6a, 0x65, 0x7c, 0xe4, 0x99, 0x62, 0x60, 0xb2, 0xcf, 0xc1, 0xb2, 0x2d, 0x7c, 0x64, 0xf4, 0xc2, 0x74 // Y part 2
 #endif
 };
 
@@ -118,41 +132,133 @@ std::string hexDump(const uint8_t *data, size_t length, size_t maxBytes = 64)
   return oss.str();
 }
 
-QByteArray hmacSha256(const QByteArray &message, const std::array<uint8_t, kAuthKeyBytes> &key)
+// Helper to append a DER integer
+void appendDerInteger(std::vector<uint8_t> &der, const uint8_t *data, size_t len)
 {
-  const QByteArray keyBytes(reinterpret_cast<const char *>(key.data()), static_cast<int>(key.size()));
-  return QMessageAuthenticationCode::hash(message, keyBytes, QCryptographicHash::Sha256);
+  // Skip leading zeros
+  while (len > 0 && *data == 0) {
+    data++;
+    len--;
+  }
+
+  if (len == 0) {
+    // Zero is encoded as 02 01 00
+    der.push_back(0x02);
+    der.push_back(0x01);
+    der.push_back(0x00);
+    return;
+  }
+
+  der.push_back(0x02); // INTEGER tag
+
+  // If MSB is set, prepend 0x00 to make it positive
+  if (data[0] & 0x80) {
+    der.push_back(static_cast<uint8_t>(len + 1));
+    der.push_back(0x00);
+  } else {
+    der.push_back(static_cast<uint8_t>(len));
+  }
+
+  der.insert(der.end(), data, data + len);
 }
 
-QByteArray makeHelloHmac(
-    const std::array<uint8_t, kAuthNonceBytes> &hostNonce, uint8_t hostVersion,
-    const std::array<uint8_t, kAuthKeyBytes> &key
+bool verifySignature(
+    const uint8_t *hostNonce, const uint8_t *deviceNonce, const uint8_t *ackCore, const uint8_t *signature
 )
 {
-  QByteArray msg;
-  msg.append(reinterpret_cast<const char *>(kHelloLabel), static_cast<int>(sizeof(kHelloLabel)));
-  msg.append(reinterpret_cast<const char *>(hostNonce.data()), static_cast<int>(hostNonce.size()));
-  msg.append(static_cast<char>(hostVersion));
-  return hmacSha256(msg, key);
-}
+  // 1. Reconstruct Message
+  std::vector<uint8_t> msg;
+  msg.reserve(sizeof(kAckLabel) + kAuthNonceBytes + kAuthNonceBytes + kAckCoreLen);
+  // Reconstruct message: HostNonce || DeviceNonce
+  // Firmware only signs the concatenated nonces
+  msg.insert(msg.end(), hostNonce, hostNonce + kAuthNonceBytes);
+  msg.insert(msg.end(), deviceNonce, deviceNonce + kAuthNonceBytes); // 2. Load Public Key (EVP_PKEY)
+  // 2. Load Public Key (Via DER SubjectPublicKeyInfo)
+  // Construct the ASN.1 structure manually to avoid provider parameter issues.
+  // Sequence (id-ecPublicKey, prime256v1), BitString (0x04 | X | Y)
+  const uint8_t *pubKeyData = kDevicePublicKey;
+  if (sizeof(kDevicePublicKey) != 65 || kDevicePublicKey[0] != 0x04) {
+    LOG_ERR("CDC: Invalid public key format (expected 65 bytes with 0x04 prefix)");
+    return false;
+  }
 
-QByteArray makeAckHmac(
-    const std::array<uint8_t, kAuthNonceBytes> &hostNonce, const uint8_t *deviceNonce, const uint8_t *ackCore,
-    const std::array<uint8_t, kAuthKeyBytes> &key
-)
-{
-  QByteArray msg;
-  msg.append(reinterpret_cast<const char *>(kAckLabel), static_cast<int>(sizeof(kAckLabel)));
-  msg.append(reinterpret_cast<const char *>(hostNonce.data()), static_cast<int>(hostNonce.size()));
-  msg.append(reinterpret_cast<const char *>(deviceNonce), static_cast<int>(kAuthNonceBytes));
-  msg.append(reinterpret_cast<const char *>(ackCore), static_cast<int>(kAckCoreLen));
-  return hmacSha256(msg, key);
+  // OIDs:
+  // id-ecPublicKey: 1.2.840.10045.2.1 -> 06 07 2A 86 48 CE 3D 02 01
+  // prime256v1:     1.2.840.10045.3.1.7 -> 06 08 2A 86 48 CE 3D 03 01 07
+  static const uint8_t kDerHeader[] = {
+      0x30, 0x59,                                                 // SEQUENCE, len=89
+      0x30, 0x13,                                                 // SEQUENCE, len=19
+      0x06, 0x07, 0x2A, 0x86, 0x48, 0xCE, 0x3D, 0x02, 0x01,       // id-ecPublicKey
+      0x06, 0x08, 0x2A, 0x86, 0x48, 0xCE, 0x3D, 0x03, 0x01, 0x07, // prime256v1
+      0x03, 0x42,                                                 // BIT STRING, len=66
+      0x00                                                        // Unused bits padding
+  };
+
+  std::vector<uint8_t> derKey;
+  derKey.reserve(sizeof(kDerHeader) + 65);
+  derKey.insert(derKey.end(), kDerHeader, kDerHeader + sizeof(kDerHeader));
+  derKey.insert(derKey.end(), pubKeyData, pubKeyData + 65);
+
+  const uint8_t *p = derKey.data();
+  EVP_PKEY *pkey = d2i_PUBKEY(nullptr, &p, static_cast<long>(derKey.size()));
+
+  if (!pkey) {
+    char errBuf[256];
+    ERR_error_string_n(ERR_peek_last_error(), errBuf, sizeof(errBuf));
+    LOG_ERR("CDC: Failed to load public key via d2i_PUBKEY: %s", errBuf);
+    return false;
+  }
+
+  // 3. Convert Raw Signature (R||S) to DER
+  // Signature is 64 bytes: 32 bytes R, 32 bytes S
+  if (kAuthTagBytes != 64) {
+    LOG_ERR("CDC: Unexpected signature size definition");
+    EVP_PKEY_free(pkey);
+    return false;
+  }
+
+  const uint8_t *r = signature;
+  const uint8_t *s = signature + 32;
+
+  std::vector<uint8_t> derSig;
+  // Sequence content
+  std::vector<uint8_t> seqContent;
+  appendDerInteger(seqContent, r, 32);
+  appendDerInteger(seqContent, s, 32);
+
+  // Sequence Header
+  derSig.push_back(0x30); // SEQUENCE
+  // Assuming short length form (< 128 bytes) which is true for P-256 sigs (~70 bytes)
+  derSig.push_back(static_cast<uint8_t>(seqContent.size()));
+  derSig.insert(derSig.end(), seqContent.begin(), seqContent.end());
+
+  // 4. Verify
+  EVP_MD_CTX *mdctx = EVP_MD_CTX_new();
+  if (!mdctx) {
+    LOG_ERR("CDC: Failed to create MD_CTX");
+    EVP_PKEY_free(pkey);
+    return false;
+  }
+
+  int ret = EVP_DigestVerifyInit(mdctx, nullptr, EVP_sha256(), nullptr, pkey);
+  if (ret > 0) {
+    ret = EVP_DigestVerify(mdctx, derSig.data(), derSig.size(), msg.data(), msg.size());
+  }
+
+  EVP_MD_CTX_free(mdctx);
+  EVP_PKEY_free(pkey);
+
+  if (ret != 1) {
+    LOG_ERR("CDC: ECDSA verification failed (ret=%d)", ret);
+    return false;
+  }
+
+  return true;
 }
 } // namespace
 
 CdcTransport::CdcTransport(const QString &devicePath) : m_devicePath(devicePath)
 {
-  m_authKey = kDefaultAuthKey;
   resetState();
 }
 
@@ -331,13 +437,17 @@ bool CdcTransport::performHandshake(bool allowInsecure)
   if (allowInsecure) {
     payload[2] = kAuthModeNone;
     std::memcpy(payload.data() + 3, m_hostNonce.data(), kAuthNonceBytes);
-    // Zero out the tag for insecure mode
-    std::memset(payload.data() + 3 + kAuthNonceBytes, 0, kAuthTagBytes);
   } else {
-    payload[2] = kAuthModeHmacSha256;
+    payload[2] = kAuthModeEcdsa; // Request ECDSA
+    // Randomize Host Nonce
+    QRandomGenerator *gen = QRandomGenerator::global();
+    quint32 *nonceWords = reinterpret_cast<quint32 *>(m_hostNonce.data());
+    for (size_t i = 0; i < kAuthNonceBytes / 4; ++i) {
+      nonceWords[i] = gen->generate();
+    }
     std::memcpy(payload.data() + 3, m_hostNonce.data(), kAuthNonceBytes);
-    const QByteArray helloTag = makeHelloHmac(m_hostNonce, kUsbLinkVersion, m_authKey);
-    std::memcpy(payload.data() + 3 + kAuthNonceBytes, helloTag.constData(), kAuthTagBytes);
+    // Zero out the auth tag area (last 64 bytes) since we use ECDSA/None for Hello
+    std::memset(payload.data() + 3 + kAuthNonceBytes, 0, kAuthTagBytes);
   }
 
   if (!sendUsbFrame(kUsbFrameTypeControl, 0, payload)) {
@@ -376,9 +486,7 @@ bool CdcTransport::performHandshake(bool allowInsecure)
 
       // Verify tag (only if not in insecure mode and auth was requested)
       if (!allowInsecure) {
-        const QByteArray computedTag = makeAckHmac(m_hostNonce, deviceNonce, ackCore, m_authKey);
-        if (computedTag.size() != static_cast<int>(kAuthTagBytes) ||
-            std::memcmp(computedTag.constData(), ackTag, kAuthTagBytes) != 0) {
+        if (!verifySignature(m_hostNonce.data(), deviceNonce, ackCore, ackTag)) {
           m_lastError = "Handshake authentication failed.";
           LOG_ERR("CDC: %s", m_lastError.c_str());
           return false;

@@ -227,8 +227,9 @@ public:
   bool sendKeepAlive(uint32_t &uptimeSeconds);
 
 private:
-  static constexpr size_t kAuthKeySize = 32;
-  static constexpr size_t kAuthNonceSize = 8;
+  static constexpr size_t kPublicKeySize = 64; // X + Y (32 bytes each)
+  static constexpr size_t kSignatureSize = 64; // R + S (32 bytes each)
+  static constexpr size_t kAuthNonceSize = 32;
 
   bool performHandshake(bool allowInsecure);
   bool sendUsbFrame(uint8_t type, uint8_t flags, const uint8_t *payload, uint16_t length);
@@ -250,7 +251,6 @@ private:
   std::string m_lastError;
   bool m_hasDeviceConfig = false;
   FirmwareConfig m_deviceConfig;
-  std::array<uint8_t, kAuthKeySize> m_authKey{};
 };
 
 } // namespace deskflow::bridge

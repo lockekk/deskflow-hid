@@ -206,8 +206,13 @@ if(APPLE)
   target_link_libraries(platform ${COCOA_LIBRARY})
 endif()
 
-# Inject dependency for CDC key generation if using custom auth key
-if(TARGET generate_auth_key)
-    message(STATUS "Injecting dependency: platform -> generate_auth_key")
-    add_dependencies(platform generate_auth_key)
+# Inject dependency for CDC public key generation if using custom key
+if(TARGET generate_public_key)
+    message(STATUS "Injecting dependency: platform -> generate_public_key")
+    add_dependencies(platform generate_public_key)
 endif()
+
+# OpenSSL dependency for ECDSA
+find_package(OpenSSL REQUIRED)
+target_link_libraries(platform OpenSSL::SSL OpenSSL::Crypto)
+
