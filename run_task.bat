@@ -8,7 +8,7 @@ if "%~1" neq "" (
 )
 
 :Interactive
-cls
+
 echo ==================================================
 echo            Deskflow Interactive Build
 echo ==================================================
@@ -18,33 +18,35 @@ echo   3^) Launch
 echo   4^) Configure Release (Clean ^& Config with Production Keys)
 echo   q^) Quit
 echo.
+set "input="
 set /p input="Select a task (1-4 or q): "
+if not defined input goto Interactive
 
 if /i "%input%"=="q" exit /b 0
 if /i "%input%"=="quit" exit /b 0
 if /i "%input%"=="exit" exit /b 0
 
 call :ProcessInput "%input%"
-pause
+
 goto Interactive
 
 :ProcessInput
 set choice=%~1
-if "%choice%"=="1" goto Build
-if "%choice%"=="build" goto Build
-if "%choice%"=="2" goto Pristine
-if "%choice%"=="build pristine" goto Pristine
-if "%choice%"=="3" goto Launch
-if "%choice%"=="launch" goto Launch
-if "%choice%"=="4" goto Release
-if "%choice%"=="release" goto Release
+if "%choice%"=="1" ( call :Build & exit /b 0 )
+if "%choice%"=="build" ( call :Build & exit /b 0 )
+if "%choice%"=="2" ( call :Pristine & exit /b 0 )
+if "%choice%"=="build pristine" ( call :Pristine & exit /b 0 )
+if "%choice%"=="3" ( call :Launch & exit /b 0 )
+if "%choice%"=="launch" ( call :Launch & exit /b 0 )
+if "%choice%"=="4" ( call :Release & exit /b 0 )
+if "%choice%"=="release" ( call :Release & exit /b 0 )
 echo Invalid selection: %choice%
 exit /b 1
 
 :Build
 call :SetupEnv
 if not exist build (
-    echo Error: 'build' directory not found. Please run a configuration step (2 or 4) first.
+    echo Error: 'build' directory not found. Please run a configuration step (2 or 4^) first.
     exit /b 1
 )
 echo --- BUILDING ---
