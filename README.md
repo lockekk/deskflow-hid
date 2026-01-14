@@ -1,68 +1,199 @@
 # Deskflow-HID: Professional Cross-Platform HID Bridge
 
+![License](https://img.shields.io/github/license/lockekk/deskflow-hid?style=flat-square) ![Release](https://img.shields.io/github/v/release/lockekk/deskflow-hid?style=flat-square) ![Build Status](https://img.shields.io/github/actions/workflow/status/lockekk/deskflow-hid/build.yml?style=flat-square)
+
+**[ English ]** | [ 简体中文 ](README_zh-CN.md)
+
+---
+
 ## Introduction
+
 Deskflow-HID is a high-performance, open-source extension of the [Deskflow](https://github.com/deskflow/deskflow) project. Supporting **Linux, Windows, and macOS**, Deskflow-HID focuses on sharing keyboard and mouse inputs with mobile devices including iPad, iPhone, and Android phones.
 
 ## Expanding the Deskflow Ecosystem: Mobile Integration
-While traditional software KVM solutions like Deskflow rely on a client-server architecture where both devices run the software, Deskflow-HID extends these capabilities to platforms with native restrictions:
+
+While traditional software KVM solutions like Deskflow work great between computers, they cannot support mobile platforms like iPadOS or Android. Deskflow-HID bridges this gap by extending Deskflow's capabilities to these devices:
 - **iOS and Android** do not allow background apps to intercept or simulate system-wide HID (Human Interface Device) events for security reasons.
 - **Apple Sidecar/Universal Control** is restricted to the Apple ecosystem, leaving Windows and Linux users behind.
 - **Remote Desktop** solutions often suffer from high latency and depend on network stability, which can impact fluid, real-time peripheral sharing.
 
 ## The Solution: Hardware-Assisted Bridging
-Deskflow-HID solves these challenges by utilizing a physical hardware bridge. By converting Deskflow network events into the native **Bluetooth Low Energy (BLE) HID protocol**, it allows you to share your host's native keyboard and mouse with any mobile device wirelessly.
 
-### Universal Compatibility
-Deskflow-HID is fully compatible with the entire Deskflow ecosystem. Whether you are using the official upstream Deskflow clients or mobile devices via the HID bridge, all your machines can share the same keyboard and mouse flawlessly.
+Deskflow-HID uses a budget-friendly **ESP32-C3 Supermini** board as a hardware bridge. It converts Deskflow events into **Bluetooth Low Energy (BLE) HID**, letting you wirelessly share your keyboard and mouse with any mobile device.
 
-## Key Features & Advantages
-- **Native Experience**: Your mobile device sees exactly what it expects—a standard Bluetooth peripheral. No apps or drivers are required on the target device.
-- **Ultra-Low Latency**: By bypassing the network stack and using direct BLE communication, input is significantly more responsive than remote desktop solutions.
-- **Universal Compatibility**: Fully supports **Windows, macOS, and Linux** hosts, and interacts seamlessly with all existing Deskflow ecosystem clients.
+<br/> <img src="doc/images/esp32-c3-supermini.png" height="120" alt="ESP32-C3 Super Mini"> <br/> <sub>Image credit: [Josselin Hefti](https://www.printables.com/model/1360390-esp32-c3-super-mini-model)</sub>
+
+
+
+## 📸 Screenshots
+
+|                            Main UI                            |                               Device Configuration                               |
+| :-----------------------------------------------------------: | :------------------------------------------------------------------------------: |
+| <img src="doc/images/main_ui.png" height="300" alt="Main UI"> | <img src="doc/images/device_config.png" height="300" alt="Device Configuration"> |
+
+
+## Key Features
+
+- **Native Experience**: No apps or drivers are required on the target device. It sees a standard Bluetooth peripheral.
+- **Ultra-Low Latency**: Offers superior responsiveness compared to remote screen sharing solutions.
+- **Universal Compatibility**: Fully supports **Windows, macOS, and Linux** hosts. Compatible with official upstream Deskflow clients.
 - **Multi-Device Pairing**: Securely pair and toggle between up to **6 mobile devices**. Switching is instantaneous and effortless.
 - **US Layout & International Flexibility**: Acts as a standard US layout keyboard but supports native iOS/Android "Hardware Keyboard" settings for non-US mappings.
-- **Consumer Key Support**: Dedicated control for media keys including Play/Pause, Volume, and Mute.
-- **"Universal Control" for Everyone**: Brings the seamless, Apple-style ecosystem experience to **Windows and Linux** users, allowing you to control your iPad or Android tablet exactly like Apple’s Universal Control feature—but without being locked into their hardware.
-- **Native Display & Productivity**: Use your tablet as a high-quality secondary screen with its native resolution and no compression artifacts.
-- **Hardware Stability**: Standardized on **ESP32-C3** hardware for superior RF performance.
+- **Consumer Key Support**: Dedicated control for media keys, including Play/Pause and Volume.
+- **Native External Display**: Use your tablet as a high-quality secondary screen.
+
 
 > [!NOTE]
 > **Clipboard Sharing**: Deskflow's network clipboard sharing is not supported at the moment but will be supported in a future update.
 
-## Getting Started
-### 1. Hardware Required
-To get started, you will need an **ESP32-C3 Mini** board. These are affordable, widely available, and offer the necessary BLE capabilities.
+## 📥 Installation
 
-### 2. Physical Setup
-Simply connect the ESP32-C3 board to your host PC via a standard **USB port**. The board acts as the bridge between your desktop's Deskflow server and your mobile devices.
+We provide pre-built binaries for all major platforms. Choose the one that fits your environment.
 
-### 3. Firmware
-Flash our custom firmware onto the ESP32-C3. Once flashed, the Deskflow-HID application will automatically detect the bridge and you'll be ready to control your mobile devices.
+### macOS (Universal)
+Suitable for macOS 12+ (Intel & Apple Silicon).
 
-### 4. Building from Source
-The development environment and build process for Deskflow-HID are **100% identical to the upstream [Deskflow project](https://github.com/deskflow/deskflow)**. You can follow the official build instructions for Windows, macOS, and Linux without any additional environment setup.
+#### Option A: Homebrew (Recommended)
+If you have [Homebrew](https://brew.sh/) installed:
+
+```bash
+# Install
+brew install --cask deskflow-hid
+
+# Uninstall
+brew uninstall deskflow-hid
+
+# Update
+brew upgrade deskflow-hid
+```
+
+#### Option B: Manual Install
+1.  Download the latest `.dmg` from the [Releases](https://github.com/lockekk/deskflow-hid/releases) page.
+2.  Open `Deskflow-HID.dmg` and drag the application to your `Applications` folder.
+3.  **Note**: If you encounter a "Damaged" or "Unverified" error, run the following command in Terminal:
+    ```bash
+    xattr -cr /Applications/Deskflow-HID.app
+    ```
+
+> [!IMPORTANT]
+> **Permissions & Setup**:
+> - **Accessibility Access**: You must grant "Accessibility" access (Privacy & Security) to both the **Deskflow-HID** app and the **deskflow-hid** process.
+> - **macOS Sequoia**: You may also need to allow Deskflow-HID under "Local Network" settings.
+> - **Upgrading**: If you are upgrading and already have Deskflow-HID on the allowed list, you may need to **manually remove** the old entries before accessibility access can be granted to the new version.
+
+### Windows
+**Dependency**: Please ensure you have installed **Microsoft Visual C++ Redistributable v14.44 or later** before use.
+
+Available as a portable archive (Recommended) or installer.
+
+-   **Portable (.7z)**: **Recommended**. Extract and run `Deskflow-HID.exe`.
+-   **Installer (.msi)**: Download and double-click to install.
+
+### Linux
+We support major distributions via AppImage and Flatpak.
+
+#### Option A: AppImage (Universal)
+Works on newer Linux distributions (Ubuntu 22.04+, Fedora 36+, etc.).
+
+1.  Download the `.AppImage` file from [Releases](https://github.com/lockekk/deskflow-hid/releases).
+2.  Make it executable:
+    ```bash
+    chmod +x Deskflow-HID-x86_64.AppImage
+    ```
+3.  Run it:
+    ```bash
+    ./Deskflow-HID-x86_64.AppImage
+    ```
+
+#### Option B: Flatpak
+Please download the `.flatpak` file from our [Releases](https://github.com/lockekk/deskflow-hid/releases) page and install it locally.
+
+**1. Setup Flatpak**
+If you haven't used Flatpak before, ensure it is installed and the Flathub repository is added:
+```bash
+# Debian/Ubuntu
+sudo apt install flatpak
+
+# Fedora
+sudo dnf install flatpak
+
+# Arch Linux
+sudo pacman -S flatpak
+
+# Add Flathub Repo (All Distros)
+flatpak remote-add --if-not-exists flathub https://dl.flathub.org/repo/flathub.flatpakrepo
+```
+
+**2. Install**
+```bash
+flatpak install --user ./Deskflow-HID.flatpak
+```
+
+**3. Manage**
+```bash
+# Uninstall
+flatpak uninstall org.deskflow.hid
+
+# Reinstall (Remove then Install)
+flatpak uninstall org.deskflow.hid
+flatpak install --user ./Deskflow-HID.flatpak
+```
+
+## First Use & Flashing Guide
+
+<div align="center">
+  <img src="doc/images/firmware_update.png" width="600" alt="Firmware Flash Tool">
+</div>
+
+### 1. Prepare Hardware
+You will need an **ESP32-C3 Supermini** board. These are cheap and widely available from AliExpress or local electronics stores. Connect it to your computer via USB.
+
+### 2. Access Flash Tool
+Open Deskflow-HID and navigate to **File -> Firmware** to open the management interface.
+
+### 3. Setup (For New Devices)
+For a brand new "virgin" device, follow this sequence:
+
+1.  **Factory Mode (Online)**:
+    *   Go to the **Factory Mode** tab.
+    *   Click **Flash** under the "Online" section to install the generic factory firmware.
+    *   This prepares the device for pairing and licensing.
+
+2.  **Request per-device application**:
+    *   Go to the **Order** tab.
+    *   Choose **Request 7-Day Free Trial** or **Purchase Full License**.
+    *   Fill in your details and click **Email** to send the request.
+    *   You will receive a specific **per-device firmware file** (e.g., `app_xxxx.uzip`) via email.
+
+3.  **Install Application (Manual)**:
+    *   Go to the **Upgrade Mode** tab.
+    *   Under "Manual", browse and select the file you received.
+    *   Click **Flash** to install your licensed firmware.
+
+### 4. Updates & Maintenance
+*   **Upgrading**: Go to the **Upgrade Mode** tab and click **Check for Updates** -> **Flash** to install the latest features via OTA.
+*   **Activation**: Go to the **Activation** tab to view your license status or input a new activation key.
+
+## Building from Source
+The development environment and build process for Deskflow-HID are **identical to the upstream [Deskflow project](https://github.com/deskflow/deskflow)**. You can follow the official build instructions for Windows, macOS, and Linux.
+
+**Note**: The firmware flashing and authentication modules are optional components and not part of the core open-source project. Users are welcome to build and use their own custom firmware implementation.
 
 ## Open Source & Commercial Terms
 Deskflow-HID is an open-source project at its core. The desktop application and bridge architecture are open for contribution and community improvement.
 
 - **7-Day Full Trial**: Experience the full functionality of the firmware and software for 7 days at no cost.
-- **Lifetime Value**: After the trial, a one-time activation provides **lifetime free upgrades via OTA (Over-The-Air)** and **lifetime maintenance**.
+- **Lifetime Value**: After the trial, a one-time activation provides **lifetime free upgrades via OTA** and **lifetime maintenance**.
 
 ## Acknowledgments
-We would like to express our deepest gratitude to the [Deskflow](https://github.com/deskflow/deskflow) project and its community. Deskflow-HID is built upon their incredible foundation, and we are proud to extend its capabilities. Special thanks to the core maintainers and contributors for their years of dedication to open-source cross-platform productivity.
+Special thanks to the [Deskflow](https://github.com/deskflow/deskflow) project and its contributors. This project is built upon their strong foundation.
 
 ## Support & Contact
-- **Maintainer**: Locke Huang
 - **Email**: [deskflow.hid@gmail.com](mailto:deskflow.hid@gmail.com)
+- **Issues**: Please report bugs via [GitHub Issues](https://github.com/lockekk/deskflow-hid/issues).
 
 ## Disclaimer & Legal
-While Deskflow-HID is built upon an open-source foundation, it is important to note:
-- **Optional Components**: The project may include optional submodules or links to proprietary repositories for specific features (e.g., firmware management).
-- **Independence**: The core open-source desktop application is fully functional and can be built independently of any proprietary submodules or firmware components. Deskflow-HID remains a true open-source project at its heart.
+Deskflow-HID is an open-source project. However, some optional features (like firmware management) may rely on proprietary components. The core application remains fully functional and open-source without these components.
 
 ## License
 Deskflow-HID is licensed under the **GNU General Public License v2.0 (GPL-2.0-only)**. This project is a derivative work based on [Deskflow](https://github.com/deskflow/deskflow).
-
-For more details, see the [LICENSE](LICENSE) file in this repository.
-
-Join the future of cross-platform productivity with Deskflow-HID.
