@@ -64,29 +64,82 @@ echo "Running linuxdeploy..."
 # We need to export plugin location
 export LINUXDEPLOY_PLUGIN_QT_PATH="$LINUXDEPLOY_PLUGIN_QT"
 
-# Auto-detect custom Qt from CMakeCache
+# Auto-detect custom Qt from CMakeCache OR use system qmake
 CACHE_FILE="$BUILD_DIR/CMakeCache.txt"
+QT_PLUGINS_DIR=""
+
 if [ -f "$CACHE_FILE" ]; then
     QT_DIR_LINE=$(grep "Qt6_DIR:PATH=" "$CACHE_FILE" | head -n 1)
     if [ ! -z "$QT_DIR_LINE" ]; then
         QT_CMAKE_PATH="${QT_DIR_LINE#*=}"
+        # Try to find qmake relative to CMake path first (custom install)
         QT_ROOT=$(dirname "$(dirname "$(dirname "$QT_CMAKE_PATH")")")
         QT_BIN="$QT_ROOT/bin"
 
-        if [ -d "$QT_BIN" ] && [ -x "$QT_BIN/qmake" ]; then
-            echo "Auto-detected Custom Qt: $QT_BIN"
-            export PATH="$QT_BIN:$PATH"
-            export QMAKE="$QT_BIN/qmake"
-            export LD_LIBRARY_PATH="$QT_ROOT/lib:$LD_LIBRARY_PATH"
-
-            # Manually copy iconengines/libqsvgicon.so if it exists (critical for SVG icons)
-            if [ -f "$QT_ROOT/plugins/iconengines/libqsvgicon.so" ]; then
-                echo "Copying libqsvgicon.so manually..."
-                mkdir -p "$APPDIR/usr/plugins/iconengines"
-                cp "$QT_ROOT/plugins/iconengines/libqsvgicon.so" "$APPDIR/usr/plugins/iconengines/"
-            fi
+        if [ -x "$QT_BIN/qmake" ]; then
+             export QMAKE="$QT_BIN/qmake"
+        elif [ -x "$QT_BIN/qmake6" ]; then
+             export QMAKE="$QT_BIN/qmake6"
+        else
+             # Fallback to system qmake if not found in derived path
+             if command -v qmake6 &> /dev/null; then
+                 export QMAKE="qmake6"
+             elif command -v qmake &> /dev/null; then
+                 export QMAKE="qmake"
+             fi
         fi
     fi
+else
+    # Fallback if no CMakeCache
+     if command -v qmake6 &> /dev/null; then
+         export QMAKE="qmake6"
+     elif command -v qmake &> /dev/null; then
+         export QMAKE="qmake"
+     fi
+fi
+
+if [ ! -z "$QMAKE" ]; then
+    echo "Using QMake: $QMAKE"
+    QT_PLUGINS_DIR=$($QMAKE -query QT_INSTALL_PLUGINS)
+    echo "Detected Qt Plugins Dir: $QT_PLUGINS_DIR"
+
+    # Export for linuxdeploy if needed
+    QT_BIN_DIR=$($QMAKE -query QT_INSTALL_BINS)
+    export PATH="$QT_BIN_DIR:$PATH"
+fi
+
+if [ ! -z "$QT_PLUGINS_DIR" ] && [ -d "$QT_PLUGINS_DIR" ]; then
+    # Copy imageformats plugins (needed for SVG icon loading)
+    if [ -d "$QT_PLUGINS_DIR/imageformats" ]; then
+        echo "Copying imageformats manually..."
+        mkdir -p "$APPDIR/usr/plugins/imageformats"
+
+        # Explicit check and copy for libqsvg.so
+        if [ -f "$QT_PLUGINS_DIR/imageformats/libqsvg.so" ]; then
+             cp "$QT_PLUGINS_DIR/imageformats/libqsvg.so" "$APPDIR/usr/plugins/imageformats/"
+             echo "Copied libqsvg.so"
+        else
+             echo "Warning: libqsvg.so not found in $QT_PLUGINS_DIR/imageformats"
+        fi
+
+        # Explicit check and copy for libqico.so
+        if [ -f "$QT_PLUGINS_DIR/imageformats/libqico.so" ]; then
+            cp "$QT_PLUGINS_DIR/imageformats/libqico.so" "$APPDIR/usr/plugins/imageformats/"
+             echo "Copied libqico.so"
+        fi
+    fi
+
+    # Manually copy iconengines/libqsvgicon.so if it exists (critical for SVG icons)
+    if [ -f "$QT_PLUGINS_DIR/iconengines/libqsvgicon.so" ]; then
+        echo "Copying libqsvgicon.so manually..."
+        mkdir -p "$APPDIR/usr/plugins/iconengines"
+        cp "$QT_PLUGINS_DIR/iconengines/libqsvgicon.so" "$APPDIR/usr/plugins/iconengines/"
+        echo "Copied libqsvgicon.so"
+    else
+         echo "Warning: libqsvgicon.so not found in $QT_PLUGINS_DIR/iconengines"
+    fi
+else
+    echo "Warning: Could not determine Qt plugins directory. Icons may be missing."
 fi
 
 # If we have custom libportal/libei, ensure they are in LD_LIBRARY_PATH
