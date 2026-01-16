@@ -20,6 +20,7 @@
 #include <QMutexLocker>
 #include <QRegularExpression>
 #include <QSharedMemory>
+#include <QThread>
 
 namespace deskflow::gui {
 
@@ -300,10 +301,27 @@ void CoreProcess::start(std::optional<ProcessMode> processModeOption)
   }
 
   if (m_mode == Settings::CoreMode::Server && isAnotherServerRunning()) {
-    qWarning("another deskflow server instance is already running, aborting start request");
-    setProcessState(ProcessState::Stopped);
-    Q_EMIT error(Error::DuplicateServer);
-    return;
+    qWarning("Another deskflow server instance is already running. Attempting to force kill it...");
+
+    QProcess killer;
+#if defined(Q_OS_WIN)
+    killer.start("taskkill", {"/F", "/IM", "deskflow-hid-core.exe"});
+#else
+    killer.start("pkill", {"-9", "-x", "deskflow-hid-core"});
+#endif
+    killer.waitForFinished(3000);
+
+    // Give it a moment to release resources
+    QThread::currentThread()->msleep(1000);
+
+    // Re-check
+    if (isAnotherServerRunning()) {
+      qWarning("Failed to kill stale server instance, aborting start request");
+      setProcessState(ProcessState::Stopped);
+      Q_EMIT error(Error::DuplicateServer);
+      return;
+    }
+    qInfo("Successfully killed stale server instance, proceeding with start.");
   }
 
   QMutexLocker locker(&m_processMutex);

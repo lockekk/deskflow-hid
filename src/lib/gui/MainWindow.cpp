@@ -539,15 +539,6 @@ void MainWindow::coreProcessError(CoreProcess::Error error)
         tr("Another Deskflow server instance is already running in the background. Please close the existing server "
            "before starting a new one.")
     );
-  } else if (error == CoreProcess::Error::DuplicateServer) {
-    show();
-    raise();
-    activateWindow();
-    QMessageBox::warning(
-        this, tr("Server already running"),
-        tr("Another Deskflow server instance is already running in the background. Please close the existing server "
-           "before starting a new one.")
-    );
   }
 }
 

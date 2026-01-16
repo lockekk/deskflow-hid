@@ -18,6 +18,7 @@
 #include "gui/MainWindow.h"
 #include "gui/Messages.h"
 #include "gui/StyleUtils.h"
+#include "platform/OpenSSLCompat.h"
 
 #include <QApplication>
 #include <QCommandLineParser>
@@ -61,6 +62,9 @@ int main(int argc, char *argv[])
   arch.init();
 
   Log log;
+
+  // Initialize OpenSSL 3.x providers/environment (macOS and Linux)
+  deskflow::platform::initializeOpenSSL();
 
   QCoreApplication::setApplicationName(kAppName);
   QCoreApplication::setOrganizationName(kAppName);

@@ -3,6 +3,7 @@
  */
 
 #include "CdcTransport.h"
+#include "platform/OpenSSLCompat.h"
 
 #include "base/Log.h"
 
@@ -13,6 +14,7 @@
 #include <chrono>
 #include <cstring>
 #include <iomanip>
+#include <mutex>
 #include <random>
 #include <sstream>
 #include <thread>
@@ -29,8 +31,12 @@
 #if defined(Q_OS_UNIX)
 #include <cerrno>
 #include <fcntl.h>
+#include <sys/stat.h>
 #include <termios.h>
 #include <unistd.h>
+#ifdef Q_OS_MAC
+#include <CoreFoundation/CoreFoundation.h>
+#endif
 #elif defined(Q_OS_WIN)
 #include <windows.h>
 #endif
@@ -166,6 +172,8 @@ bool verifySignature(
     const uint8_t *hostNonce, const uint8_t *deviceNonce, const uint8_t *ackCore, const uint8_t *signature
 )
 {
+  deskflow::platform::initializeOpenSSL();
+
   // 1. Reconstruct Message
   std::vector<uint8_t> msg;
   msg.reserve(sizeof(kAckLabel) + kAuthNonceBytes + kAuthNonceBytes + kAckCoreLen);

@@ -48,6 +48,8 @@ if(WIN32)
     MSWindowsSession.h
     MSWindowsWatchdog.cpp
     MSWindowsWatchdog.h
+    OpenSSLCompat.cpp
+    OpenSSLCompat.h
   )
 elseif(APPLE)
   set(PLATFORM_SOURCES
@@ -91,6 +93,8 @@ elseif(APPLE)
     OSXScreenSaverUtil.m
     OSXUchrKeyResource.cpp
     OSXUchrKeyResource.h
+    OpenSSLCompat.cpp
+    OpenSSLCompat.h
   )
 elseif(UNIX)
   set(PLATFORM_SOURCES
@@ -99,6 +103,8 @@ elseif(UNIX)
     XDGPowerManager.h
     XDGKeyUtil.h
     XDGKeyUtil.cpp
+    OpenSSLCompat.cpp
+    OpenSSLCompat.h
   )
   if (BUILD_X11_SUPPORT)
     configure_file(XWindowsConfig.h.in XWindowsConfig.h @ONLY)

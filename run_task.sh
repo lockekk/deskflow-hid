@@ -134,17 +134,6 @@ process_input() {
                     echo "No signing identity found (APPLE_CODESIGN_DEV not set). Using ad-hoc signing."
                 fi
 
-                # Check for Universal OpenSSL
-                UNIVERSAL_SSL_DIR="$(pwd)/rel_openssl_universal/universal"
-                CMAKE_OPENSSL_ARG=""
-                if [ -d "$UNIVERSAL_SSL_DIR" ]; then
-                    echo "Using Universal OpenSSL at: $UNIVERSAL_SSL_DIR"
-                    CMAKE_OPENSSL_ARG="-DOPENSSL_ROOT_DIR=$UNIVERSAL_SSL_DIR -DOPENSSL_USE_STATIC_LIBS=TRUE"
-                else
-                    echo "Warning: Universal OpenSSL not found at $UNIVERSAL_SSL_DIR."
-                    echo "Universal build might fail if system OpenSSL is single-arch."
-                fi
-
                 # Use a separate build directory for deployment to avoid polluting dev build
                 BUILD_DIR="build_deploy"
                 rm -rf "$BUILD_DIR"
@@ -153,7 +142,6 @@ process_input() {
                 cmake -B "$BUILD_DIR" -G "Unix Makefiles" \
                   -DCMAKE_PREFIX_PATH="$CMAKE_PREFIX_PATH" \
                   -DCMAKE_OSX_SYSROOT="$CMAKE_OSX_SYSROOT" \
-                  -DCMAKE_OSX_ARCHITECTURES="x86_64;arm64" \
                   -DCMAKE_BUILD_TYPE=Release \
                   -DSKIP_BUILD_TESTS=ON \
                   -DBUILD_TESTS=OFF \
@@ -162,7 +150,7 @@ process_input() {
                   -DDESKFLOW_CDC_PUBLIC_KEY="$DESKFLOW_CDC_PUBLIC_KEY" \
                   -DDESKFLOW_ESP32_ENCRYPTION_KEY="$DESKFLOW_ESP32_ENCRYPTION_KEY" \
                   -DOSX_CODESIGN_IDENTITY="$TARGET_IDENTITY" \
-                  $CMAKE_OPENSSL_ARG
+                  -DOPENSSL_USE_STATIC_LIBS=TRUE
 
                 if [ $? -ne 0 ]; then
                     echo "Configuration failed."

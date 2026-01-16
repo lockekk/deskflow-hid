@@ -17,6 +17,7 @@
 #include "common/Settings.h"
 #include "deskflow/ClientApp.h"
 #include "deskflow/ServerApp.h"
+#include "platform/OpenSSLCompat.h"
 #include "platform/bridge/CdcTransport.h"
 
 #ifndef _WIN32
@@ -56,6 +57,9 @@ int main(int argc, char **argv)
   arch.init();
 
   Log log;
+
+  // Initialize OpenSSL 3.x providers/environment (macOS and Linux)
+  deskflow::platform::initializeOpenSSL();
 
   QStringList args;
   for (int i = 0; i < argc; i++)

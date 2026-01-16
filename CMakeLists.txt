@@ -184,11 +184,6 @@ add_subdirectory(translations)
 
 add_subdirectory(src)
 
-option(BUILD_INSTALLER "Build installer" ON)
-if(BUILD_INSTALLER)
-    add_subdirectory(deploy)
-endif()
-
 install(
   FILES ${PROJECT_SOURCE_DIR}/LICENSE
   DESTINATION ${CMAKE_INSTALL_LICENSE_DIR}
@@ -199,3 +194,8 @@ install(
   DESTINATION ${CMAKE_INSTALL_LICENSE_DIR}
   RENAME LICENSE_EXCEPTION
 )
+
+option(BUILD_INSTALLER "Build installer" ON)
+if(BUILD_INSTALLER)
+    add_subdirectory(deploy)
+endif()
