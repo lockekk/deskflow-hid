@@ -71,7 +71,7 @@ protected:
   void initApp() override;
   ISocketFactory *getSocketFactory() const override;
   void handleScreenError() const override;
-  void handleClientConnected() const override;
+  void handleClientConnected() override;
   void handleClientFailed(const Event &e) override;
   void handleClientDisconnected() override;
 

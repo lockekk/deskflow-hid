@@ -9,6 +9,9 @@
 #pragma once
 
 #include "deskflow/App.h"
+#include "net/NetworkAddress.h"
+
+#include <QList>
 
 namespace deskflow {
 class Screen;
@@ -17,7 +20,6 @@ class ClientArgs;
 
 class Event;
 class Client;
-class NetworkAddress;
 class Thread;
 class ISocketFactory;
 
@@ -54,7 +56,7 @@ public:
   void closeClientScreen(deskflow::Screen *screen);
   void handleClientRestart(const Event &, EventQueueTimer *vtimer);
   void scheduleClientRestart(double retryTime);
-  virtual void handleClientConnected() const;
+  virtual void handleClientConnected();
   virtual void handleClientFailed(const Event &e);
   virtual void handleClientRefused(const Event &e);
   virtual void handleClientDisconnected();
@@ -80,9 +82,14 @@ protected:
   virtual ISocketFactory *getSocketFactory() const;
 
 private:
+  NetworkAddress &getCurrentServerAddress();
+  void tryNextServer();
+
+private:
   bool m_suspended = false;
   Client *m_client = nullptr;
   deskflow::Screen *m_clientScreen = nullptr;
-  NetworkAddress *m_serverAddress = nullptr;
+  QList<NetworkAddress> m_serverAddresses;
+  size_t m_currentServerIndex = 0;
   size_t m_lastServerAddressIndex = 0;
 };

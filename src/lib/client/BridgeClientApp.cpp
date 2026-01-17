@@ -61,7 +61,7 @@ void BridgeClientApp::handleScreenError() const
   throw ExitAppException(s_exitFailed);
 }
 
-void BridgeClientApp::handleClientConnected() const
+void BridgeClientApp::handleClientConnected()
 {
   ClientApp::handleClientConnected();
   LOG_INFO("BridgeClientApp: Pre-connecting to bridge device...");
