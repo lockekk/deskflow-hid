@@ -249,7 +249,7 @@ process_input() {
                 ARCH=$(uname -m)
                 BUNDLE_NAME="deskflow-${VERSION}-linux-${ARCH}.flatpak"
 
-                flatpak build-bundle repo "${BUNDLE_NAME}" org.lockekk.deskflow-hid
+                flatpak build-bundle --runtime-repo=https://dl.flathub.org/repo/flathub.flatpakrepo repo "${BUNDLE_NAME}" org.lockekk.deskflow-hid
 
                 if [ $? -eq 0 ]; then
                     echo "Flatpak bundle created: ${BUNDLE_NAME}"
