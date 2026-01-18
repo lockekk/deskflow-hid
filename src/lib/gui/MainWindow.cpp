@@ -554,7 +554,7 @@ void MainWindow::coreProcessError(CoreProcess::Error error)
 void MainWindow::startCore()
 {
   // Save current IP state when server starts
-  if (m_coreProcess.mode() == CoreMode::Server && Settings::value(Settings::Core::Interface).isNull()) {
+  if (m_coreProcess.mode() == CoreMode::Server && Settings::value(Settings::Core::Interface).toString().isEmpty()) {
     m_serverStartIPs = m_networkMonitor->getAvailableIPv4Addresses();
     m_serverStartSuggestedIP = m_serverStartIPs.isEmpty() ? "" : m_serverStartIPs.first();
   }
@@ -860,8 +860,8 @@ bool MainWindow::nativeEvent(const QByteArray &eventType, void *message, qintptr
 
 void MainWindow::applyConfig()
 {
-  if (!Settings::value(Settings::Client::RemoteHost).isNull())
-    ui->lineHostname->setText(Settings::value(Settings::Client::RemoteHost).toString());
+  if (const auto host = Settings::value(Settings::Client::RemoteHost).toString(); !host.isEmpty())
+    ui->lineHostname->setText(host);
   updateLocalFingerprint();
   setTrayIcon();
 
@@ -1436,7 +1436,7 @@ void MainWindow::updateIpLabel(const QStringList &addresses)
 
   static const auto colorText = QStringLiteral(R"(<span style="color:%1;">%2</span>)");
   const bool serverStarted = m_coreProcess.isStarted();
-  const bool fixedIP = !Settings::value(Settings::Core::Interface).isNull();
+  const bool fixedIP = !Settings::value(Settings::Core::Interface).toString().isEmpty();
 
   if (!fixedIP && addresses.isEmpty() && !serverStarted || (serverStarted && m_serverStartSuggestedIP.isEmpty())) {
     ui->lblIpAddresses->setText(colorText.arg(palette().linkVisited().color().name(), tr("No IP Detected")));
