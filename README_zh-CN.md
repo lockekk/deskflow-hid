@@ -1,10 +1,14 @@
-# Deskflow-HID: 专业跨平台 HID 硬件桥接器
+# Deskflow-HID: 与移动设备共享键盘和鼠标
 
-![License](https://img.shields.io/github/license/lockekk/deskflow-hid?style=flat-square) ![Release](https://img.shields.io/github/v/release/lockekk/deskflow-hid?style=flat-square) ![Build Status](https://img.shields.io/github/actions/workflow/status/lockekk/deskflow-hid/build.yml?style=flat-square)
+![License](https://img.shields.io/github/license/lockekk/deskflow-hid?style=flat-square) ![Release](https://img.shields.io/github/v/tag/lockekk/deskflow-hid?style=flat-square)
 
 [ English ](README.md) | **[ 简体中文 ]**
 
 ---
+
+<p align="center">
+  <img src="doc/images/deskflow-hid-post.png" width="800" alt="Deskflow-HID Post">
+</p>
 
 ## 简介
 

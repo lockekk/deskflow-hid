@@ -1,10 +1,14 @@
-# Deskflow-HID: Professional Cross-Platform HID Bridge
+# Deskflow-HID: Share Keyboard and Mouse with Mobile Devices
 
-![License](https://img.shields.io/github/license/lockekk/deskflow-hid?style=flat-square) ![Release](https://img.shields.io/github/v/release/lockekk/deskflow-hid?style=flat-square) ![Build Status](https://img.shields.io/github/actions/workflow/status/lockekk/deskflow-hid/build.yml?style=flat-square)
+![License](https://img.shields.io/github/license/lockekk/deskflow-hid?style=flat-square) ![Release](https://img.shields.io/github/v/tag/lockekk/deskflow-hid?style=flat-square)
 
 **[ English ]** | [ 简体中文 ](README_zh-CN.md)
 
 ---
+
+<p align="center">
+  <img src="doc/images/deskflow-hid-post.png" width="800" alt="Deskflow-HID Post">
+</p>
 
 ## Introduction
 
@@ -17,7 +21,7 @@ While traditional software KVM solutions like Deskflow work great between comput
 - **Apple Sidecar/Universal Control** is restricted to the Apple ecosystem, leaving Windows and Linux users behind.
 - **Remote Desktop** solutions often suffer from high latency and depend on network stability, which can impact fluid, real-time peripheral sharing.
 
-## The Solution: Hardware-Assisted Bridging
+## The Solution: Hardware Bridge Client
 
 Deskflow-HID uses a budget-friendly **ESP32-C3 Supermini** board as a hardware bridge. It converts Deskflow events into **Bluetooth Low Energy (BLE) HID**, letting you wirelessly share your keyboard and mouse with any mobile device.
 
