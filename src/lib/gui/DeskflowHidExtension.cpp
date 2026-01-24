@@ -1,5 +1,5 @@
 /*
- * Deskflow-hid -- created by locke.huang@gmail.com
+ * dshare-hid -- created by locke.huang@gmail.com
  */
 
 #include "DeskflowHidExtension.h"
@@ -1484,7 +1484,7 @@ void DeskflowHidExtension::onBridgeProcessHandshakeFailed(const QString &deviceP
   } else if (reason == QStringLiteral("Handshake timeout")) {
     handleHandshakeFailure(
         devicePath, "Detected handshake timeout (possible non-Deskflow firmware)",
-        tr("Device handshake failed. Possibly not a Deskflow-HID firmware."),
+        tr("Device handshake failed. Possibly not a DShare-HID firmware."),
         tr("Handshake failed on %1. Auto-connect disabled.")
     );
   }

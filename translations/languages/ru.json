@@ -254,7 +254,7 @@
         "Save Request File": "Сохранить файл запроса",
         "Text Files (*.txt)": "Текстовые файлы (*.txt)",
         "Request file generated: %1": "Файл запроса создан: %1",
-        "Request file generated successfully!\n\nPlease send this file or its content (with payment if applicable) to deskflow.hid@gmail.com.\nYour firmware will be back in 24 hours.": "Файл запроса успешно создан!\n\nПожалуйста, отправьте этот файл или его содержимое (с оплатой, если применимо) на deskflow.hid@gmail.com.\nВаша прошивка вернется через 24 часа.",
+        "Request file generated successfully!\n\nPlease send this file or its content (with payment if applicable) to dshare.hid@gmail.com.\nYour firmware will be back in 24 hours.": "Файл запроса успешно создан!\n\nПожалуйста, отправьте этот файл или его содержимое (с оплатой, если применимо) на dshare.hid@gmail.com.\nВаша прошивка вернется через 24 часа.",
         "Failed to save request file: %1": "Не удалось сохранить файл запроса: %1",
         "Failed to save request file.": "Не удалось сохранить файл запроса.",
         "Order content copied to clipboard.": "Содержимое заказа скопировано в буфер обмена.",

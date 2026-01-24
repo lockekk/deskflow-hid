@@ -1,5 +1,5 @@
 /*
- * Deskflow-hid -- created by locke.huang@gmail.com
+ * dshare-hid -- created by locke.huang@gmail.com
  */
 
 #include "Esp32HidToolsWidget.h"
@@ -83,7 +83,9 @@ Esp32HidToolsWidget::Esp32HidToolsWidget(const QString &devicePath, QWidget *par
   auto *factoryLayout = new QVBoxLayout(factoryTab);
 
 #ifdef _WIN32
-  auto *bootReminderLbl = new QLabel(tr("Reminder: Press 'Boot' button then plugin your ESP32-C3. Click Refresh button to ensure the device is detected."));
+  auto *bootReminderLbl = new QLabel(tr(
+      "Reminder: Press 'Boot' button then plugin your ESP32-C3. Click Refresh button to ensure the device is detected."
+  ));
   bootReminderLbl->setStyleSheet("color: blue; font-weight: bold;");
   bootReminderLbl->setWordWrap(true);
   factoryLayout->addWidget(bootReminderLbl);
@@ -431,7 +433,7 @@ void Esp32HidToolsWidget::fetchPrices()
 #ifdef DESKFLOW_PRICES_URL
   QString urlStr = DESKFLOW_PRICES_URL;
 #else
-  QString urlStr = "https://raw.githubusercontent.com/lockekk/deskflow-hid-release/main/prices.json";
+  QString urlStr = "https://raw.githubusercontent.com/lockekk/esp32-hid-release/main/prices.json";
 #endif
 
   LOG_INFO("Fetching prices from: %s", qPrintable(urlStr));
@@ -748,7 +750,7 @@ void Esp32HidToolsWidget::onDownloadAndFlashFactory()
   std::string port = portName.toStdString();
 
   auto fetchTask = [this, port]() {
-    GithubDownloader downloader("deskflow-hid", "deskflow-hid-release");
+    GithubDownloader downloader("lockekk", "esp32-hid-release");
     auto assets = downloader.get_latest_assets();
     std::string assetName;
     for (const auto &asset : assets) {
@@ -779,7 +781,7 @@ void Esp32HidToolsWidget::onDownloadAndFlashFactory()
           log(tr("Downloading %1...").arg(QString::fromStdString(assetName)));
         });
 
-        GithubDownloader downloader("deskflow-hid", "deskflow-hid-release");
+        GithubDownloader downloader("lockekk", "esp32-hid-release");
         auto dataOpt = downloader.download_asset_to_memory(assetName);
         if (!dataOpt.has_value()) {
           QMetaObject::invokeMethod(this, [this]() {
@@ -863,12 +865,10 @@ void Esp32HidToolsWidget::onDownloadAndFlashFactory()
 
 std::function<void()> Esp32HidToolsWidget::createReplugCallback()
 {
-  return [this]()
-  {
+  return [this]() {
     QMetaObject::invokeMethod(
         this,
-        [this]()
-        {
+        [this]() {
           log(tr("Waiting for user to reconnect device..."));
           QMessageBox msgBox(
               QMessageBox::Warning, tr("Reconnect Device"), tr("Please disconnect and reconnect the device now."),
@@ -901,8 +901,8 @@ int Esp32HidToolsWidget::showWideMessageBox(
 bool Esp32HidToolsWidget::confirmFactoryFlash(const QString &filename)
 {
   QString message = tr("About to flash: <b>%1</b><br><br>"
-                       "This action will permanently convert your device to Deskflow-HID. "
-                       "This process is irreversible and precludes non-Deskflow firmware.<br><br>Proceed?")
+                       "This action will permanently convert your device to DShare-HID. "
+                       "This process is irreversible and precludes non-DShare firmware.<br><br>Proceed?")
                         .arg(filename);
 
   return (
@@ -914,10 +914,9 @@ bool Esp32HidToolsWidget::confirmFactoryFlash(const QString &filename)
 
 void Esp32HidToolsWidget::showFactoryFlashSuccess()
 {
-  QString msg =
-      tr("Factory firmware flashed successfully.\n\n"
-         "Next step: You need to flash the per-device firmware to use the device. "
-         "Please switch to the 'Order' tab to request it.");
+  QString msg = tr("Factory firmware flashed successfully.\n\n"
+                   "Next step: You need to flash the per-device firmware to use the device. "
+                   "Please switch to the 'Order' tab to request it.");
 
   showWideMessageBox(QMessageBox::Information, tr("Success"), msg);
   m_copyInfoBtn->setFocus();
@@ -1001,8 +1000,8 @@ void Esp32HidToolsWidget::onCheckUpgrade()
   std::string port = portName.toStdString();
 
   auto task = [this, port]() {
-    // Check for "deskflow-hid" / "deskflow-hid-release"
-    GithubDownloader downloader("deskflow-hid", "deskflow-hid-release");
+    // Check for "dshare-hid" / "dshare-hid-release"
+    GithubDownloader downloader("lockekk", "esp32-hid-release");
     auto latestTag = downloader.get_latest_tag();
     if (latestTag.empty()) {
       QMetaObject::invokeMethod(this, [this]() {
@@ -1163,7 +1162,7 @@ void Esp32HidToolsWidget::onFlashOnline()
   // We can reuse runBackgroundTask for download + flash chain.
 
   auto task = [this]() {
-    GithubDownloader downloader("deskflow-hid", "deskflow-hid-release");
+    GithubDownloader downloader("lockekk", "esp32-hid-release");
     auto assets = downloader.get_latest_assets();
     std::string assetName;
     for (const auto &asset : assets) {
@@ -1288,8 +1287,7 @@ void Esp32HidToolsWidget::flashFirmware(const std::vector<uint8_t> &firmwareData
         });
       } else {
         QString errorMsg = QString::fromStdString(flashResultToString(res));
-        log_cb_func(
-            tr("Flash failed, %1").arg(errorMsg).toStdString()
+        log_cb_func(tr("Flash failed, %1").arg(errorMsg).toStdString()
         ); // log_cb takes std::string, but log takes QString. log_cb calls log.
         QMetaObject::invokeMethod(this, [this, errorMsg]() {
           showWideMessageBox(QMessageBox::Critical, tr("Error"), tr("Flash failed, %1").arg(errorMsg));
@@ -1644,10 +1642,8 @@ QString deskflow::gui::Esp32HidToolsWidget::composeOrderContent(QString &outPref
   } else if (m_orderOption3->isChecked()) {
     outOption = 3;
     outPrefix = "full_license_";
-    content = QString(
-                  "Name: %1\nEmail: %2\nSerial: %3\nDevice Secret: %4\nTotal Profiles: %5\nRequest: Skip trial "
-                  "and buy full license\n"
-    )
+    content = QString("Name: %1\nEmail: %2\nSerial: %3\nDevice Secret: %4\nTotal Profiles: %5\nRequest: Skip trial "
+                      "and buy full license\n")
                   .arg(name, email, serial, secret, QString::number(totalProfiles));
   } else if (m_orderOption4->isChecked()) {
     outOption = 4;
@@ -1834,7 +1830,7 @@ void deskflow::gui::Esp32HidToolsWidget::onPayNowClicked()
     refNo = m_paymentRefNo->text();
   }
 
-  QString itemName = QString("Deskflow-HID: %1").arg(priceDesc);
+  QString itemName = QString("DShare-HID: %1").arg(priceDesc);
 
   QUrlQuery query;
   query.addQueryItem("cmd", "_xclick");
@@ -1893,10 +1889,10 @@ void deskflow::gui::Esp32HidToolsWidget::onEmailOrder()
   }
 
   QString serial = m_orderSerialLabel->text();
-  QString subject = QString("Deskflow Order: %1 %2").arg(prefix, serial);
+  QString subject = QString("DShare Order: %1 %2").arg(prefix, serial);
 
   // URL encode content and subject
-  QUrl url(QString("mailto:deskflow.hid@gmail.com"));
+  QUrl url(QString("mailto:dshare.hid@gmail.com"));
   QUrlQuery query;
   query.addQueryItem("subject", subject);
   query.addQueryItem("body", content);

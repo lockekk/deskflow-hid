@@ -543,7 +543,7 @@ void MainWindow::coreProcessError(CoreProcess::Error error)
     activateWindow();
     QMessageBox::warning(
         this, tr("Server already running"),
-        tr("Another Deskflow server instance is already running in the background. Please close the existing server "
+        tr("Another DShare-HID server instance is already running in the background. Please close the existing server "
            "before starting a new one.")
     );
   }

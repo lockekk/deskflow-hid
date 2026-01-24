@@ -41,7 +41,9 @@ inline QString iconMode()
 inline void updateIconTheme()
 {
   // Sets the fallback icon path and fallback theme
-  const auto themeName = QStringLiteral("%1-%2").arg(kAppId, iconMode());
+  // Rebranding workaround: We force the use of "deskflow" theme folder name
+  // because we avoided renaming the resource directories to match the new kAppId (dshare-hid).
+  const auto themeName = QStringLiteral("deskflow-%1").arg(iconMode());
   if (QIcon::themeName().isEmpty() || QIcon::themeName().startsWith(kAppId))
     QIcon::setThemeName(themeName);
   else

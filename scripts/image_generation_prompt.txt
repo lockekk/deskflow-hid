@@ -1,4 +1,4 @@
-A minimalist encyclopedia-style informational card for [Deskflow-HID],
+A minimalist encyclopedia-style informational card for [DShare-HID],
 museum exhibition quality design, information-rich but visually restrained
 
 【Overall Composition - Golden Ratio Layout】
@@ -11,11 +11,11 @@ museum exhibition quality design, information-rich but visually restrained
 【Top Showcase Area - Visual Anchor】
 • Product name: Extra-large font, ultra-light sans-serif, wide letter-spacing
 • Tagline: "Universal Control for Everyone" in refined italic
-• Category capsule tag: "Deskflow Extension for Mobile Devices"
+• Category capsule tag: "DShare Extension for Mobile Devices"
 • Hero composition: Split visual showing BOTH the software app AND ESP32-C3 hardware
 • Ecosystem badge: "Forked from Deskflow - Compatible with All Deskflow Clients"
 • Platform compatibility icons row: Windows + macOS + Linux + iOS + Android
-• Simple architecture diagram: Deskflow-HID App + ESP32-C3 Bridge = Mobile Control
+• Simple architecture diagram: DShare-HID App + ESP32-C3 Bridge = Mobile Control
 
 【Middle Core Information Area - 4 Modules (2x2 Grid)】
 
@@ -30,9 +30,9 @@ museum exhibition quality design, information-rich but visually restrained
 
 2、HOW IT WORKS (Top-Right)
    - Visual flow diagram:
-     [Your Keyboard/Mouse] -> [Desktop PC] -> [Deskflow-HID App] -> [ESP32-C3 Bridge via USB] -> [Bluetooth] -> [Mobile Device]
+     [Your Keyboard/Mouse] -> [Desktop PC] -> [DShare-HID App] -> [ESP32-C3 Bridge via USB] -> [Bluetooth] -> [Mobile Device]
    - Dual-component callout:
-     * Software: Deskflow-HID desktop application (forked from Deskflow)
+     * Software: DShare-HID desktop application (forked from Deskflow)
      * Hardware: ESP32-C3 firmware flashed on the bridge
    - Compatible with: Original Deskflow clients can connect seamlessly
    - "Plug & Play" emphasis

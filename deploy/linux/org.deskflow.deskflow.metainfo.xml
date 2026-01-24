@@ -3,7 +3,7 @@
 	<id>org.deskflow.deskflow</id>
 	<metadata_license>CC0-1.0</metadata_license>
 	<project_license>GPL-2.0-only</project_license>
-	<name>Deskflow-HID</name>
+	<name>DShare-HID</name>
 	<developer id="org.deskflow">
 		<name>Deskflow Developers</name>
 	</developer>
@@ -17,13 +17,13 @@
 			使用一台计算机的键盘、鼠标或触控板来控制附近的其它计算机，并在它们之间无缝工作。
 		</p>
 	</description>
-	<launchable type="desktop-id">org.deskflow.deskflow.desktop</launchable>
-	<url type="homepage">https://deskflow.org</url>
-	<url type="bugtracker">https://github.com/deskflow/deskflow/issues</url>
-	<url type="faq">https://github.com/deskflow/deskflow/wiki/Project-FAQ</url>
-	<url type="help">https://github.com/deskflow/deskflow/wiki#user-guides</url>
-	<url type="vcs-browser">https://github.com/deskflow/deskflow</url>
-	<url type="contribute">https://github.com/deskflow/deskflow/wiki/Contributing</url>
+	<launchable type="desktop-id">org.lockekk.dshare-hid.desktop</launchable>
+	<url type="homepage">https://github.com/lockekk/dshare-hid</url>
+	<url type="bugtracker">https://github.com/lockekk/dshare-hid/issues</url>
+	<url type="faq">https://github.com/lockekk/dshare-hid/wiki</url>
+	<url type="help">https://github.com/lockekk/dshare-hid/wiki</url>
+	<url type="vcs-browser">https://github.com/lockekk/dshare-hid</url>
+	<url type="contribute">https://github.com/lockekk/dshare-hid/wiki</url>
 	<screenshots>
 		<screenshot type="default">
 			<image>https://deskflow.org/screenshots/deskflow-client.png</image>
@@ -50,7 +50,7 @@
 			<caption>Deskflow with the log visible on KDE (dark mode)</caption>
 		</screenshot>
 	</screenshots>
-	<provides> <id>org.deskflow.deskflow.desktop</id> </provides>
+	<provides> <id>org.lockekk.dshare-hid.desktop</id> </provides>
 	<categories>
 		<category>Utility</category>
 	</categories>

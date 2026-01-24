@@ -1,5 +1,5 @@
 /*
- * Deskflow-hid -- created by locke.huang@gmail.com
+ * dshare-hid -- created by locke.huang@gmail.com
  */
 
 #include "UsbDeviceHelper.h"
@@ -392,9 +392,8 @@ QMap<QString, QString> UsbDeviceHelper::getConnectedDevices(bool queryDevice)
           io_service_t child;
           while ((child = IOIteratorNext(childIter))) {
             if (IOObjectConformsTo(child, "IOSerialBSDClient")) {
-              CFStringRef pathRef = (CFStringRef)IORegistryEntryCreateCFProperty(
-                  child, CFSTR(kIOCalloutDeviceKey), kCFAllocatorDefault, 0
-              );
+              CFStringRef pathRef = (CFStringRef
+              )IORegistryEntryCreateCFProperty(child, CFSTR(kIOCalloutDeviceKey), kCFAllocatorDefault, 0);
               if (pathRef) {
                 const CFIndex kMaxPath = 1024;
                 char pathBuf[kMaxPath];
@@ -419,9 +418,8 @@ QMap<QString, QString> UsbDeviceHelper::getConnectedDevices(bool queryDevice)
           if (serialNumber.isEmpty()) {
             // Fallback to reading from IOKit if possible (though readSerialNumber tries CDC first)
             // IOKit serial is kUSBSerialNumberString
-            CFStringRef serialRef = (CFStringRef)IORegistryEntryCreateCFProperty(
-                device, CFSTR(kUSBSerialNumberString), kCFAllocatorDefault, 0
-            );
+            CFStringRef serialRef = (CFStringRef
+            )IORegistryEntryCreateCFProperty(device, CFSTR(kUSBSerialNumberString), kCFAllocatorDefault, 0);
             if (serialRef) {
               const CFIndex kMaxSerial = 256;
               char serialBuf[kMaxSerial];

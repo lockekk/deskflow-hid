@@ -1,5 +1,5 @@
 /*
- * Deskflow-hid -- created by locke.huang@gmail.com
+ * dshare-hid -- created by locke.huang@gmail.com
  */
 
 #include "MacUsbMonitor.h"
@@ -284,9 +284,8 @@ static QString findCdcModemPath(io_service_t usbDevice)
   while ((service = IOIteratorNext(iter))) {
     ScopedIOObject childService(service);
     if (IOObjectConformsTo(service, "IOSerialBSDClient")) {
-      ScopedCFTypeRef path(
-          (CFStringRef)IORegistryEntryCreateCFProperty(service, CFSTR(kIOCalloutDeviceKey), kCFAllocatorDefault, 0)
-      );
+      ScopedCFTypeRef path((CFStringRef
+      )IORegistryEntryCreateCFProperty(service, CFSTR(kIOCalloutDeviceKey), kCFAllocatorDefault, 0));
       if (path.msg) {
         modemPath = fromCFString((CFStringRef)path.msg);
       }
@@ -310,9 +309,8 @@ UsbDeviceInfo MacUsbMonitor::extractDeviceInfo(io_service_t device)
   info.productId = QString().asprintf("%04lx", (unsigned long)pid);
 
   // Serial Number
-  ScopedCFTypeRef serial(
-      (CFStringRef)IORegistryEntryCreateCFProperty(device, CFSTR(kUSBSerialNumberString), kCFAllocatorDefault, 0)
-  );
+  ScopedCFTypeRef serial((CFStringRef
+  )IORegistryEntryCreateCFProperty(device, CFSTR(kUSBSerialNumberString), kCFAllocatorDefault, 0));
   if (serial.msg) {
     info.serialNumber = fromCFString((CFStringRef)serial.msg);
   }

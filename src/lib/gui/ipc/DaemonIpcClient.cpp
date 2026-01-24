@@ -17,7 +17,7 @@ namespace deskflow::gui::ipc {
 
 const auto kTimeout = 1000;
 
-//disable ipc entirely for deskflow-hid
+// disable ipc entirely for dshare-hid
 const auto kRetryLimit = 0;
 
 DaemonIpcClient::DaemonIpcClient(QObject *parent)

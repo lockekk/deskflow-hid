@@ -1,29 +1,30 @@
-# Deskflow-HID: Share Keyboard and Mouse with Mobile Devices
+# DShare-HID: Share Keyboard and Mouse with Mobile Devices
 
-![License](https://img.shields.io/github/license/lockekk/deskflow-hid?style=flat-square) ![Release](https://img.shields.io/github/v/tag/lockekk/deskflow-hid?style=flat-square)
+![License](https://img.shields.io/github/license/lockekk/dshare-hid?style=flat-square) ![Release](https://img.shields.io/github/v/tag/lockekk/dshare-hid?style=flat-square)
 
 **[ English ]** | [ 简体中文 ](README_zh-CN.md)
 
 ---
 
 <p align="center">
-  <img src="doc/images/deskflow-hid-post.png" width="800" alt="Deskflow-HID Post">
+  <img src="doc/images/dshare-hid-post.png" width="800" alt="DShare-HID Post">
 </p>
 
 ## Introduction
 
-Deskflow-HID is a high-performance, open-source extension of the [Deskflow](https://github.com/deskflow/deskflow) project. Supporting **Linux, Windows, and macOS**, Deskflow-HID focuses on sharing keyboard and mouse inputs with mobile devices including iPad, iPhone, and Android phones.
+DShare-HID is a high-performance, open-source project derived from [Deskflow](https://github.com/deskflow/deskflow). While sharing the core architecture, DShare-HID is an independent fork focused on sharing keyboard and mouse inputs with mobile devices including iPad, iPhone, and Android phones.
+
 
 ## Expanding the Deskflow Ecosystem: Mobile Integration
 
-While traditional software KVM solutions like Deskflow work great between computers, they cannot support mobile platforms like iPadOS or Android. Deskflow-HID bridges this gap by extending Deskflow's capabilities to these devices:
+While traditional software KVM solutions like Deskflow work great between computers, they cannot support mobile platforms like iPadOS or Android. DShare-HID bridges this gap by extending Deskflow's capabilities to these devices:
 - **iOS and Android** do not allow background apps to intercept or simulate system-wide HID (Human Interface Device) events for security reasons.
 - **Apple Sidecar/Universal Control** is restricted to the Apple ecosystem, leaving Windows and Linux users behind.
 - **Remote Desktop** solutions often suffer from high latency and depend on network stability, which can impact fluid, real-time peripheral sharing.
 
 ## The Solution: Hardware Bridge Client
 
-Deskflow-HID uses a budget-friendly (~$2.50 USD on AliExpress) **ESP32-C3 Supermini** board as a hardware bridge. It converts Deskflow events into **Bluetooth Low Energy (BLE) HID**, letting you wirelessly share your keyboard and mouse with any mobile device.
+DShare-HID uses a budget-friendly (~$2.50 USD on AliExpress) **ESP32-C3 Supermini** board as a hardware bridge. It converts Deskflow events into **Bluetooth Low Energy (BLE) HID**, letting you wirelessly share your keyboard and mouse with any mobile device.
 
 <br/> <img src="doc/images/esp32-c3-supermini.png" height="120" alt="ESP32-C3 Super Mini"> <br/> <sub>Image credit: [Josselin Hefti](https://www.printables.com/model/1360390-esp32-c3-super-mini-model)</sub>
 
@@ -63,39 +64,39 @@ This option is currently disabled and will be supported in a future update.
 <!--
 ```bash
 # 1. Add the Tap
-brew tap lockekk/deskflow
+brew tap lockekk/dshare-hid
 
 # 2. Install
-brew install --cask deskflow-hid
+brew install --cask dshare-hid
 
 # To Uninstall
-brew uninstall deskflow-hid
+brew uninstall dshare-hid
 
 # To Update
-brew upgrade deskflow-hid
+brew upgrade dshare-hid
 ```
 -->
 
 #### Option B: Manual Install
-1.  Download the latest `.dmg` from the [Releases](https://github.com/lockekk/deskflow-hid/releases) page.
-2.  Open `deskflow-hid-1.25.0-macos-universal.dmg` and drag the application to your `Applications` folder.
+1.  Download the latest `.dmg` from the [Releases](https://github.com/lockekk/dshare-hid/releases) page.
+2.  Open `dshare-hid-1.25.0-macos-universal.dmg` and drag the application to your `Applications` folder.
 3.  **Note**: If you encounter a "Damaged" or "Unverified" error, run the following command in Terminal:
     ```bash
-    xattr -cr /Applications/Deskflow-HID.app
+    xattr -cr /Applications/DShare-HID.app
     ```
 
 > [!IMPORTANT]
 > **Permissions & Setup**:
-> - **Accessibility Access**: You must grant "Accessibility" access (Privacy & Security) to both the **Deskflow-HID** app and the **deskflow-hid** process.
-> - **macOS Sequoia**: You may also need to allow Deskflow-HID under "Local Network" settings.
-> - **Upgrading**: If you are upgrading and already have Deskflow-HID on the allowed list, you may need to **manually remove** the old entries before accessibility access can be granted to the new version.
+> - **Accessibility Access**: You must grant "Accessibility" access (Privacy & Security) to both the **DShare-HID** app and the **dshare-hid** process.
+> - **macOS Sequoia**: You may also need to allow DShare-HID under "Local Network" settings.
+> - **Upgrading**: If you are upgrading and already have DShare-HID on the allowed list, you may need to **manually remove** the old entries before accessibility access can be granted to the new version.
 
 ### Windows
 **Dependency**: Please ensure you have installed **Microsoft Visual C++ Redistributable v14.44 or later** before use.
 
 Available as a portable archive (Recommended) or installer.
 
--   **Portable (.7z)**: **Recommended**. Extract and run `Deskflow-HID.exe`.
+-   **Portable (.7z)**: **Recommended**. Extract and run `dshare-hid.exe`.
 -   **Installer (.msi)**: Download and double-click to install.
 
 ### Linux
@@ -111,18 +112,18 @@ We support major distributions via AppImage and Flatpak.
 #### Option A: AppImage (Universal)
 Works on newer Linux distributions (Ubuntu 22.04+, Fedora 36+, etc.).
 
-1.  Download the `.AppImage` file from [Releases](https://github.com/lockekk/deskflow-hid/releases).
+1.  Download the `.AppImage` file from [Releases](https://github.com/lockekk/dshare-hid/releases).
 2.  Make it executable:
     ```bash
-    chmod +x deskflow-hid-1.25.0-x86_64.AppImage
+    chmod +x dshare-hid-1.25.0-linux-x86_64.AppImage
     ```
 3.  Run it:
     ```bash
-    ./deskflow-hid-1.25.0-x86_64.AppImage
+    ./dshare-hid-1.25.0-linux-x86_64.AppImage
     ```
 
 #### Option B: Flatpak
-Please download the `.flatpak` file from our [Releases](https://github.com/lockekk/deskflow-hid/releases) page and install it locally.
+Please download the `.flatpak` file from our [Releases](https://github.com/lockekk/dshare-hid/releases) page and install it locally.
 
 **1. Setup Flatpak**
 If you haven't used Flatpak before, ensure it is installed and the Flathub repository is added:
@@ -142,30 +143,30 @@ flatpak remote-add --if-not-exists flathub https://dl.flathub.org/repo/flathub.f
 
 **2. Install**
 ```bash
-flatpak install --user ./deskflow-1.25.0-linux-x86_64.flatpak
+flatpak install --user ./dshare-hid-1.25.0-linux-x86_64.flatpak
 ```
 
 # Manage
 ```bash
 # Uninstall
-flatpak uninstall org.deskflow.hid
+flatpak uninstall org.lockekk.dshare-hid
 
 # Reinstall (Remove then Install)
-flatpak uninstall org.deskflow.hid
-flatpak install --user ./deskflow-1.25.0-linux-x86_64.flatpak
+flatpak uninstall org.lockekk.dshare-hid
+flatpak install --user ./dshare-hid-1.25.0-linux-x86_64.flatpak
 ```
 
 #### Option C: Debian Package (Ubuntu 24+)
 For Ubuntu 24.04 and newer.
 
-1.  Download the `.deb` file from [Releases](https://github.com/lockekk/deskflow-hid/releases).
+1.  Download the `.deb` file from [Releases](https://github.com/lockekk/dshare-hid/releases).
 2.  Install:
     ```bash
-    sudo apt install ./deskflow-hid_1.25.0_ubuntu_24_amd64.deb
+    sudo apt install ./dshare-hid_1.25.0_ubuntu_24.04_amd64.deb
     ```
 3.  Uninstall:
     ```bash
-    sudo apt remove deskflow-hid
+    sudo apt remove dshare-hid
     ```
 
 ## First Use & Flashing Guide
@@ -178,7 +179,7 @@ For Ubuntu 24.04 and newer.
 You will need an **ESP32-C3 Supermini** board. These are cheap and widely available from AliExpress or local electronics stores. Connect it to your computer via USB.
 
 ### 2. Access Flash Tool
-Open Deskflow-HID and navigate to **File -> Firmware** to open the management interface.
+Open DShare-HID and navigate to **File -> Firmware** to open the management interface.
 
 ### 3. Setup (For New Devices)
 For a brand new "virgin" device, follow this sequence:
@@ -204,12 +205,12 @@ For a brand new "virgin" device, follow this sequence:
 *   **Activation**: Go to the **Activation** tab to view your license status or input a new activation key.
 
 ## Building from Source
-The development environment and build process for Deskflow-HID are **identical to the upstream [Deskflow project](https://github.com/deskflow/deskflow)**. You can follow the official build instructions for Windows, macOS, and Linux.
+The development environment and build process for DShare-HID are **identical to the upstream [Deskflow project](https://github.com/deskflow/deskflow)**. You can follow the official build instructions for Windows, macOS, and Linux.
 
 **Note**: The firmware flashing and authentication modules are optional components and not part of the core open-source project. Users are welcome to build and use their own custom firmware implementation.
 
 ## Open Source & Commercial Terms
-Deskflow-HID is an open-source project at its core. The desktop application and bridge architecture are open for contribution and community improvement.
+DShare-HID is an open-source project at its core. The desktop application and bridge architecture are open for contribution and community improvement.
 
 - **7-Day Full Trial**: Experience the full functionality of the firmware and software for 7 days at no cost.
 - **Lifetime Value**: After the trial, a one-time activation provides **lifetime free upgrades via OTA** and **lifetime maintenance**.
@@ -220,11 +221,12 @@ Special thanks to the [Deskflow](https://github.com/deskflow/deskflow) project a
 We also thank [Josselin Hefti](https://www.printables.com/model/1360390-esp32-c3-super-mini-model) for the excellent 3D model image of the ESP32-C3 Supermini.
 
 ## Support & Contact
-- **Email**: [deskflow.hid@gmail.com](mailto:deskflow.hid@gmail.com)
-- **Issues**: Please report bugs via [GitHub Issues](https://github.com/lockekk/deskflow-hid/issues).
+- **Email**: [dshare.hid@gmail.com](mailto:dshare.hid@gmail.com)
+- **Issues**: Please report bugs via [GitHub Issues](https://github.com/lockekk/dshare-hid/issues).
 
 ## Disclaimer & Legal
-Deskflow-HID is an open-source project. However, some optional features (like firmware management) may rely on proprietary components. The core application remains fully functional and open-source without these components.
+DShare-HID is an open-source project. However, some optional features (like firmware management) may rely on proprietary components. The core application remains fully functional and open-source without these components.
 
 ## License
-Deskflow-HID is licensed under the **GNU General Public License v2.0 (GPL-2.0-only)**. This project is a derivative work based on [Deskflow](https://github.com/deskflow/deskflow).
+DShare-HID is licensed under the **GNU General Public License v2.0 (GPL-2.0-only)**. This project is a derivative work based on [Deskflow](https://github.com/deskflow/deskflow).
+

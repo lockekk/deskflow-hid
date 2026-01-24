@@ -53,7 +53,11 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>About Deskflow-HID</source>
-        <translation>Acerca de Deskflow-HID</translation>
+        <translation type="vanished">Acerca de Deskflow-HID</translation>
+    </message>
+    <message>
+        <source>About DShare-HID</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -209,7 +213,7 @@ Archivo -&gt; Firmware -&gt; Pedido.</translation>
     </message>
     <message>
         <source>Device handshake failed. Possibly not a Deskflow-HID firmware.</source>
-        <translation>Fallo en la negociación del dispositivo. Posiblemente no sea un firmware Deskflow-HID.</translation>
+        <translation type="vanished">Fallo en la negociación del dispositivo. Posiblemente no sea un firmware Deskflow-HID.</translation>
     </message>
     <message>
         <source>Handshake failed on %1. Auto-connect disabled.</source>
@@ -246,6 +250,10 @@ Archivo -&gt; Firmware -&gt; Pedido.</translation>
     <message>
         <source>Auto-connect failed. Giving up after 3 attempts.</source>
         <translation>Fallo en la conexión automática. Desistiendo tras 3 intentos.</translation>
+    </message>
+    <message>
+        <source>Device handshake failed. Possibly not a DShare-HID firmware.</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -686,7 +694,7 @@ Nombres válidos:
     </message>
     <message>
         <source>Another Deskflow server instance is already running in the background. Please close the existing server before starting a new one.</source>
-        <translation>Ya se está ejecutando otra instancia del servidor Deskflow en segundo plano. Por favor, cierre el servidor existente antes de iniciar uno nuevo.</translation>
+        <translation type="vanished">Ya se está ejecutando otra instancia del servidor Deskflow en segundo plano. Por favor, cierre el servidor existente antes de iniciar uno nuevo.</translation>
     </message>
     <message>
         <source>Firmware</source>
@@ -703,6 +711,10 @@ Nombres válidos:
     <message>
         <source>User &lt;b&gt;%1&lt;/b&gt; is not in the &lt;b&gt;dialout&lt;/b&gt; group.&lt;br&gt;&lt;br&gt;You may not be able to access the USB device.&lt;br&gt;Please run the following command then &lt;b&gt;log out then log in&lt;/b&gt;, or &lt;b&gt;reboot&lt;/b&gt;:&lt;br&gt;&lt;br&gt;&lt;code&gt;sudo usermod -a -G dialout $USER&lt;/code&gt;</source>
         <translation>El usuario &lt;b&gt;%1&lt;/b&gt; no está en el grupo &lt;b&gt;dialout&lt;/b&gt;.&lt;br&gt;&lt;br&gt;Es posible que no pueda acceder al dispositivo USB.&lt;br&gt;Ejecute el siguiente comando y luego &lt;b&gt;cierre sesión e inicie sesión&lt;/b&gt;, o &lt;b&gt;reinicie&lt;/b&gt;:&lt;br&gt;&lt;br&gt;&lt;code&gt;sudo usermod -a -G dialout $USER&lt;/code&gt;</translation>
+    </message>
+    <message>
+        <source>Another DShare-HID server instance is already running in the background. Please close the existing server before starting a new one.</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -901,18 +913,32 @@ Nombres válidos:
     <message>
         <source>There is another Deskflow server is already running and has been brought to the foreground.
 This new instance cannot start and will exit now.</source>
-        <translation>Ya se está ejecutando otro servidor Deskflow y se ha traído al primer plano.
+        <translation type="vanished">Ya se está ejecutando otro servidor Deskflow y se ha traído al primer plano.
 Esta nueva instancia no puede iniciarse y se cerrará ahora.</translation>
     </message>
     <message>
         <source>Deskflow is already running.
 This new instance cannot start another server, so it will now exit.</source>
-        <translation>Deskflow ya se está ejecutando.
+        <translation type="vanished">Deskflow ya se está ejecutando.
 Esta nueva instancia no puede iniciar otro servidor, por lo que se cerrará ahora.</translation>
     </message>
     <message>
         <source>Deskflow</source>
-        <translation>Deskflow</translation>
+        <translation type="vanished">Deskflow</translation>
+    </message>
+    <message>
+        <source>There is another DShare-HID server is already running and has been brought to the foreground.
+This new instance cannot start and will exit now.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>DShare-HID is already running.
+This new instance cannot start another server, so it will now exit.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>DShare-HID</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -2155,10 +2181,6 @@ Siguiente paso: Debe flashear el firmware por dispositivo para usar el dispositi
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>About to flash: &lt;b&gt;%1&lt;/b&gt;&lt;br&gt;&lt;br&gt;This action will permanently convert your device to Deskflow-HID. This process is irreversible and precludes non-Deskflow firmware.&lt;br&gt;&lt;br&gt;Proceed?</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>Device is in Factory Mode. Fetching PDEK...</source>
         <translation>El dispositivo está en modo fábrica. Obteniendo PDEK...</translation>
     </message>
@@ -2513,6 +2535,10 @@ Siguiente paso: Debe flashear el firmware por dispositivo para usar el dispositi
     <message>
         <source>Include version in the window title</source>
         <translation type="obsolete">Incluir la versión en el título de la ventana</translation>
+    </message>
+    <message>
+        <source>About to flash: &lt;b&gt;%1&lt;/b&gt;&lt;br&gt;&lt;br&gt;This action will permanently convert your device to DShare-HID. This process is irreversible and precludes non-DShare firmware.&lt;br&gt;&lt;br&gt;Proceed?</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>

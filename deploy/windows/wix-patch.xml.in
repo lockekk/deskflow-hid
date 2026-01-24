@@ -1,9 +1,9 @@
 <CPackWiXPatch>
 
 
-  <CPackWiXFragment Id="CM_CP_deskflow_hid_core.exe">
-    <firewall:FirewallException Id="ServerFirewallException" Name="Deskflow Server" Program="[INSTALL_ROOT]deskflow-hid-core.exe" Scope="any"/>
-    <firewall:FirewallException Id="ClientFirewallException" Name="Deskflow Client" Program="[INSTALL_ROOT]deskflow-hid-core.exe" Scope="any"/>
+  <CPackWiXFragment Id="CM_CP_dshare_hid_core.exe">
+    <firewall:FirewallException Id="ServerFirewallException" Name="DShare-HID Server" Program="[INSTALL_ROOT]dshare-hid-core.exe" Scope="any"/>
+    <firewall:FirewallException Id="ClientFirewallException" Name="DShare-HID Client" Program="[INSTALL_ROOT]dshare-hid-core.exe" Scope="any"/>
   </CPackWiXFragment>
 
   <CPackWiXFragment Id="#PRODUCT">
@@ -39,7 +39,7 @@
 
     <CustomAction
       Id="RunDeskflow"
-      ExeCommand="[INSTALL_ROOT]deskflow-hid.exe"
+      ExeCommand="[INSTALL_ROOT]dshare-hid.exe"
       Directory="INSTALL_ROOT"
       Execute="immediate"
       Impersonate="yes"

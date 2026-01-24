@@ -1,5 +1,5 @@
 /*
- * Deskflow-hid -- created by locke.huang@gmail.com
+ * dshare-hid -- created by locke.huang@gmail.com
  */
 
 #pragma once
@@ -26,7 +26,8 @@ namespace deskflow::gui {
  *
  * No root permissions are required for monitoring device events.
  */
-class LinuxUdevMonitor : public UsbDeviceMonitor {
+class LinuxUdevMonitor : public UsbDeviceMonitor
+{
   Q_OBJECT
 
 public:
@@ -58,7 +59,7 @@ private:
    * @param device tty device
    * @return parent USB device, or nullptr if not found
    */
-  ::udev_device* getUsbDevice(::udev_device *device);
+  ::udev_device *getUsbDevice(::udev_device *device);
 
   /**
    * @brief Cleanup resources

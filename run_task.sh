@@ -43,9 +43,9 @@ process_input() {
             if [ $? -eq 0 ]; then
                 if [ "$os_name" = "Darwin" ]; then
                     echo "--- DEPLOYING QT ---"
-                    $CMAKE_PREFIX_PATH/bin/macdeployqt build/bin/Deskflow-HID.app
+                    $CMAKE_PREFIX_PATH/bin/macdeployqt build/bin/DShare-HID.app
                     echo "--- SIGNING ---"
-                    codesign --force --deep --sign "$APPLE_CODESIGN_DEV" build/bin/Deskflow-HID.app
+                    codesign --force --deep --sign "$APPLE_CODESIGN_DEV" build/bin/DShare-HID.app
                 fi
                 echo "Build complete."
             else
@@ -105,19 +105,19 @@ process_input() {
             ;;
         3|"launch")
             if [ "$os_name" = "Darwin" ]; then
-                if [ ! -d "build/bin/Deskflow-HID.app" ]; then
+                if [ ! -d "build/bin/DShare-HID.app" ]; then
                     echo "Error: Application not built. Select '1' to build first."
                 else
-                    echo "--- LAUNCHING DESKFLOW-HID ---"
-                    build/bin/Deskflow-HID.app/Contents/MacOS/Deskflow-HID
+                    echo "--- LAUNCHING DSHARE-HID ---"
+                    build/bin/DShare-HID.app/Contents/MacOS/DShare-HID
                 fi
             else
                 # Linux Launch
-                 if [ ! -f "build/bin/deskflow-hid" ]; then
+                 if [ ! -f "build/bin/dshare-hid" ]; then
                     echo "Error: Application not built. Select '1' to build first."
                 else
-                     echo "--- LAUNCHING DESKFLOW-HID ---"
-                     ./build/bin/deskflow-hid
+                     echo "--- LAUNCHING DSHARE-HID ---"
+                     ./build/bin/dshare-hid
                 fi
             fi
             ;;
@@ -148,7 +148,7 @@ process_input() {
                 fi
 
                 # Use a separate build directory for deployment to avoid polluting dev build
-                BUILD_DIR="build_deploy"
+                BUILD_DIR="build_dmg"
                 rm -rf "$BUILD_DIR"
 
                 echo "--- CONFIGURING ---"
@@ -182,7 +182,7 @@ process_input() {
                 fi
 
                 echo "--- VERIFYING ARCHITECTURES ---"
-                BINARY_PATH="$BUILD_DIR/bin/Deskflow-HID.app/Contents/MacOS/Deskflow-HID"
+                BINARY_PATH="$BUILD_DIR/bin/DShare-HID.app/Contents/MacOS/DShare-HID"
                 if [ -f "$BINARY_PATH" ]; then
                     lipo -info "$BINARY_PATH"
                 else
@@ -220,24 +220,24 @@ process_input() {
       - \"-DDESKFLOW_ESP32_ENCRYPTION_KEY=${DESKFLOW_ESP32_ENCRYPTION_KEY}\"\\
       - \"-DSKIP_BUILD_TESTS=ON\"\\
       - \"-DBUILD_TESTS=OFF\"" \
-            deploy/linux/flatpak/org.deskflow.deskflow.yml > org.deskflow.deskflow.generated.yml
+            deploy/linux/flatpak/org.lockekk.dshare-hid.yml > org.lockekk.dshare-hid.generated.yml
 
             # 1. Fix patch file path
-            sed -i "s|path: libportal-qt69.patch|path: deploy/linux/flatpak/libportal-qt69.patch|g" org.deskflow.deskflow.generated.yml
+            sed -i "s|path: libportal-qt69.patch|path: deploy/linux/flatpak/libportal-qt69.patch|g" org.lockekk.dshare-hid.generated.yml
 
             # 2. Fix source dir path (../../../ becomes .)
-            sed -i "s|path: ../../../|path: .|g" org.deskflow.deskflow.generated.yml
+            sed -i "s|path: ../../../|path: .|g" org.lockekk.dshare-hid.generated.yml
 
             # 3. Inject build-time filesystem permissions for keys
             # We insert 'build-options' -> 'build-args' after the module name 'deskflow'
-            sed -i "/- name: deskflow/a \\    build-options:\\n      build-args:\\n        - \"--filesystem=${ENC_KEY_DIR}\"\\n        - \"--filesystem=${CDC_KEY_DIR}\"" org.deskflow.deskflow.generated.yml
+            sed -i "/- name: deskflow/a \\    build-options:\\n      build-args:\\n        - \"--filesystem=${ENC_KEY_DIR}\"\\n        - \"--filesystem=${CDC_KEY_DIR}\"" org.lockekk.dshare-hid.generated.yml
 
-            echo "Generated manifest: org.deskflow.deskflow.generated.yml"
+            echo "Generated manifest: org.lockekk.dshare-hid.generated.yml"
 
             echo "--- BUILDING FLATPAK ---"
 
             # Build using the generated manifest
-            flatpak-builder --user --force-clean --repo=repo build-dir org.deskflow.deskflow.generated.yml
+            flatpak-builder --user --force-clean --repo=repo build_flatpak org.lockekk.dshare-hid.generated.yml
 
             if [ $? -eq 0 ]; then
                 echo "--- CREATING BUNDLE ---"
@@ -247,9 +247,9 @@ process_input() {
                 VERSION="${MAJOR}.${MINOR}.${PATCH}"
 
                 ARCH=$(uname -m)
-                BUNDLE_NAME="deskflow-${VERSION}-linux-${ARCH}.flatpak"
+                BUNDLE_NAME="dshare-hid-${VERSION}-linux-${ARCH}.flatpak"
 
-                flatpak build-bundle --runtime-repo=https://dl.flathub.org/repo/flathub.flatpakrepo repo "${BUNDLE_NAME}" org.lockekk.deskflow-hid
+                flatpak build-bundle --runtime-repo=https://dl.flathub.org/repo/flathub.flatpakrepo repo "build_flatpak/${BUNDLE_NAME}" org.lockekk.dshare-hid
 
                 if [ $? -eq 0 ]; then
                     echo "Flatpak bundle created: ${BUNDLE_NAME}"
@@ -258,11 +258,11 @@ process_input() {
                 fi
             else
                 echo "Flatpak build failed."
-                rm org.deskflow.deskflow.generated.yml
+                rm org.lockekk.dshare-hid.generated.yml
                 return 1
             fi
 
-            rm org.deskflow.deskflow.generated.yml
+            rm org.lockekk.dshare-hid.generated.yml
             ;;
         6|"appimage")
             if [ "$os_name" = "Darwin" ]; then

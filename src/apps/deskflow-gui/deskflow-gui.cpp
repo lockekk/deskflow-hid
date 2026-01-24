@@ -129,15 +129,14 @@ int main(int argc, char *argv[])
     socket.disconnectFromServer();
 
     const QString message =
-        connected ? QObject::tr(
-                        "There is another Deskflow server is already running and has been brought to the foreground.\n"
-                        "This new instance cannot start and will exit now."
-                    )
-                  : QObject::tr(
-                        "Deskflow is already running.\n"
-                        "This new instance cannot start another server, so it will now exit."
-                    );
-    QMessageBox::information(nullptr, QObject::tr("Deskflow"), message);
+        connected
+            ? QObject::tr(
+                  "There is another DShare-HID server is already running and has been brought to the foreground.\n"
+                  "This new instance cannot start and will exit now."
+              )
+            : QObject::tr("DShare-HID is already running.\n"
+                          "This new instance cannot start another server, so it will now exit.");
+    QMessageBox::information(nullptr, QObject::tr("DShare-HID"), message);
     return s_exitDuplicate;
   }
 
@@ -154,10 +153,8 @@ int main(int argc, char *argv[])
 #if defined(Q_OS_MACOS)
 
   if (app.applicationDirPath().startsWith("/Volumes/")) {
-    QString msgBody = QStringLiteral(
-        "Please drag %1 to the Applications folder, "
-        "and open it from there."
-    );
+    QString msgBody = QStringLiteral("Please drag %1 to the Applications folder, "
+                                     "and open it from there.");
     QMessageBox::information(nullptr, kAppName, msgBody.arg(kAppName));
     return 1;
   }
@@ -171,6 +168,9 @@ int main(int argc, char *argv[])
   if (parser.isSet(resetOption)) {
     diagnostic::clearSettings(false);
   }
+
+  // Ensure the fallback theme is set before loading any UI resources
+  updateIconTheme();
 
   MainWindow mainWindow;
   mainWindow.open();

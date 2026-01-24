@@ -83,12 +83,12 @@ cmake --build build --target package
 exit /b %ERRORLEVEL%
 
 :Launch
-if not exist build\bin\deskflow-hid.exe (
+if not exist build\bin\dshare-hid.exe (
     echo Error: Application not built. Select '1' to build first.
     exit /b 1
 )
-echo --- LAUNCHING DESKFLOW-HID ---
-build\bin\deskflow-hid.exe
+echo --- LAUNCHING DSHARE-HID ---
+build\bin\dshare-hid.exe
 exit /b 0
 
 :Configure

@@ -53,7 +53,11 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>About Deskflow-HID</source>
-        <translation>Deskflow-HID について</translation>
+        <translation type="vanished">Deskflow-HID について</translation>
+    </message>
+    <message>
+        <source>About DShare-HID</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -209,7 +213,7 @@ File -&gt; Firmware -&gt; Order.</source>
     </message>
     <message>
         <source>Device handshake failed. Possibly not a Deskflow-HID firmware.</source>
-        <translation>デバイスのハンドシェイクに失敗しました。Deskflow-HID ファームウェアではない可能性があります。</translation>
+        <translation type="vanished">デバイスのハンドシェイクに失敗しました。Deskflow-HID ファームウェアではない可能性があります。</translation>
     </message>
     <message>
         <source>Handshake failed on %1. Auto-connect disabled.</source>
@@ -254,6 +258,10 @@ File -&gt; Firmware -&gt; Order.</source>
     <message>
         <source>Device disconnected.</source>
         <translation>デバイスが切断されました。</translation>
+    </message>
+    <message>
+        <source>Device handshake failed. Possibly not a DShare-HID firmware.</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -729,7 +737,7 @@ Valid names:
     </message>
     <message>
         <source>Another Deskflow server instance is already running in the background. Please close the existing server before starting a new one.</source>
-        <translation>別の Deskflow サーバーインスタンスがバックグラウンドで既に実行されています。新しいインスタンスを開始する前に、既存のサーバーを閉じてください。</translation>
+        <translation type="vanished">別の Deskflow サーバーインスタンスがバックグラウンドで既に実行されています。新しいインスタンスを開始する前に、既存のサーバーを閉じてください。</translation>
     </message>
     <message>
         <source>Firmware</source>
@@ -746,6 +754,10 @@ Valid names:
     <message>
         <source>User &lt;b&gt;%1&lt;/b&gt; is not in the &lt;b&gt;dialout&lt;/b&gt; group.&lt;br&gt;&lt;br&gt;You may not be able to access the USB device.&lt;br&gt;Please run the following command then &lt;b&gt;log out then log in&lt;/b&gt;, or &lt;b&gt;reboot&lt;/b&gt;:&lt;br&gt;&lt;br&gt;&lt;code&gt;sudo usermod -a -G dialout $USER&lt;/code&gt;</source>
         <translation>ユーザー &lt;b&gt;%1&lt;/b&gt; は &lt;b&gt;dialout&lt;/b&gt; グループに属していません。&lt;br&gt;&lt;br&gt;USB デバイスにアクセスできない可能性があります。&lt;br&gt;次のコマンドを実行してから、&lt;b&gt;ログアウトしてログイン&lt;/b&gt;するか、&lt;b&gt;再起動&lt;/b&gt;してください：&lt;br&gt;&lt;br&gt;&lt;code&gt;sudo usermod -a -G dialout $USER&lt;/code&gt;</translation>
+    </message>
+    <message>
+        <source>Another DShare-HID server instance is already running in the background. Please close the existing server before starting a new one.</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -946,18 +958,32 @@ Valid names:
     <message>
         <source>There is another Deskflow server is already running and has been brought to the foreground.
 This new instance cannot start and will exit now.</source>
-        <translation>別の Deskflow サーバーが既に実行されており、最前面に表示されました。
+        <translation type="vanished">別の Deskflow サーバーが既に実行されており、最前面に表示されました。
 この新しいインスタンスは開始できず、終了します。</translation>
     </message>
     <message>
         <source>Deskflow is already running.
 This new instance cannot start another server, so it will now exit.</source>
-        <translation>Deskflow は既に実行中です。
+        <translation type="vanished">Deskflow は既に実行中です。
 この新しいインスタンスは別のサーバーを開始できないため、終了します。</translation>
     </message>
     <message>
         <source>Deskflow</source>
-        <translation>Deskflow</translation>
+        <translation type="vanished">Deskflow</translation>
+    </message>
+    <message>
+        <source>There is another DShare-HID server is already running and has been brought to the foreground.
+This new instance cannot start and will exit now.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>DShare-HID is already running.
+This new instance cannot start another server, so it will now exit.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>DShare-HID</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -2412,10 +2438,6 @@ Next step: You need to flash the per-device firmware to use the device. Please s
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>About to flash: &lt;b&gt;%1&lt;/b&gt;&lt;br&gt;&lt;br&gt;This action will permanently convert your device to Deskflow-HID. This process is irreversible and precludes non-Deskflow firmware.&lt;br&gt;&lt;br&gt;Proceed?</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>Device Info copied to clipboard:</source>
         <translation type="unfinished"></translation>
     </message>
@@ -2546,11 +2568,11 @@ Next step: You need to flash the per-device firmware to use the device. Please s
     <message>
         <source>Request file generated successfully!
 
-Please send this file or its content (with payment if applicable) to deskflow.hid@gmail.com.
+Please send this file or its content (with payment if applicable) to dshare.hid@gmail.com.
 Your firmware will be back in 24 hours.</source>
         <translation type="vanished">リクエストファイル生成成功！
 
-このファイルまたは内容を deskflow.hid@gmail.com に送信してください。
+このファイルまたは内容を dshare.hid@gmail.com に送信してください。
 24時間以内にファームウェアが返送されます。</translation>
     </message>
     <message>
@@ -2660,6 +2682,10 @@ Your firmware will be back in 24 hours.</source>
     <message>
         <source>Include version in the window title</source>
         <translation type="obsolete">ウィンドウタイトルにバージョン情報を含める</translation>
+    </message>
+    <message>
+        <source>About to flash: &lt;b&gt;%1&lt;/b&gt;&lt;br&gt;&lt;br&gt;This action will permanently convert your device to DShare-HID. This process is irreversible and precludes non-DShare firmware.&lt;br&gt;&lt;br&gt;Proceed?</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>

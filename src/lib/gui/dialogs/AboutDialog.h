@@ -25,10 +25,10 @@ private:
   std::unique_ptr<Ui::AboutDialog> ui;
   void copyVersionText() const;
 
-  inline static const QString kSupportEmail = QStringLiteral("deskflow.hid@gmail.com");
+  inline static const QString kSupportEmail = QStringLiteral("dshare.hid@gmail.com");
 
   inline static const auto s_hidDevs = QStringList{
-      // Deskflow-HID maintainer
+      // DShare-HID maintainer
       QStringLiteral("Locke Huang"),
   };
 
@@ -75,7 +75,7 @@ private:
       QStringLiteral("Povilas Kanapickas"),
       QStringLiteral("Dom Rodriguez"),
 
-      // Deskflow maintainers
+      // Upstream Deskflow maintainers
       QStringLiteral("Chris Rizzitello"),
   };
 };

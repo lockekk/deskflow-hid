@@ -1,6 +1,6 @@
-# Deskflow Icon Update Guide
+# DShare Icon Update Guide
 
-This guide explains how to update the application icon for Deskflow across all platforms (Linux, Windows, macOS) and ensures correct integration with the Linux desktop environment.
+This guide explains how to update the application icon for DShare across all platforms (Linux, Windows, macOS) and ensures correct integration with the Linux desktop environment.
 
 ## Prerequisites
 
@@ -23,15 +23,15 @@ Run the `update_icons.py` script from the project root:
 ```
 
 **What this does:**
-1.  **macOS**: Updates `src/apps/res/Deskflow.icns`.
-2.  **Windows**: Updates `src/apps/res/deskflow.ico` (multi-size ICO).
-3.  **Linux**: Updates `deploy/linux/org.deskflow.deskflow.png` (512x512).
+1.  **macOS**: Updates `src/apps/res/DShare.icns`.
+2.  **Windows**: Updates `src/apps/res/dshare.ico` (multi-size ICO).
+3.  **Linux**: Updates `deploy/linux/org.lockekk.dshare-hid.png` (512x512).
 4.  **Windows**: Generates `deploy/windows/wix-dialog.png` & `wix-banner.png`.
 5.  **macOS**: Synchs `deploy/mac/dmg-volume.icns`.
 6.  **Internal Resources**: Updates embedded SVG icons used within the application GUI:
-    *   `src/apps/res/icons/deskflow-dark/apps/64/org.deskflow.deskflow.svg` (Colorful)
-    *   `src/apps/res/icons/deskflow-light/apps/64/org.deskflow.deskflow.svg` (Colorful)
-    *   `src/apps/res/icons/.../org.deskflow.deskflow-symbolic.svg` (Monochrome/Grayscale for Tray)
+    *   `src/apps/res/icons/dshare-dark/apps/64/org.lockekk.dshare-hid.svg` (Colorful)
+    *   `src/apps/res/icons/dshare-light/apps/64/org.lockekk.dshare-hid.svg` (Colorful)
+    *   `src/apps/res/icons/.../org.lockekk.dshare-hid-symbolic.svg` (Monochrome/Grayscale for Tray)
 
 > **Note**: The script automatically generates a high-contrast **Grayscale** version for the "Symbolic" (Monocolor) icon used in the system tray. This ensures visibility even if your source icon is a solid block without transparency.
 
@@ -52,9 +52,8 @@ After updating the icon (Step 1), run:
 **What this does:**
 1.  **Installs Icons**: Copies the generated icons to `~/.local/share/icons/hicolor/`.
 2.  **Updates Cache**: Runs `gtk-update-icon-cache` to ensure the system sees the new files immediately.
-3.  **Desktop File**: Creates a definitive `~/.local/share/applications/deskflow-hid.desktop` file.
-    *   Sets `StartupWMClass=Deskflow-HID` to correctly associate the running window with the pinned icon.
-    *   Sets the `Icon` path explicitly to the installed system icon.
+3.  **Desktop File**: Creates a definitive `~/.local/share/applications/dshare-hid.desktop` file.
+4.  **Window Handling**: Sets `StartupWMClass=DShare-HID` to correctly associate the running window with the pinned icon.
 
 ## 3. Applying Changes
 
@@ -66,7 +65,7 @@ After running both scripts:
     ```
 2.  **Restart** the application:
     ```bash
-    ./build/bin/deskflow-hid
+    ./build/bin/dshare-hid
     ```
 
 ## Troubleshooting
@@ -74,3 +73,4 @@ After running both scripts:
 *   **Taskbar Icon is Generic/Gear**: Run `./scripts/install_linux_integration.sh` again and restart the app. Ensure you are not running an old binary or a different `.desktop` file (e.g., from a Flatpak or global install) isn't taking precedence.
 *   **Tray Icon is Invisible**: If using "Monocolor" style in settings, ensure you ran `update_icons.py`. The script ensures the monochrome icon is grayscale (visible) rather than a solid white block.
 *   **Permissions**: If scripts fail to run, ensure they are executable: `chmod +x scripts/*.py scripts/*.sh`.
+

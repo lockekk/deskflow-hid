@@ -1,6 +1,6 @@
-# Building Deskflow on macOS (Step-by-Step)
+# Building DShare on macOS (Step-by-Step)
 
-This guide provides the exact steps to build, sign, and launch Deskflow from a clean state.
+This guide provides the exact steps to build, sign, and launch DShare from a clean state.
 
 ## 1. Prerequisites: Code Signing
 
@@ -68,21 +68,21 @@ cmake -B build -G "Unix Makefiles" \
 
 ## 4. Build
 
-Build the main Deskflow application.
+Build the main DShare application.
 
 ```bash
 cmake --build build -j$(sysctl -n hw.ncpu)
 ```
 
-**Note**: The binaries will be located in `build/bin/Deskflow-HID.app`.
-- Main App: `build/bin/Deskflow-HID.app/Contents/MacOS/Deskflow-HID`
-- Core Service: `build/bin/Deskflow-HID.app/Contents/MacOS/deskflow-core`
+**Note**: The binaries will be located in `build/bin/DShare-HID.app`.
+- Main App: `build/bin/DShare-HID.app/Contents/MacOS/DShare-HID`
+- Core Service: `build/bin/DShare-HID.app/Contents/MacOS/dshare-core`
 
 ### 4. Deploy Qt Frameworks
 The application requires Qt frameworks to be bundled. Run the following command (ensure `CMAKE_PREFIX_PATH` is set as per step 1):
 
 ```bash
-$CMAKE_PREFIX_PATH/bin/macdeployqt build/bin/Deskflow-HID.app
+$CMAKE_PREFIX_PATH/bin/macdeployqt build/bin/DShare-HID.app
 ```
 
 ### 5. Sign (Required for Privacy/Accessibility)
@@ -91,7 +91,7 @@ On macOS, the app must be signed to function correctly with system permissions.
 
 ```bash
 # Sign the entire bundle
-codesign --force --deep --sign "$APPLE_CODESIGN_DEV" build/bin/Deskflow-HID.app
+codesign --force --deep --sign "$APPLE_CODESIGN_DEV" build/bin/DShare-HID.app
 ```
 
 ## 5. Launch
@@ -100,7 +100,7 @@ You can launch the app directly from the build directory:
 
 ```bash
 # Run the main GUI
-build/bin/Deskflow-HID.app/Contents/MacOS/Deskflow-HID
+build/bin/DShare-HID.app/Contents/MacOS/DShare-HID
 ```
 
 *Note: The GUI will automatically launch `deskflow-core` from the bundle.*
@@ -109,13 +109,13 @@ build/bin/Deskflow-HID.app/Contents/MacOS/Deskflow-HID
 
 - **Permissions**: If the app fails to capture input, try resetting accessibility permissions:
   ```bash
-  sudo tccutil reset Accessibility org.deskflow.deskflow-hid
+  sudo tccutil reset Accessibility org.lockekk.dshare-hid
   ```
 - **Leftover Processes**: If the server won't start, check for hung `deskflow-core` processes:
   ```bash
-  ps -ef | grep deskflow-hid-core | grep -v grep
-  pkill -9 -if deskflow-hid
-  pkill -9 -if deskflow-hid-core
+  ps -ef | grep dshare-hid-core | grep -v grep
+  pkill -9 -if dshare-hid
+  pkill -9 -if dshare-hid-core
   ```
 - **Runtime Errors (dyld / missing core)**:
-  - If you see `core server binary does not exist`, ensure you built with `--target Deskflow-HID deskflow-hid-core`.
+  - If you see `core server binary does not exist`, ensure you built with `--target DShare-HID dshare-hid-core`.

@@ -254,7 +254,7 @@
         "Save Request File": "保存请求文件",
         "Text Files (*.txt)": "文本文件 (*.txt)",
         "Request file generated: %1": "请求文件已生成：%1",
-        "Request file generated successfully!\n\nPlease send this file or its content (with payment if applicable) to deskflow.hid@gmail.com.\nYour firmware will be back in 24 hours.": "请求文件生成成功！\n\n请将此文件或其内容（如果适用，连同付款）发送至 deskflow.hid@gmail.com。\n您的固件将在 24 小时内返回。",
+        "Request file generated successfully!\n\nPlease send this file or its content (with payment if applicable) to dshare.hid@gmail.com.\nYour firmware will be back in 24 hours.": "请求文件生成成功！\n\n请将此文件或其内容（如果适用，连同付款）发送至 dshare.hid@gmail.com。\n您的固件将在 24 小时内返回。",
         "Failed to save request file: %1": "保存请求文件失败：%1",
         "Failed to save request file.": "保存请求文件失败。",
         "Order content copied to clipboard.": "订购内容已复制到剪贴板。",

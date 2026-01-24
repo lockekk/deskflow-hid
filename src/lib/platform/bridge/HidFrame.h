@@ -1,5 +1,5 @@
 /*
- * Deskflow-hid -- created by locke.huang@gmail.com
+ * dshare-hid -- created by locke.huang@gmail.com
  */
 
 #pragma once
@@ -9,7 +9,8 @@
 
 namespace deskflow::bridge {
 
-enum class HidEventType : uint8_t {
+enum class HidEventType : uint8_t
+{
   KeyboardPress = 0x01,
   KeyboardRelease = 0x02,
   MouseMove = 0x03,
@@ -26,7 +27,8 @@ enum class HidEventType : uint8_t {
  * Format (little endian):
  *   header (0xAA55) | type (1 byte) | length (1 byte) | payload (N bytes)
  */
-struct HidEventPacket {
+struct HidEventPacket
+{
   static constexpr uint16_t MAGIC = 0xAA55;
 
   HidEventType type;

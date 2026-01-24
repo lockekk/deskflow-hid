@@ -18,7 +18,7 @@ PROJECT_ROOT="$(realpath "$SCRIPT_DIR/../..")"
 STAGING_DIR="$OUTPUT_DIR/deb_staging"
 # Final Deb Root (structure for dpkg-deb)
 DEB_ROOT="$OUTPUT_DIR/deb_root"
-INSTALL_PREFIX="/opt/deskflow-hid"
+INSTALL_PREFIX="/opt/dshare-hid"
 
 echo "Project Root:     $PROJECT_ROOT"
 echo "Build Dir:        $BUILD_DIR"
@@ -55,8 +55,8 @@ DESTDIR="$STAGING_DIR" cmake --install "$BUILD_DIR" --prefix "/usr"
 
 # 2. Find resources
 DESKTOP_FILE=$(find "$STAGING_DIR" -name "*.desktop" | head -n 1)
-EXECUTABLE="$STAGING_DIR/usr/bin/deskflow-hid"
-ICON_FILE="$STAGING_DIR/usr/share/icons/hicolor/512x512/apps/org.deskflow.deskflow.png"
+EXECUTABLE="$STAGING_DIR/usr/bin/dshare-hid"
+ICON_FILE="$STAGING_DIR/usr/share/icons/hicolor/512x512/apps/org.lockekk.dshare-hid.png"
 
 if [ ! -f "$EXECUTABLE" ]; then
     echo "Error: Could not find executable at $EXECUTABLE"
@@ -153,20 +153,20 @@ fi
 
 # 4. Move Bundled Content to Deb Root structure
 # Staging: usr/bin, usr/lib, usr/plugins, usr/share
-# Target: /opt/deskflow-hid/bin, /opt/deskflow-hid/lib, ...
+# Target: /opt/dshare-hid/bin, /opt/dshare-hid/lib, ...
 
 echo "Migrating to Deb structure ($INSTALL_PREFIX)..."
 cp -r "$STAGING_DIR/usr/"* "$DEB_ROOT$INSTALL_PREFIX/"
 
 # Create Wrapper Script for "Static-like" behavior (forcing bundled libs)
-mv "$DEB_ROOT$INSTALL_PREFIX/bin/deskflow-hid" "$DEB_ROOT$INSTALL_PREFIX/bin/deskflow-hid.bin"
-cat > "$DEB_ROOT$INSTALL_PREFIX/bin/deskflow-hid" <<EOF
+mv "$DEB_ROOT$INSTALL_PREFIX/bin/dshare-hid" "$DEB_ROOT$INSTALL_PREFIX/bin/dshare-hid.bin"
+cat > "$DEB_ROOT$INSTALL_PREFIX/bin/dshare-hid" <<EOF
 #!/bin/sh
 HERE="\$(dirname "\$(readlink -f "\${0}")")"
 export LD_LIBRARY_PATH="\${HERE}/../lib:\${LD_LIBRARY_PATH}"
-exec "\${HERE}/deskflow-hid.bin" "\$@"
+exec "\${HERE}/dshare-hid.bin" "\$@"
 EOF
-chmod +x "$DEB_ROOT$INSTALL_PREFIX/bin/deskflow-hid"
+chmod +x "$DEB_ROOT$INSTALL_PREFIX/bin/dshare-hid"
 
 # 5. Create Control File
 VERSION=$(grep "set(DESKFLOW_VERSION_MAJOR" "$PROJECT_ROOT/CMakeLists.txt" | head -n1 | awk '{print $2}' | tr -d ')')
@@ -176,26 +176,26 @@ ARCH=$(dpkg --print-architecture)
 
 mkdir -p "$DEB_ROOT/DEBIAN"
 cat > "$DEB_ROOT/DEBIAN/control" <<EOF
-Package: deskflow-hid
+Package: dshare-hid
 Version: $VERSION
 Section: utils
 Priority: optional
 Architecture: $ARCH
-Maintainer: deskflow-hid <deskflow.hid@gmail.com>
-Description: Deskflow HID Client
- Deskflow HID Client for Linux.
+Maintainer: DShare-HID <dshare.hid@gmail.com>
+Description: DShare-HID Client
+ DShare-HID Client for Linux.
  Bundled with dependencies for stability.
 EOF
 
 # 6. Create postinst to handle desktop integration (symlinking)
 cat > "$DEB_ROOT/DEBIAN/postinst" <<EOF
 #!/bin/bash
-ln -sf $INSTALL_PREFIX/bin/deskflow-hid /usr/bin/deskflow-hid
-ln -sf $INSTALL_PREFIX/share/applications/org.deskflow.deskflow.desktop /usr/share/applications/org.deskflow.deskflow.desktop
+ln -sf $INSTALL_PREFIX/bin/dshare-hid /usr/bin/dshare-hid
+ln -sf $INSTALL_PREFIX/share/applications/org.lockekk.dshare-hid.desktop /usr/share/applications/org.lockekk.dshare-hid.desktop
 
 # Symlink Icon
 mkdir -p /usr/share/icons/hicolor/512x512/apps
-ln -sf $INSTALL_PREFIX/share/icons/hicolor/512x512/apps/org.deskflow.deskflow.png /usr/share/icons/hicolor/512x512/apps/org.deskflow.deskflow.png
+ln -sf $INSTALL_PREFIX/share/icons/hicolor/512x512/apps/org.lockekk.dshare-hid.png /usr/share/icons/hicolor/512x512/apps/org.lockekk.dshare-hid.png
 
 # Update caches
 if command -v update-desktop-database > /dev/null; then
@@ -210,15 +210,26 @@ chmod 755 "$DEB_ROOT/DEBIAN/postinst"
 # 7. Create prerm to cleanup Symlinks
 cat > "$DEB_ROOT/DEBIAN/prerm" <<EOF
 #!/bin/bash
-rm -f /usr/bin/deskflow-hid
-rm -f /usr/share/applications/org.deskflow.deskflow.desktop
-rm -f /usr/share/icons/hicolor/512x512/apps/org.deskflow.deskflow.png
+rm -f /usr/bin/dshare-hid
+rm -f /usr/share/applications/org.lockekk.dshare-hid.desktop
+rm -f /usr/share/icons/hicolor/512x512/apps/org.lockekk.dshare-hid.png
 EOF
 chmod 755 "$DEB_ROOT/DEBIAN/prerm"
 
 
 # 8. Build Deb
 echo "Building Debian Package..."
-dpkg-deb --root-owner-group --build "$DEB_ROOT" "$OUTPUT_DIR/deskflow-hid_${VERSION}_${ARCH}.deb"
 
-echo "Done. Package available at $OUTPUT_DIR/deskflow-hid_${VERSION}_${ARCH}.deb"
+# Detect Distro for filename
+if [ -f /etc/os-release ]; then
+    DISTRO_ID=$(grep "^ID=" /etc/os-release | cut -d= -f2 | tr -d '"')
+    DISTRO_VER=$(grep "^VERSION_ID=" /etc/os-release | cut -d= -f2 | tr -d '"')
+    DISTRO_INFO="${DISTRO_ID}_${DISTRO_VER}"
+else
+    DISTRO_INFO="linux"
+fi
+
+DEB_FILENAME="dshare-hid_${VERSION}_${DISTRO_INFO}_${ARCH}.deb"
+dpkg-deb --root-owner-group --build "$DEB_ROOT" "$OUTPUT_DIR/$DEB_FILENAME"
+
+echo "Done. Package available at $OUTPUT_DIR/$DEB_FILENAME"

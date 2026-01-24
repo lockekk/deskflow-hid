@@ -1,5 +1,5 @@
 {
-    "org.lockekk.deskflow-hid": [
+    "org.lockekk.dshare-hid": [
         "appstream-external-screenshot-url",
         "appstream-screenshots-not-mirrored-in-ostree"
     ]

@@ -1,5 +1,5 @@
 /*
- * Deskflow-hid -- created by locke.huang@gmail.com
+ * dshare-hid -- created by locke.huang@gmail.com
  */
 
 #pragma once
@@ -10,7 +10,6 @@
 #include <QLabel>
 #include <QLineEdit>
 #include <QMessageBox>
-#include <functional>
 #include <QNetworkReply>
 #include <QPushButton>
 #include <QRadioButton>
@@ -18,6 +17,7 @@
 #include <QTabWidget>
 #include <QTextEdit>
 #include <cstdint>
+#include <functional>
 #include <vector>
 
 class QNetworkAccessManager;

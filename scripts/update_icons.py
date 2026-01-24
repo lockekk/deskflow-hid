@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 """
-Update Deskflow Icons
-=====================
-This script reads the master macOS icon (Deskflow.icns) and regenerates:
+Update DShare Icons
+====================
+This script reads the master macOS icon (DShare.icns) and regenerates:
 1. Linux deployment icon (PNG 512x512)
 2. Windows application icon (ICO multi-size)
 3. Windows WiX installer icons (Dialog & Banner)
@@ -19,10 +19,10 @@ import argparse
 
 # Configuration
 PROJECT_ROOT = Path(__file__).parent.parent
-DEFAULT_SOURCE = PROJECT_ROOT / "src/apps/res/Deskflow.icns"
-ICNS_PATH = PROJECT_ROOT / "src/apps/res/Deskflow.icns"
-LINUX_ICON_PATH = PROJECT_ROOT / "deploy/linux/org.deskflow.deskflow.png"
-WINDOWS_ICON_PATH = PROJECT_ROOT / "src/apps/res/deskflow.ico"
+DEFAULT_SOURCE = PROJECT_ROOT / "src/apps/res/DShare.icns"
+ICNS_PATH = PROJECT_ROOT / "src/apps/res/DShare.icns"
+LINUX_ICON_PATH = PROJECT_ROOT / "deploy/linux/org.lockekk.dshare-hid.png"
+WINDOWS_ICON_PATH = PROJECT_ROOT / "src/apps/res/dshare.ico"
 WIX_DIALOG_PATH = PROJECT_ROOT / "deploy/windows/wix-dialog.png"
 WIX_BANNER_PATH = PROJECT_ROOT / "deploy/windows/wix-banner.png"
 MAC_VOLUME_ICON_PATH = PROJECT_ROOT / "deploy/mac/dmg-volume.icns"
@@ -33,9 +33,9 @@ WINDOWS_ICON_SIZES = [(256, 256), (128, 128), (64, 64),
 
 def main():
     parser = argparse.ArgumentParser(
-        description="Update Deskflow icons from a source image.")
+        description="Update DShare icons from a source image.")
     parser.add_argument(
-        "source", nargs="?", help="Path to source image (PNG/ICNS). Defaults to existing Deskflow.icns")
+        "source", nargs="?", help="Path to source image (PNG/ICNS). Defaults to existing DShare.icns")
     args = parser.parse_args()
 
     source_path = Path(args.source) if args.source else DEFAULT_SOURCE
@@ -161,12 +161,12 @@ def main():
         # (path, use_grayscale)
         targets = [
             # Main App Icons (Colorful)
-            (PROJECT_ROOT / "src/apps/res/icons/deskflow-dark/apps/64/org.deskflow.deskflow.svg", False),
-            (PROJECT_ROOT / "src/apps/res/icons/deskflow-light/apps/64/org.deskflow.deskflow.svg", False),
+            (PROJECT_ROOT / "src/apps/res/icons/dshare-dark/apps/64/org.lockekk.dshare-hid.svg", False),
+            (PROJECT_ROOT / "src/apps/res/icons/dshare-light/apps/64/org.lockekk.dshare-hid.svg", False),
 
             # Symbolic/Mono Icons
-            (PROJECT_ROOT / "src/apps/res/icons/deskflow-dark/apps/64/org.deskflow.deskflow-symbolic.svg", True),
-            (PROJECT_ROOT / "src/apps/res/icons/deskflow-light/apps/64/org.deskflow.deskflow-symbolic.svg", True),
+            (PROJECT_ROOT / "src/apps/res/icons/dshare-dark/apps/64/org.lockekk.dshare-hid-symbolic.svg", True),
+            (PROJECT_ROOT / "src/apps/res/icons/dshare-light/apps/64/org.lockekk.dshare-hid-symbolic.svg", True),
         ]
 
         for path, use_grayscale in targets:

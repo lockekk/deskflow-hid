@@ -254,7 +254,7 @@
         "Save Request File": "リクエストファイルを保存",
         "Text Files (*.txt)": "テキストファイル (*.txt)",
         "Request file generated: %1": "リクエストファイル生成: %1",
-        "Request file generated successfully!\n\nPlease send this file or its content (with payment if applicable) to deskflow.hid@gmail.com.\nYour firmware will be back in 24 hours.": "リクエストファイル生成成功！\n\nこのファイルまたは内容を deskflow.hid@gmail.com に送信してください。\n24時間以内にファームウェアが返送されます。",
+        "Request file generated successfully!\n\nPlease send this file or its content (with payment if applicable) to dshare.hid@gmail.com.\nYour firmware will be back in 24 hours.": "リクエストファイル生成成功！\n\nこのファイルまたは内容を dshare.hid@gmail.com に送信してください。\n24時間以内にファームウェアが返送されます。",
         "Failed to save request file: %1": "リクエストファイルの保存に失敗: %1",
         "Failed to save request file.": "リクエストファイルの保存に失敗しました。",
         "Order content copied to clipboard.": "注文内容がクリップボードにコピーされました。",

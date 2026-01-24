@@ -1,14 +1,15 @@
-app-id: org.deskflow.deskflow
+app-id: org.lockekk.dshare-hid
 runtime: org.kde.Platform
 runtime-version: "6.10"
 sdk: org.kde.Sdk
-command: deskflow
+command: dshare-hid
 finish-args:
   - --share=ipc
   - --socket=wayland
   - --socket=fallback-x11
   - --share=network
   - --device=dri
+  - --device=all
   - --talk-name=org.kde.StatusNotifierWatcher
 cleanup:
   - /include

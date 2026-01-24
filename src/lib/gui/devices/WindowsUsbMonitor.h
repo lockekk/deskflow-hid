@@ -1,5 +1,5 @@
 /*
- * Deskflow-hid -- created by locke.huang@gmail.com
+ * dshare-hid -- created by locke.huang@gmail.com
  */
 
 #pragma once
@@ -36,7 +36,6 @@ private:
   void checkDeviceChanges();
 
   static LRESULT CALLBACK windowProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam);
-
 
   HWND m_hwnd = nullptr;
   HDEVNOTIFY m_hDevNotify = nullptr;

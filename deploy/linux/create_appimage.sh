@@ -167,7 +167,7 @@ echo "Current PATH (for qmake): $PATH"
 # --desktop-file: Explicitly set desktop file (usually auto-detected)
 # -e: Executable to inspect for dependencies
 
-EXECUTABLE="$APPDIR/usr/bin/deskflow-hid"
+EXECUTABLE="$APPDIR/usr/bin/dshare-hid"
 
 if [ ! -f "$EXECUTABLE" ]; then
      # Try to find it blindly if the path is different
@@ -183,10 +183,18 @@ fi
     --plugin qt \
     --output appimage \
     --desktop-file "$DESKTOP_FILE" \
-    --icon-file "$APPDIR/usr/share/icons/hicolor/512x512/apps/org.deskflow.deskflow.png" \
+    --icon-file "$APPDIR/usr/share/icons/hicolor/512x512/apps/org.lockekk.dshare-hid.png" \
     --executable "$EXECUTABLE"
 
-# Move the result to output dir
-mv Deskflow*AppImage "$OUTPUT_DIR/"
+# 5. Extract version for filename
+MAJOR=$(grep "set(DESKFLOW_VERSION_MAJOR" "$PROJECT_ROOT/CMakeLists.txt" | head -n1 | awk '{print $2}' | tr -d ')')
+MINOR=$(grep "set(DESKFLOW_VERSION_MINOR" "$PROJECT_ROOT/CMakeLists.txt" | head -n1 | awk '{print $2}' | tr -d ')')
+PATCH=$(grep "set(DESKFLOW_VERSION_PATCH" "$PROJECT_ROOT/CMakeLists.txt" | head -n1 | awk '{print $2}' | tr -d ')')
+VERSION="${MAJOR}.${MINOR}.${PATCH}"
+ARCH=$(uname -m)
+APPIMAGE_NAME="dshare-hid-${VERSION}-linux-${ARCH}.AppImage"
 
-echo "AppImage created in $OUTPUT_DIR"
+# Move the result to output dir
+mv DShare-HID*AppImage "$OUTPUT_DIR/$APPIMAGE_NAME"
+
+echo "AppImage created in $OUTPUT_DIR as $APPIMAGE_NAME"

@@ -20,7 +20,7 @@
    </sizepolicy>
   </property>
   <property name="windowTitle">
-   <string>About Deskflow-HID</string>
+   <string>About DShare-HID</string>
   </property>
   <property name="windowIcon">
    <iconset theme="help-about"/>
@@ -105,7 +105,7 @@ p, li { white-space: pre-wrap; }
          </font>
         </property>
         <property name="text">
-         <string notr="true">Deskflow-HID</string>
+         <string notr="true">DShare-HID</string>
         </property>
         <property name="scaledContents">
          <bool>false</bool>

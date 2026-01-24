@@ -19,6 +19,8 @@ if(WIN32)
     DaemonApp.h
     ${CMAKE_CURRENT_BINARY_DIR}/${target}.rc)
 
+  set_target_properties(${target} PROPERTIES OUTPUT_NAME "dshare-hid-daemon")
+
   target_link_libraries(
     ${target}
     arch

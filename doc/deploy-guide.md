@@ -27,39 +27,39 @@ Run these commands from the root of the repository.
 1.  **Build the Project**
     This compiles the project using the manifest. It automatically uses all available CPU cores.
     ```bash
-    flatpak-builder --user --force-clean --repo=repo build-dir deploy/linux/flatpak/org.deskflow.deskflow.yml
+    flatpak-builder --user --force-clean --repo=repo build-dir deploy/linux/flatpak/org.lockekk.dshare-hid.yml
     ```
 
 2.  **Create Bundle**
-    Package the build into a single `.flatpak` file.
-    *   **App ID**: `org.lockekk.deskflow-hid`
+    Packet the build into a single `.flatpak` file.
+    *   **App ID**: `org.lockekk.dshare-hid`
     ```bash
-    flatpak build-bundle repo deskflow-1.25.0-linux-x86_64.flatpak org.lockekk.deskflow-hid
+    flatpak build-bundle repo dshare-hid-1.25.0-linux-x86_64.flatpak org.lockekk.dshare-hid
     ```
 
 ### Installing & Running
 
 1.  **Install**
     ```bash
-    flatpak install --user -y deskflow-1.25.0-linux-x86_64.flatpak
+    flatpak install --user -y dshare-hid-1.25.0-linux-x86_64.flatpak
     ```
 
 2.  **Run**
     ```bash
-    flatpak run org.lockekk.deskflow-hid
+    flatpak run org.lockekk.dshare-hid
     ```
 
 ### Uninstalling & Reinstalling
 
 *   **Uninstall**
     ```bash
-    flatpak uninstall --user org.lockekk.deskflow-hid
+    flatpak uninstall --user org.lockekk.dshare-hid
     ```
 
 *   **Reinstall (Update)**
     If you have rebuilt the package and want to update your existing installation:
     ```bash
-    flatpak install --user --reinstall -y deskflow-1.25.0-linux-x86_64.flatpak
+    flatpak install --user --reinstall -y dshare-hid-1.25.0-linux-x86_64.flatpak
     ```
 
 ### Notes
@@ -82,7 +82,7 @@ The easiest way to generate an AppImage is using the interactive task runner.
     ./run_task.sh
     ```
 2.  Select **Option 6 ("Build AppImage")**.
-3.  The AppImage will be generated directly in your `build` directory (e.g., `build/Deskflow-HID-x86_64.AppImage`).
+3.  The AppImage will be generated directly in your `build` directory (e.g., `build/DShare-HID-x86_64.AppImage`).
 
 #### Method 2: Manual Script
 
@@ -132,7 +132,7 @@ This performs the following:
 
 ### Output
 
-The MSI file will be created in the `build` directory (e.g., `build/Deskflow-HID-1.25.0-win-x64.msi`).
+The MSI file will be created in the `build` directory (e.g., `build/DShare-HID-1.25.0-win-x64.msi`).
 
 ---
 
@@ -179,5 +179,5 @@ The `run_task.sh` script (Option 5) handles the entire process.
 
 4.  **Output**
 
-    The `.dmg` file will be generated in `build_deploy/` (e.g., `Deskflow-HID-1.25.0-macos-universal.dmg`).
+    The `.dmg` file will be generated in `build_deploy/` (e.g., `DShare-HID-1.25.0-macos-universal.dmg`).
 

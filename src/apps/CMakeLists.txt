@@ -13,16 +13,16 @@ endif()
 function(generate_app_man TARGET NAME)
   if(HELP2MAN)
     add_custom_command(
-      TARGET ${target} POST_BUILD
-        COMMAND QT_QPA_PLATFORM=minimal PATH=$<TARGET_FILE_DIR:${target}>:${PATH} ${HELP2MAN}
+      TARGET ${TARGET} POST_BUILD
+        COMMAND QT_QPA_PLATFORM=minimal PATH=$<TARGET_FILE_DIR:${TARGET}>:${PATH} ${HELP2MAN}
           --name ${NAME}
           --include ${CMAKE_SOURCE_DIR}/src/apps/res/manpage.txt
           --no-info
-          ${target}
-          -o $<TARGET_FILE_DIR:${target}>/${target}.1
+          $<TARGET_FILE:${TARGET}>
+          -o $<TARGET_FILE_DIR:${TARGET}>/$<TARGET_FILE_BASE_NAME:${TARGET}>.1
     )
     install(
-      FILES $<TARGET_FILE_DIR:${target}>/${target}.1
+      FILES $<TARGET_FILE_DIR:${TARGET}>/$<TARGET_FILE_BASE_NAME:${TARGET}>.1
       DESTINATION ${CMAKE_INSTALL_MANDIR}/man1
     )
   endif()

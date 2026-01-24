@@ -3,9 +3,9 @@
 # SPDX-License-Identifier: MIT
 
 if(APPLE)
-  set(target Deskflow-HID)
+  set(target DShare-HID)
 else()
-  set(target deskflow-hid)
+  set(target dshare-hid)
 endif()
 
 set(CMAKE_INCLUDE_CURRENT_DIR ON)
@@ -40,6 +40,13 @@ add_executable(${target} WIN32 MACOSX_BUNDLE
   ../res/deskflow.qrc
   deskflow-gui.cpp
 )
+
+if(APPLE)
+  set_target_properties(${target} PROPERTIES OUTPUT_NAME "DShare-HID")
+else()
+  set_target_properties(${target} PROPERTIES OUTPUT_NAME "dshare-hid")
+endif()
+
 
 target_link_libraries(
   ${target}

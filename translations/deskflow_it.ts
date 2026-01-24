@@ -53,7 +53,11 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>About Deskflow-HID</source>
-        <translation>Informazioni su Deskflow-HID</translation>
+        <translation type="vanished">Informazioni su Deskflow-HID</translation>
+    </message>
+    <message>
+        <source>About DShare-HID</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -209,7 +213,7 @@ File -&gt; Firmware -&gt; Ordina.</translation>
     </message>
     <message>
         <source>Device handshake failed. Possibly not a Deskflow-HID firmware.</source>
-        <translation>Handshake del dispositivo fallito. Probabilmente non è un firmware Deskflow-HID.</translation>
+        <translation type="vanished">Handshake del dispositivo fallito. Probabilmente non è un firmware Deskflow-HID.</translation>
     </message>
     <message>
         <source>Handshake failed on %1. Auto-connect disabled.</source>
@@ -254,6 +258,10 @@ File -&gt; Firmware -&gt; Ordina.</translation>
     <message>
         <source>Device disconnected.</source>
         <translation>Dispositivo scollegato.</translation>
+    </message>
+    <message>
+        <source>Device handshake failed. Possibly not a DShare-HID firmware.</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -730,7 +738,7 @@ Nomi validi:
     </message>
     <message>
         <source>Another Deskflow server instance is already running in the background. Please close the existing server before starting a new one.</source>
-        <translation>Un&apos;altra istanza server è in esecuzione. Chiudila prima di avviarne una nuova.</translation>
+        <translation type="vanished">Un&apos;altra istanza server è in esecuzione. Chiudila prima di avviarne una nuova.</translation>
     </message>
     <message>
         <source>Firmware</source>
@@ -747,6 +755,10 @@ Nomi validi:
     <message>
         <source>User &lt;b&gt;%1&lt;/b&gt; is not in the &lt;b&gt;dialout&lt;/b&gt; group.&lt;br&gt;&lt;br&gt;You may not be able to access the USB device.&lt;br&gt;Please run the following command then &lt;b&gt;log out then log in&lt;/b&gt;, or &lt;b&gt;reboot&lt;/b&gt;:&lt;br&gt;&lt;br&gt;&lt;code&gt;sudo usermod -a -G dialout $USER&lt;/code&gt;</source>
         <translation>L&apos;utente &lt;b&gt;%1&lt;/b&gt; non è nel gruppo &lt;b&gt;dialout&lt;/b&gt;.&lt;br&gt;&lt;br&gt;Potresti non essere in grado di accedere al dispositivo USB.&lt;br&gt;Esegui il comando seguente e poi &lt;b&gt;disconnettiti e riconnettiti&lt;/b&gt;, o &lt;b&gt;riavvia&lt;/b&gt;:&lt;br&gt;&lt;br&gt;&lt;code&gt;sudo usermod -a -G dialout $USER&lt;/code&gt;</translation>
+    </message>
+    <message>
+        <source>Another DShare-HID server instance is already running in the background. Please close the existing server before starting a new one.</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -945,18 +957,32 @@ Nomi validi:
     <message>
         <source>There is another Deskflow server is already running and has been brought to the foreground.
 This new instance cannot start and will exit now.</source>
-        <translation>Un altro server Deskflow è già in esecuzione ed è stato portato in primo piano.
+        <translation type="vanished">Un altro server Deskflow è già in esecuzione ed è stato portato in primo piano.
 Questa nuova istanza non può essere avviata e verrà chiusa ora.</translation>
     </message>
     <message>
         <source>Deskflow is already running.
 This new instance cannot start another server, so it will now exit.</source>
-        <translation>Deskflow è già in esecuzione.
+        <translation type="vanished">Deskflow è già in esecuzione.
 Questa nuova istanza non può avviare un altro server, quindi verrà chiusa ora.</translation>
     </message>
     <message>
         <source>Deskflow</source>
-        <translation>Deskflow</translation>
+        <translation type="vanished">Deskflow</translation>
+    </message>
+    <message>
+        <source>There is another DShare-HID server is already running and has been brought to the foreground.
+This new instance cannot start and will exit now.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>DShare-HID is already running.
+This new instance cannot start another server, so it will now exit.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>DShare-HID</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -2409,10 +2435,6 @@ Prossimo passo: Flashare firmware per dispositivo. Vai alla scheda &apos;Ordina&
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>About to flash: &lt;b&gt;%1&lt;/b&gt;&lt;br&gt;&lt;br&gt;This action will permanently convert your device to Deskflow-HID. This process is irreversible and precludes non-Deskflow firmware.&lt;br&gt;&lt;br&gt;Proceed?</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>Device Info copied to clipboard:</source>
         <translation type="unfinished"></translation>
     </message>
@@ -2543,11 +2565,11 @@ Prossimo passo: Flashare firmware per dispositivo. Vai alla scheda &apos;Ordina&
     <message>
         <source>Request file generated successfully!
 
-Please send this file or its content (with payment if applicable) to deskflow.hid@gmail.com.
+Please send this file or its content (with payment if applicable) to dshare.hid@gmail.com.
 Your firmware will be back in 24 hours.</source>
         <translation type="vanished">File richiesta generato!
 
-Invialo a deskflow.hid@gmail.com.
+Invialo a dshare.hid@gmail.com.
 Il firmware tornerà in 24 ore.</translation>
     </message>
     <message>
@@ -2657,6 +2679,10 @@ Il firmware tornerà in 24 ore.</translation>
     <message>
         <source>Include version in the window title</source>
         <translation type="obsolete">Includi la versione nel titolo della finestra</translation>
+    </message>
+    <message>
+        <source>About to flash: &lt;b&gt;%1&lt;/b&gt;&lt;br&gt;&lt;br&gt;This action will permanently convert your device to DShare-HID. This process is irreversible and precludes non-DShare firmware.&lt;br&gt;&lt;br&gt;Proceed?</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>

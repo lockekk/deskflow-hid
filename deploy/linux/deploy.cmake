@@ -6,23 +6,34 @@
 set(MY_DIR ${CMAKE_CURRENT_LIST_DIR})
 
 # Install our desktop file
+file(READ ${MY_DIR}/org.deskflow.deskflow.desktop DESKTOP_CONTENT)
+string(REPLACE "org.deskflow.deskflow" "${CMAKE_PROJECT_REV_FQDN}" DESKTOP_CONTENT "${DESKTOP_CONTENT}")
+file(WRITE ${CMAKE_CURRENT_BINARY_DIR}/${CMAKE_PROJECT_REV_FQDN}.desktop "${DESKTOP_CONTENT}")
 install(
-  FILES ${MY_DIR}/${CMAKE_PROJECT_REV_FQDN}.desktop
+  FILES ${CMAKE_CURRENT_BINARY_DIR}/${CMAKE_PROJECT_REV_FQDN}.desktop
   DESTINATION ${CMAKE_INSTALL_DATADIR}/applications
 )
 
 # Install our icon
-install(FILES ${MY_DIR}/org.deskflow.deskflow.png DESTINATION ${CMAKE_INSTALL_DATADIR}/icons/hicolor/512x512/apps/)
+install(
+  FILES ${MY_DIR}/org.deskflow.deskflow.png
+  DESTINATION ${CMAKE_INSTALL_DATADIR}/icons/hicolor/512x512/apps/
+  RENAME ${CMAKE_PROJECT_REV_FQDN}.png
+)
 
 # Install our symbolic icon
 install(
   FILES ${CMAKE_SOURCE_DIR}/src/apps/res/icons/deskflow-light/apps/64/org.deskflow.deskflow-symbolic.svg
   DESTINATION ${CMAKE_INSTALL_DATADIR}/icons/hicolor/symbolic/apps/
+  RENAME ${CMAKE_PROJECT_REV_FQDN}-symbolic.svg
 )
 
 # Install our metainfo
+file(READ ${MY_DIR}/org.deskflow.deskflow.metainfo.xml METAINFO_CONTENT)
+string(REPLACE "org.deskflow.deskflow" "${CMAKE_PROJECT_REV_FQDN}" METAINFO_CONTENT "${METAINFO_CONTENT}")
+file(WRITE ${CMAKE_CURRENT_BINARY_DIR}/${CMAKE_PROJECT_REV_FQDN}.metainfo.xml "${METAINFO_CONTENT}")
 install(
-  FILES ${MY_DIR}/${CMAKE_PROJECT_REV_FQDN}.metainfo.xml
+  FILES ${CMAKE_CURRENT_BINARY_DIR}/${CMAKE_PROJECT_REV_FQDN}.metainfo.xml
   DESTINATION ${CMAKE_INSTALL_DATADIR}/metainfo/
 )
 

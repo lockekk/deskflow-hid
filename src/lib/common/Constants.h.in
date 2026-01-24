@@ -8,7 +8,7 @@
 #pragma once
 
 const auto kAppName = "@CMAKE_PROJECT_PROPER_NAME@";
-const auto kAppId = "deskflow";
+const auto kAppId = "dshare-hid";
 const auto kAppDescription = "@CMAKE_PROJECT_DESCRIPTION@";
 const auto kDaemonBinName = "@CMAKE_PROJECT_NAME@-daemon";
 const auto kDaemonIpcName = "@CMAKE_PROJECT_NAME@-daemon";

@@ -1,20 +1,20 @@
-# macOS Deployment Guide for Deskflow-HID
+# macOS Deployment Guide for DShare-HID
 
 ## Overview
 
-This document explains the different macOS deployment options for Deskflow-HID and how OpenSSL 3.x is handled in each scenario.
+This document explains the different macOS deployment options for DShare-HID and how OpenSSL 3.x is handled in each scenario.
 
 ---
 
-## Why Deskflow-HID Has Special OpenSSL Requirements
+## Why DShare-HID Has Special OpenSSL Requirements
 
-### Upstream Deskflow vs Deskflow-HID
+### Upstream Deskflow vs DShare-HID
 
-| Feature | Upstream Deskflow | Deskflow-HID |
-|---------|------------------|--------------|
-| OpenSSL Usage | TLS/SSL networking, SHA digests | ECDSA signature verification |
-| Provider Loading Needed | **No** - auto-loaded | **Yes** - must load explicitly |
-| ossl-modules Needed | **No** | **Yes** - on macOS bundles |
+| Feature                 | Upstream Deskflow               | DShare-HID                     |
+| ----------------------- | ------------------------------- | ------------------------------ |
+| OpenSSL Usage           | TLS/SSL networking, SHA digests | ECDSA signature verification   |
+| Provider Loading Needed | **No** - auto-loaded            | **Yes** - must load explicitly |
+| ossl-modules Needed     | **No**                          | **Yes** - on macOS bundles     |
 
 **Key Point:** Your HID bridge uses `EVP_DigestVerify()` for ECDSA signature verification, which requires explicit OpenSSL 3.x provider loading. Upstream only uses basic crypto (SHA, TLS) that works without explicit provider loading.
 
@@ -24,12 +24,12 @@ This document explains the different macOS deployment options for Deskflow-HID a
 
 ### Quick Reference
 
-| Deployment Type | OpenSSL Handling | Code Signing | Distribution Method | User Install |
-|-----------------|------------------|--------------|---------------------|--------------|
-| **DMG (App Bundle)** | Bundle ossl-modules | Required | GitHub Releases | Download & drag |
-| **Homebrew Cask** | Bundle ossl-modules | Required (in DMG) | `brew install` | Automatic |
-| **Homebrew Formula** | System OpenSSL | Not required | `brew install` | Builds from source |
-| **Direct Build** | System OpenSSL | Optional | Manual | Manual |
+| Deployment Type      | OpenSSL Handling    | Code Signing      | Distribution Method | User Install       |
+| -------------------- | ------------------- | ----------------- | ------------------- | ------------------ |
+| **DMG (App Bundle)** | Bundle ossl-modules | Required          | GitHub Releases     | Download & drag    |
+| **Homebrew Cask**    | Bundle ossl-modules | Required (in DMG) | `brew install`      | Automatic          |
+| **Homebrew Formula** | System OpenSSL      | Not required      | `brew install`      | Builds from source |
+| **Direct Build**     | System OpenSSL      | Optional          | Manual              | Manual             |
 
 ---
 
@@ -58,10 +58,10 @@ cd build && cpack
 ### What Gets Bundled
 
 ```
-Deskflow-HID.app/
+DShare-HID.app/
 ├── Contents/
 │   ├── MacOS/
-│   │   └── Deskflow-HID              # Main executable
+│   │   └── DShare-HID              # Main executable
 │   ├── Frameworks/
 │   │   ├── Qt*.dylib                 # Qt frameworks (via macdeployqt)
 │   │   ├── libssl.dylib              # OpenSSL SSL library
@@ -106,11 +106,11 @@ OSSL_PROVIDER_load(nullptr, "legacy");
 
 ### Code Signing Requirements
 
-| Requirement | Command |
-|-------------|---------|
-| Basic signing | `codesign --force --deep --sign "IDENTITY" App.app` |
+| Requirement      | Command                                                               |
+| ---------------- | --------------------------------------------------------------------- |
+| Basic signing    | `codesign --force --deep --sign "IDENTITY" App.app`                   |
 | Hardened Runtime | `codesign --force --deep --options=runtime --sign "IDENTITY" App.app` |
-| Verification | `codesign --verify --deep --verbose=4 App.app` |
+| Verification     | `codesign --verify --deep --verbose=4 App.app`                        |
 
 **Why Hardened Runtime (`--options=runtime`):**
 - Required for USB device access (ESP32 communication)
@@ -138,11 +138,11 @@ execute_process(COMMAND codesign --force --deep --options=runtime
 
 ### Architecture Support
 
-| Build Type | Command | Output |
-|------------|---------|--------|
-| ARM64 (Apple Silicon) | Default on ARM Mac | `Deskflow-HID-1.0.0-macos-arm64.dmg` |
-| x86_64 (Intel) | Default on Intel Mac | `Deskflow-HID-1.0.0-macos-x86_64.dmg` |
-| Universal | Manual `lipo` step | `Deskflow-HID-1.0.0-macos-universal.dmg` |
+| Build Type            | Command              | Output                                 |
+| --------------------- | -------------------- | -------------------------------------- |
+| ARM64 (Apple Silicon) | Default on ARM Mac   | `DShare-HID-1.0.0-macos-arm64.dmg`     |
+| x86_64 (Intel)        | Default on Intel Mac | `DShare-HID-1.0.0-macos-x86_64.dmg`    |
+| Universal             | Manual `lipo` step   | `DShare-HID-1.0.0-macos-universal.dmg` |
 
 **Note:** The `build_universal_openssl.sh` script was removed. You now build architecture-specific DMGs separately.
 
@@ -157,21 +157,21 @@ A Ruby recipe that installs your pre-built DMG via Homebrew.
 ### Cask File Example
 
 ```ruby
-# Casks/deskflow-hid.rb
-cask "deskflow-hid" do
+# Casks/dshare-hid.rb
+cask "dshare-hid" do
   version "1.0.0"
   sha256 "dmg_sha256_hash_here"
 
-  url "https://github.com/lockekk/deskflow-hid/releases/download/v#{version}/Deskflow-HID-#{version}.macos-arm64.dmg"
-  name "Deskflow-HID"
-  desc "Professional Cross-Platform HID Bridge for Deskflow"
-  homepage "https://github.com/lockekk/deskflow-hid"
+  url "https://github.com/lockekk/dshare-hid/releases/download/v#{version}/DShare-HID-#{version}.macos-arm64.dmg"
+  name "DShare-HID"
+  desc "Professional Cross-Platform HID Bridge for DShare-HID"
+  homepage "https://github.com/lockekk/dshare-hid"
 
-  app "Deskflow-HID.app"
+  app "DShare-HID.app"
 
   zap trash: [
-    "~/Library/Deskflow-HID",
-    "~/Library/Application Support/Deskflow-HID",
+    "~/Library/DShare-HID",
+    "~/Library/Application Support/DShare-HID",
   ]
 end
 ```
@@ -182,14 +182,14 @@ You need separate casks for ARM and Intel:
 
 ```ruby
 # For ARM (Apple Silicon)
-cask "deskflow-hid-arm" do
-  url "https://github.com/lockekk/deskflow-hid/releases/download/v#{version}/Deskflow-HID-#{version}.macos-arm64.dmg"
+cask "dshare-hid-arm" do
+  url "https://github.com/lockekk/dshare-hid/releases/download/v#{version}/DShare-HID-#{version}.macos-arm64.dmg"
   # ...
 end
 
 # For Intel
-cask "deskflow-hid-intel" do
-  url "https://github.com/lockekk/deskflow-hid/releases/download/v#{version}/Deskflow-HID-#{version}.macos-x86_64.dmg"
+cask "dshare-hid-intel" do
+  url "https://github.com/lockekk/dshare-hid/releases/download/v#{version}/DShare-HID-#{version}.macos-x86_64.dmg"
   # ...
 end
 ```
@@ -201,14 +201,14 @@ end
 ### User Installation
 
 ```bash
-brew install --cask deskflow-hid-arm    # Apple Silicon
-brew install --cask deskflow-hid-intel  # Intel
+brew install --cask dshare-hid-arm    # Apple Silicon
+brew install --cask dshare-hid-intel  # Intel
 ```
 
 ### Updates
 
 ```bash
-brew upgrade --cask deskflow-hid-arm
+brew upgrade --cask dshare-hid-arm
 ```
 
 ---
@@ -217,16 +217,16 @@ brew upgrade --cask deskflow-hid-arm
 
 ### What It Is
 
-A Ruby recipe that builds Deskflow-HID from source using system libraries.
+A Ruby recipe that builds DShare-HID from source using system libraries.
 
 ### Formula File Example
 
 ```ruby
-# Formula/deskflow-hid.rb
+# Formula/dshare-hid.rb
 class DeskflowHid < Formula
   desc "Professional Cross-Platform HID Bridge for Deskflow"
-  homepage "https://github.com/lockekk/deskflow-hid"
-  url "https://github.com/lockekk/deskflow-hid/archive/refs/tags/v1.0.0.tar.gz"
+  homepage "https://github.com/lockekk/dshare-hid"
+  url "https://github.com/lockekk/dshare-hid/archive/refs/tags/v1.0.0.tar.gz"
   sha256 "source_tarball_sha256_here"
   license "GPL-2.0-only"
 
@@ -243,7 +243,7 @@ class DeskflowHid < Formula
 
   def caveats
     <<~EOS
-      Deskflow-HID requires access to USB devices for ESP32 communication.
+      DShare-HID requires access to USB devices for ESP32 communication.
       You may need to grant permissions in System Preferences > Security & Privacy.
     EOS
   end
@@ -267,7 +267,7 @@ Your `ensureOpenSslProviders()` function will work automatically - it will find 
 ### User Installation
 
 ```bash
-brew install deskflow-hid
+brew install dshare-hid
 ```
 
 ---
@@ -286,18 +286,18 @@ cmake -B build -G "Unix Makefiles" \
   -DCMAKE_BUILD_TYPE=Release
 
 cmake --build build -j$(sysctl -n hw.ncpu)
-./build/bin/Deskflow-HID.app/Contents/MacOS/Deskflow-HID
+./build/bin/DShare-HID.app/Contents/MacOS/DShare-HID
 ```
 
 ### OpenSSL Handling
 
 Depends on how OpenSSL was found:
 
-| OpenSSL Source | Module Location | Action Needed |
-|----------------|-----------------|---------------|
-| Homebrew (`brew install openssl`) | `/opt/homebrew/opt/openssl@3/ossl-modules` | None (auto-found) |
-| Custom build | Custom path | Set `OPENSSL_MODULES` |
-| Bundled (via cmake) | Build directory | Set `OPENSSL_MODULES` |
+| OpenSSL Source                    | Module Location                            | Action Needed         |
+| --------------------------------- | ------------------------------------------ | --------------------- |
+| Homebrew (`brew install openssl`) | `/opt/homebrew/opt/openssl@3/ossl-modules` | None (auto-found)     |
+| Custom build                      | Custom path                                | Set `OPENSSL_MODULES` |
+| Bundled (via cmake)               | Build directory                            | Set `OPENSSL_MODULES` |
 
 ---
 
@@ -305,18 +305,18 @@ Depends on how OpenSSL was found:
 
 ### Feature Matrix
 
-| Feature | DMG | Homebrew Cask | Homebrew Formula | Direct Build |
-|---------|-----|---------------|------------------|--------------|
-| **Distribution** | GitHub Releases | Homebrew | Homebrew | N/A (dev) |
-| **Build Time** | Pre-built | Pre-built | On user's machine | On developer's machine |
-| **Install Size** | ~100MB | ~100MB | ~50MB (uses system libs) | Variable |
-| **Update Method** | Manual download | `brew upgrade` | `brew upgrade` | Manual git pull |
-| **Code Signing** | Required | Required (in DMG) | Not required | Optional |
-| **Notarization** | Required | Required (in DMG) | Not required | Not required |
-| **OpenSSL Handling** | Must bundle modules | Must bundle modules | System (auto) | Depends on setup |
-| **USB Access** | Needs entitlements | Needs entitlements | May need permissions | May need permissions |
-| **Architecture** | ARM + Intel (separate) | ARM + Intel (separate) | ARM + Intel (auto) | Host arch only |
-| **Suitable For** | Public release | Power users | Developers | Development |
+| Feature              | DMG                    | Homebrew Cask          | Homebrew Formula         | Direct Build           |
+| -------------------- | ---------------------- | ---------------------- | ------------------------ | ---------------------- |
+| **Distribution**     | GitHub Releases        | Homebrew               | Homebrew                 | N/A (dev)              |
+| **Build Time**       | Pre-built              | Pre-built              | On user's machine        | On developer's machine |
+| **Install Size**     | ~100MB                 | ~100MB                 | ~50MB (uses system libs) | Variable               |
+| **Update Method**    | Manual download        | `brew upgrade`         | `brew upgrade`           | Manual git pull        |
+| **Code Signing**     | Required               | Required (in DMG)      | Not required             | Optional               |
+| **Notarization**     | Required               | Required (in DMG)      | Not required             | Not required           |
+| **OpenSSL Handling** | Must bundle modules    | Must bundle modules    | System (auto)            | Depends on setup       |
+| **USB Access**       | Needs entitlements     | Needs entitlements     | May need permissions     | May need permissions   |
+| **Architecture**     | ARM + Intel (separate) | ARM + Intel (separate) | ARM + Intel (auto)       | Host arch only         |
+| **Suitable For**     | Public release         | Power users            | Developers               | Development            |
 
 ### Deployment Complexity
 
@@ -360,10 +360,10 @@ Depends on how OpenSSL was found:
 
 ```
 release/
-├── Deskflow-HID-1.0.0-macos-arm64.dmg
-├── Deskflow-HID-1.0.0-macos-arm64.dmg.dmg.asc       # GPG signature (optional)
-├── Deskflow-HID-1.0.0-macos-x86_64.dmg
-├── Deskflow-HID-1.0.0-macos-x86_64.dmg.dmg.asc
+├── DShare-HID-1.0.0-macos-arm64.dmg
+├── DShare-HID-1.0.0-macos-arm64.dmg.dmg.asc       # GPG signature (optional)
+├── DShare-HID-1.0.0-macos-x86_64.dmg
+├── DShare-HID-1.0.0-macos-x86_64.dmg.dmg.asc
 └── checksums.txt                                     # SHA256 checksums
 ```
 
@@ -377,8 +377,8 @@ release/
 
 **Solution:** Clear attributes before signing:
 ```bash
-xattr -cr Deskflow-HID.app
-codesign --force --deep --options=runtime --sign "IDENTITY" Deskflow-HID.app
+xattr -cr DShare-HID.app
+codesign --force --deep --options=runtime --sign "IDENTITY" DShare-HID.app
 ```
 
 ### OpenSSL Provider Not Loading
@@ -391,10 +391,10 @@ codesign --force --deep --options=runtime --sign "IDENTITY" Deskflow-HID.app
 echo $OPENSSL_MODULES
 
 # Check bundle contents
-ls -la Deskflow-HID.app/Contents/Frameworks/ossl-modules/
+ls -la DShare-HID.app/Contents/Frameworks/ossl-modules/
 
 # Check code signature
-codesign -dv Deskflow-HID.app
+codesign -dv DShare-HID.app
 ```
 
 ### USB Device Access Denied

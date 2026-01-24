@@ -55,7 +55,11 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>About Deskflow-HID</source>
-        <translation>О Deskflow-HID</translation>
+        <translation type="vanished">О Deskflow-HID</translation>
+    </message>
+    <message>
+        <source>About DShare-HID</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -211,7 +215,7 @@ File -&gt; Firmware -&gt; Order.</source>
     </message>
     <message>
         <source>Device handshake failed. Possibly not a Deskflow-HID firmware.</source>
-        <translation>Ошибка рукопожатия устройства. Возможно, это не прошивка Deskflow-HID.</translation>
+        <translation type="vanished">Ошибка рукопожатия устройства. Возможно, это не прошивка Deskflow-HID.</translation>
     </message>
     <message>
         <source>Handshake failed on %1. Auto-connect disabled.</source>
@@ -256,6 +260,10 @@ File -&gt; Firmware -&gt; Order.</source>
     <message>
         <source>Device disconnected.</source>
         <translation>Устройство отключено.</translation>
+    </message>
+    <message>
+        <source>Device handshake failed. Possibly not a DShare-HID firmware.</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -733,7 +741,7 @@ Valid names:
     </message>
     <message>
         <source>Another Deskflow server instance is already running in the background. Please close the existing server before starting a new one.</source>
-        <translation>Другой экземпляр сервера Deskflow уже запущен в фоновом режиме. Пожалуйста, закройте существующий сервер перед запуском нового.</translation>
+        <translation type="vanished">Другой экземпляр сервера Deskflow уже запущен в фоновом режиме. Пожалуйста, закройте существующий сервер перед запуском нового.</translation>
     </message>
     <message>
         <source>Firmware</source>
@@ -750,6 +758,10 @@ Valid names:
     <message>
         <source>User &lt;b&gt;%1&lt;/b&gt; is not in the &lt;b&gt;dialout&lt;/b&gt; group.&lt;br&gt;&lt;br&gt;You may not be able to access the USB device.&lt;br&gt;Please run the following command then &lt;b&gt;log out then log in&lt;/b&gt;, or &lt;b&gt;reboot&lt;/b&gt;:&lt;br&gt;&lt;br&gt;&lt;code&gt;sudo usermod -a -G dialout $USER&lt;/code&gt;</source>
         <translation>Пользователь &lt;b&gt;%1&lt;/b&gt; не состоит в группе &lt;b&gt;dialout&lt;/b&gt;.&lt;br&gt;&lt;br&gt;Возможны проблемы с доступом к USB-устройству.&lt;br&gt;Выполните следующую команду, затем &lt;b&gt;выйдите и войдите в систему&lt;/b&gt; или &lt;b&gt;перезагрузите компьютер&lt;/b&gt;:&lt;br&gt;&lt;br&gt;&lt;code&gt;sudo usermod -a -G dialout $USER&lt;/code&gt;</translation>
+    </message>
+    <message>
+        <source>Another DShare-HID server instance is already running in the background. Please close the existing server before starting a new one.</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -948,18 +960,32 @@ Valid names:
     <message>
         <source>There is another Deskflow server is already running and has been brought to the foreground.
 This new instance cannot start and will exit now.</source>
-        <translation>Другой экземпляр сервера Deskflow уже запущен и выведен на передний план.
+        <translation type="vanished">Другой экземпляр сервера Deskflow уже запущен и выведен на передний план.
 Этот новый экземпляр не может быть запущен и будет закрыт.</translation>
     </message>
     <message>
         <source>Deskflow is already running.
 This new instance cannot start another server, so it will now exit.</source>
-        <translation>Deskflow уже запущен.
+        <translation type="vanished">Deskflow уже запущен.
 Этот новый экземпляр не может запустить еще один сервер, поэтому он будет закрыт.</translation>
     </message>
     <message>
         <source>Deskflow</source>
-        <translation>Deskflow</translation>
+        <translation type="vanished">Deskflow</translation>
+    </message>
+    <message>
+        <source>There is another DShare-HID server is already running and has been brought to the foreground.
+This new instance cannot start and will exit now.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>DShare-HID is already running.
+This new instance cannot start another server, so it will now exit.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>DShare-HID</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -2416,10 +2442,6 @@ Next step: You need to flash the per-device firmware to use the device. Please s
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>About to flash: &lt;b&gt;%1&lt;/b&gt;&lt;br&gt;&lt;br&gt;This action will permanently convert your device to Deskflow-HID. This process is irreversible and precludes non-Deskflow firmware.&lt;br&gt;&lt;br&gt;Proceed?</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>Device Info copied to clipboard:</source>
         <translation type="unfinished"></translation>
     </message>
@@ -2550,11 +2572,11 @@ Next step: You need to flash the per-device firmware to use the device. Please s
     <message>
         <source>Request file generated successfully!
 
-Please send this file or its content (with payment if applicable) to deskflow.hid@gmail.com.
+Please send this file or its content (with payment if applicable) to dshare.hid@gmail.com.
 Your firmware will be back in 24 hours.</source>
         <translation type="vanished">Файл запроса успешно создан!
 
-Пожалуйста, отправьте этот файл или его содержимое (с оплатой, если применимо) на deskflow.hid@gmail.com.
+Пожалуйста, отправьте этот файл или его содержимое (с оплатой, если применимо) на dshare.hid@gmail.com.
 Ваша прошивка вернется через 24 часа.</translation>
     </message>
     <message>
@@ -2660,6 +2682,10 @@ Your firmware will be back in 24 hours.</source>
     <message>
         <source>Reminder: Press &apos;Boot&apos; button then plugin your ESP32-C3. Click Refresh button to ensure the device is detected.</source>
         <translation>Напоминание: Нажмите кнопку &apos;Boot&apos;, затем подключите ваш ESP32-C3. Нажмите кнопку &apos;Обновить&apos;, чтобы убедиться, что устройство обнаружено.</translation>
+    </message>
+    <message>
+        <source>About to flash: &lt;b&gt;%1&lt;/b&gt;&lt;br&gt;&lt;br&gt;This action will permanently convert your device to DShare-HID. This process is irreversible and precludes non-DShare firmware.&lt;br&gt;&lt;br&gt;Proceed?</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
