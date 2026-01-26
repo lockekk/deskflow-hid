@@ -700,6 +700,26 @@ uint8_t BridgePlatformScreen::modifierBitForButton(KeyButton button) const
   default:
     return 0;
   }
+#elif defined(_WIN32)
+  switch (button) {
+  case 42: // Windows Shift_L (Scan Code 0x2A)
+    return 0x02;
+  case 54: // Windows Shift_R (Scan Code 0x36)
+    return 0x20;
+  case 29: // Windows Control_L (Scan Code 0x1D)
+    return 0x01;
+  // Note: Right Control is extended 0xE0 0x1D, often mapped to 29 or handled specially.
+  // Standard Scan Code Set 1 for RCtrl is 0xE0 0x1D.
+  case 56: // Windows Alt_L (Scan Code 0x38)
+    return 0x04;
+  // Windows Alt_R is extended 0xE0 0x38
+  case 91: // Windows LWin (Scan Code 0x5B)
+    return 0x08;
+  case 92: // Windows RWin (Scan Code 0x5C)
+    return 0x80;
+  default:
+    return 0;
+  }
 #else
   switch (button) {
   case 50: // Linux Shift_L
