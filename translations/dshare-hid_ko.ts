@@ -5,7 +5,7 @@
     <name>AboutDialog</name>
     <message>
         <source>About Deskflow</source>
-        <translation>Deskflow 정보</translation>
+        <translation type="vanished">Deskflow 정보</translation>
     </message>
     <message>
         <source>&lt;!DOCTYPE HTML PUBLIC &quot;-//W3C//DTD HTML 4.0//EN&quot; &quot;http://www.w3.org/TR/REC-html40/strict.dtd&quot;&gt;
@@ -13,7 +13,7 @@
 p, li { white-space: pre-wrap; }
 &lt;/style&gt;&lt;/head&gt;&lt;body style=&quot; font-family:&apos;Ubuntu&apos;; font-size:10pt; font-weight:400; font-style:normal;&quot;&gt;
 &lt;p style=&quot; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;&lt;a href=&quot;https://www.gnu.org/licenses/old-licenses/gpl-2.0.html&quot;&gt;&lt;span style=&quot; text-decoration: underline; color:#508ed8;&quot;&gt;License: GNU GPL Version 2&lt;/a&gt;&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</source>
-        <translation>&lt;!DOCTYPE HTML PUBLIC &quot;-//W3C//DTD HTML 4.0//EN&quot; &quot;http://www.w3.org/TR/REC-html40/strict.dtd&quot;&gt;
+        <translation type="vanished">&lt;!DOCTYPE HTML PUBLIC &quot;-//W3C//DTD HTML 4.0//EN&quot; &quot;http://www.w3.org/TR/REC-html40/strict.dtd&quot;&gt;
 &lt;html&gt;&lt;head&gt;&lt;meta name=&quot;qrichtext&quot; content=&quot;1&quot; /&gt;&lt;style type=&quot;text/css&quot;&gt;
 p, li { white-space: pre-wrap; }
 &lt;/style&gt;&lt;/head&gt;&lt;body style=&quot; font-family:&apos;Ubuntu&apos;; font-size:10pt; font-weight:400; font-style:normal;&quot;&gt;
@@ -33,7 +33,7 @@ p, li { white-space: pre-wrap; }
 p, li { white-space: pre-wrap; }
 &lt;/style&gt;&lt;/head&gt;&lt;body style=&quot; font-family:&apos;Ubuntu&apos;; font-size:10pt; font-weight:400; font-style:normal;&quot;&gt;
 &lt;p style=&quot; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;&lt;a href=&quot;https://github.com/deskflow/deskflow/graphs/contributors&quot;&gt;&lt;span style=&quot; text-decoration: underline; color:#508ed8;&quot;&gt;Code Contributors&lt;/span&gt;&lt;/a&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</source>
-        <translation>&lt;!DOCTYPE HTML PUBLIC &quot;-//W3C//DTD HTML 4.0//EN&quot; &quot;http://www.w3.org/TR/REC-html40/strict.dtd&quot;&gt;
+        <translation type="vanished">&lt;!DOCTYPE HTML PUBLIC &quot;-//W3C//DTD HTML 4.0//EN&quot; &quot;http://www.w3.org/TR/REC-html40/strict.dtd&quot;&gt;
 &lt;html&gt;&lt;head&gt;&lt;meta name=&quot;qrichtext&quot; content=&quot;1&quot; /&gt;&lt;style type=&quot;text/css&quot;&gt;
 p, li { white-space: pre-wrap; }
 &lt;/style&gt;&lt;/head&gt;&lt;body style=&quot; font-family:&apos;Ubuntu&apos;; font-size:10pt; font-weight:400; font-style:normal;&quot;&gt;
@@ -45,11 +45,31 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Important Developers</source>
-        <translation>주요 개발자</translation>
+        <translation type="vanished">주요 개발자</translation>
     </message>
     <message>
         <source>&amp;Close</source>
         <translation>닫기(&amp;C)</translation>
+    </message>
+    <message>
+        <source>About DShare-HID</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;!DOCTYPE HTML PUBLIC &quot;-//W3C//DTD HTML 4.0//EN&quot; &quot;http://www.w3.org/TR/REC-html40/strict.dtd&quot;&gt;
+&lt;html&gt;&lt;head&gt;&lt;meta name=&quot;qrichtext&quot; content=&quot;1&quot; /&gt;&lt;style type=&quot;text/css&quot;&gt;
+p, li { white-space: pre-wrap; }
+&lt;/style&gt;&lt;/head&gt;&lt;body style=&quot; font-size:10pt; font-weight:400; font-style:normal;&quot;&gt;
+&lt;p style=&quot; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;&lt;a href=&quot;https://www.gnu.org/licenses/old-licenses/gpl-2.0.html&quot;&gt;&lt;span style=&quot; text-decoration: underline; color:#508ed8;&quot;&gt;License: GNU GPL Version 2&lt;/a&gt;&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;!DOCTYPE HTML PUBLIC &quot;-//W3C//DTD HTML 4.0//EN&quot; &quot;http://www.w3.org/TR/REC-html40/strict.dtd&quot;&gt;
+&lt;html&gt;&lt;head&gt;&lt;meta name=&quot;qrichtext&quot; content=&quot;1&quot; /&gt;&lt;style type=&quot;text/css&quot;&gt;
+p, li { white-space: pre-wrap; }
+&lt;/style&gt;&lt;/head&gt;&lt;body style=&quot; font-size:10pt; font-weight:400; font-style:normal;&quot;&gt;
+&lt;p style=&quot; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;&lt;a href=&quot;https://github.com/lockekk/dshare-hid&quot;&gt;&lt;span style=&quot; text-decoration: underline; color:#508ed8;&quot;&gt;Code Contributors&lt;/span&gt;&lt;/a&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -137,6 +157,110 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>Switch to </source>
         <translation>전환: </translation>
+    </message>
+</context>
+<context>
+    <name>DeskflowHidExtension</name>
+    <message>
+        <source>Bridge Client Logs</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>ESP32 HID Tools</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Ready</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Feature Unavailable</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>The ESP32 HID Tools module is not available in this build.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Unknown Device</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Bridge client device plugged in: %1</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Bridge client device unplugged: %1</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Error: No configuration found for device: %1</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Error: Cannot connect. Device path is empty.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Already connected via another profile</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Activation Required</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Free trial is expired. Please consider purchasing a license via 
+File -&gt; Firmware -&gt; Order.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Starting bridge client: %1</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Failed to start bridge client: %1</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Factory firmware detected. Please update firmware.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Factory firmware detected on %1. Auto-connect disabled.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Device handshake failed. Possibly not a DShare-HID firmware.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Handshake failed on %1. Auto-connect disabled.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Device disconnected.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Server is down. Auto-connect will resume once the server starts.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Connection failed. Retrying auto-connect (%1/3)...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Auto-connect failed. Giving up after 3 attempts.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Locked</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Locked by %1</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -272,7 +396,7 @@ Do you want to connect to the server?
     <message>
         <source>Use another computer’s mouse and keyboard
 (make this computer the client)</source>
-        <translation>다른 컴퓨터의 키보드와 마우스를 사용
+        <translation type="vanished">다른 컴퓨터의 키보드와 마우스를 사용
 (이 컴퓨터를 클라이언트로 설정)</translation>
     </message>
     <message>
@@ -394,6 +518,18 @@ A bound IP is now invalid, you may need to restart the server.</source>
 바인딩된 IP가 이제 유효하지 않습니다. 서버를 재시작해야 할 수 있습니다.</translation>
     </message>
     <message>
+        <source>ESP32 HID Tools are not available in this build (submodule missing).</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Server already running</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Another DShare-HID server instance is already running in the background. Please close the existing server before starting a new one.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
         <source>%1 is starting...</source>
         <translation>%1 시작 중...</translation>
     </message>
@@ -475,6 +611,14 @@ A bound IP is now invalid, you may need to restart the server.</source>
         <translation>중지(&amp;T)</translation>
     </message>
     <message>
+        <source>Firmware</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Firmware (Unavailable)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
         <source>About %1...</source>
         <extracomment>%1 will be the replaced with the appname</extracomment>
         <translation>%1 정보...</translation>
@@ -542,8 +686,29 @@ Valid names:
         <translation type="unfinished">추천 IP: </translation>
     </message>
     <message>
+        <source>current user</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Permission Warning</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>User &lt;b&gt;%1&lt;/b&gt; is not in the &lt;b&gt;dialout&lt;/b&gt; group.&lt;br&gt;&lt;br&gt;You may not be able to access the USB device.&lt;br&gt;Please run the following command then &lt;b&gt;log out then log in&lt;/b&gt;, or &lt;b&gt;reboot&lt;/b&gt;:&lt;br&gt;&lt;br&gt;&lt;code&gt;sudo usermod -a -G dialout $USER&lt;/code&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
         <source>The Core executable could not be successfully started, although it does exist. Please check if you have sufficient permissions to run this program.</source>
         <translation>코어 실행 파일은 존재하지만 정상적으로 시작할 수 없습니다. 이 프로그램을 실행할 권한이 충분한지 확인하세요.</translation>
+    </message>
+    <message>
+        <source>Use another computer&apos;s mouse and keyboard
+(make this computer the client)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Bridge Clients</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -559,6 +724,20 @@ Valid names:
     <message>
         <source>%1 is already running</source>
         <translation>%1이(가) 이미 실행 중입니다</translation>
+    </message>
+    <message>
+        <source>There is another DShare-HID server is already running and has been brought to the foreground.
+This new instance cannot start and will exit now.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>DShare-HID is already running.
+This new instance cannot start another server, so it will now exit.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>DShare-HID</source>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>fatal error</source>
@@ -886,19 +1065,19 @@ Valid names:
     <name>SearchWidget</name>
     <message>
         <source>Search</source>
-        <translation type="unfinished">검색</translation>
+        <translation type="obsolete">검색</translation>
     </message>
     <message>
         <source>Find next</source>
-        <translation type="unfinished">다음 찾기</translation>
+        <translation type="obsolete">다음 찾기</translation>
     </message>
     <message>
         <source>Find previous</source>
-        <translation type="unfinished">이전 찾기</translation>
+        <translation type="obsolete">이전 찾기</translation>
     </message>
     <message>
         <source>Find...</source>
-        <translation type="unfinished">찾기...</translation>
+        <translation type="obsolete">찾기...</translation>
     </message>
 </context>
 <context>
@@ -1078,6 +1257,27 @@ Enabling this setting will disable the server config GUI.</source>
     <message>
         <source>Config file path</source>
         <translation>설정 파일 경로</translation>
+    </message>
+    <message>
+        <source>Delete Bridge Client Configuration</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>The screen &apos;%1&apos; is a bridge client.
+
+Do you want to delete its configuration file as well?
+
+If you choose &apos;Yes&apos;, the bridge client widget will be removed from the main window.
+If you choose &apos;No&apos;, the bridge client configuration will be kept and can still be used.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Deletion Failed</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Failed to delete bridge client configuration file for &apos;%1&apos;.</source>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>%1 Configurations (*.conf);;All files (*.*)</source>
@@ -1322,6 +1522,1013 @@ Enabling this setting will disable the server config GUI.</source>
     <message>
         <source>Include version in the window title</source>
         <translation type="unfinished">창 제목에 버전 정보 포함</translation>
+    </message>
+</context>
+<context>
+    <name>deskflow::gui::BridgeClientConfigDialog</name>
+    <message>
+        <source>Bridge Client Configuration</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Screen Name:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Device name:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>A-Z, 0-9, spaces, .-_ (max 22 chars)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Advanced</source>
+        <translation type="unfinished">고급</translation>
+    </message>
+    <message>
+        <source>Automatically disconnect Bluetooth</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Disconnects from the host device when you stop using Deskflow.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Auto-connect when USB device plugged in</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Automatically connect to the Deskflow server when the device is plugged in.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Automatically restore screen location for the active profile</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>When enabled, the saved screen location for the active profile will be restored automatically.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Profiles (Device)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>A-Z, 0-9, spaces, .-_ (max 31 chars)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Hostname:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Resolution:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Portrait</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Landscape</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Orientation:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Keyboard + Mouse</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Mouse Only</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>HID Mode:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Invert direction</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Scroll speed:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Save to Device</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Activate</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Reset</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Device must be activated to change its name.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Profiles (Device Not Connected)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Profiles (Failed to Open Device)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Error</source>
+        <translation type="unfinished">오류</translation>
+    </message>
+    <message>
+        <source>Failed to open device</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Success</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Profile saved to device.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Failed to save profile: %1</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Switched to %1</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Failed to switch profile: %1</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Confirm Reset</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Are you sure you want to reset and erase this profile?</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Profile erased.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Failed to erase profile: %1</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Rename Failed</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Failed to rename config file from &apos;%1&apos; to &apos;%2&apos;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Invalid Input</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Screen name cannot be empty.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Device name cannot be empty.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Duplicate Configuration</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>A configuration for this device serial number already exists.
+Duplicate: %1</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>deskflow::gui::BridgeClientWidget</name>
+    <message>
+        <source>Connect</source>
+        <translation type="unfinished">연결</translation>
+    </message>
+    <message>
+        <source>Connect/disconnect bridge client</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Configure</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Configure bridge client settings</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>--</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>unknown</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Disconnect</source>
+        <translation type="unfinished">연결 해제</translation>
+    </message>
+    <message>
+        <source>Landscape</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Portrait</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Device not connected</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Waiting for server to start...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Another profile for this device is already connected</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Disconnect before configuring</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>This profile is locked because another one is connected</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>deskflow::gui::BridgeDeviceService</name>
+    <message>
+        <source>Failed to open device after retries.</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>deskflow::gui::Esp32HidToolsWidget</name>
+    <message>
+        <source>Firmware Flash Tool</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Refresh</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Port:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Reminder: Press &apos;Boot&apos; button then plugin your ESP32-C3. Click Refresh button to ensure the device is detected.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Online</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Flash</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Manual</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Path to factory.fzip</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Browse...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>File:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Copy Device Secret</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Factory Mode</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Current Version: Unknown</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Latest Version: Unknown</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Check for Updates</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Path to upgrade.uzip</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Upgrade Mode</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>State: Unknown</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Serial:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>-</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Copy Serial</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Paste Activation Key Here</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Activate</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Activation Key:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Activation</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>User Information</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Name:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Email:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Order Options</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Request 7-Day Free Trial</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Purchase Full License</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Skip Trial and Purchase Full License</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Upgrade Profile Capacity</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Payments</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Payment Details: Free Trial ($0.00)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Please put this Reference No. in your PayPal payment message/note.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Paste your PayPal Transaction ID here</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>I will arrange payment via email</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Not required for manual payment</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Paypal Seller: &lt;b&gt;&lt;font color=&apos;red&apos;&gt;%1&lt;/font&gt;&lt;/b&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Reference NO.:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>PayPal Transaction ID:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Pay Now (Secure PayPal Link)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Device Information</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Device Secret:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Serial Number:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Total Profiles:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Copy content</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Email</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Order</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Log Output:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>No devices found</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Select Factory Package</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Factory Package (*.fzip)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Selected factory firmware: %1</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Select Upgrade Package</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Upgrade Package (*.uzip)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Selected upgrade firmware: %1</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Error</source>
+        <translation type="unfinished">오류</translation>
+    </message>
+    <message>
+        <source>Please select a valid serial port.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Reading factory firmware from: %1</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Error: Failed to read file or file is empty: %1</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Checking device status...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Device is already running with factory firmware.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Attempting to fetch PDEK...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>PDEK fetched successfully.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Device Info: %1</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Info</source>
+        <translation type="unfinished">정보</translation>
+    </message>
+    <message>
+        <source>Device is already running with factory firmware. Device Info has been fetched.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Failed to fetch PDEK from factory mode device.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Device is already running with factory firmware, but failed to fetch PDEK.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Device is running Application Firmware.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Wrong Mode</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Device is running Application Firmware. Please enter Bootloader mode to flash Factory Firmware.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Error: No factory package selected.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Please select a factory package file to flash.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Starting Factory Flash...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Factory Flash Success!</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Flash failed, %1</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Checking for latest factory firmware...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Failed to find factory firmware in the latest release.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Failed to find factory firmware.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Found factory firmware: %1</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Factory flash cancelled.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Starting Download &amp; Flash process...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Downloading %1...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Download failed.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Failed to download firmware. Check internet connection.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Download complete. Size: %1 bytes</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Starting flashing process...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Device is already running factory firmware.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Device is in App Mode. Please enter Bootloader Mode.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Please enter Bootloader mode to flash Factory Firmware.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Flash Success!</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Waiting for user to reconnect device...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Reconnect Device</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Please disconnect and reconnect the device now.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>I have reconnected the device</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>User confirmed reconnection.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>About to flash: &lt;b&gt;%1&lt;/b&gt;&lt;br&gt;&lt;br&gt;This action will permanently convert your device to DShare-HID. This process is irreversible and precludes non-DShare firmware.&lt;br&gt;&lt;br&gt;Proceed?</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Confirm Factory Flash</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Factory firmware flashed successfully.
+
+Next step: You need to flash the per-device firmware to use the device. Please switch to the &apos;Order&apos; tab to request it.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Success</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Device Info copied to clipboard:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Checking device info on %1...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Device is in Factory Mode. Fetching PDEK...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Device Info fetched and copied to clipboard:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Device Info copied to clipboard.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Failed to fetch PDEK.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Failed to fetch Device Info.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Device is not in Factory Mode (Mode: %1).</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Device must be in Factory Mode to copy Device Info.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Handshake complete but no config received.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Device handshake incomplete.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Failed to open device or handshake failed.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Connection Error</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Failed to connect to device.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Checking for upgrades...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Failed to fetch latest version tag from GitHub.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Network Error</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Could not check for updates.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Device handshake failed or no config received. Assuming factory/unknown state.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Could not open device. Assuming factory/unknown state.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Current Version: %1</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Latest Version: %1</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Update available (%1 &gt; %2).</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Update available (Device version unknown).</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Please flash per-device firmware firstly.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Online flashing disabled: Device missing OTA partition.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Device is up to date.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Please select a firmware file.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Failed to read firmware file.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Reading local firmware from: %1</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Flashing local file: %1</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Downloading upgrade firmware...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Download failed. No .uzip asset found.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Failed to find upgrade firmware in the latest release.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Found upgrade firmware: %1</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Failed to download firmware.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Download complete. Starting flash...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Flashing... %1%</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Firmware upgrade successful.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Flash failed: %1</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Firmware Flash Tool - %1</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Free trial for 7 days</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>I am ok with free trial and want to buy full license</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Skip trial and buy Full licensed version</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Already licensed, but want bump profiles</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>State: %1</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Refreshing device state...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>State: Checking...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>State: %1, %2 Profiles</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>State: Factory Mode (Cannot Activate)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Device State Refreshed. Serial: %1, Mode: Factory, Secret: %2</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Device State Refreshed. Serial: %1, State: %2, Profiles: %3</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>State: Error</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Failed to refresh state: %1</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Erased Device Detected</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>No valid firmware detected on the device. Please go to the &apos;Factory Mode&apos; tab and flash &apos;Online&apos; first.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Serial number copied to clipboard.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Please enter an activation key.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Activating device...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Activation successful!</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Device activated successfully.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Activation failed.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Input Required</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Please enter your name and email address.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Device Error</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Serial number missing. Please check device connection.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Selection Required</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Please select one of the order options.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Missing Transaction ID</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Please enter your PayPal Transaction ID for verification.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Missing Secret</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Device Secret (PDEK) is required for this option. Please ensure the device is in Factory Mode and the secret has been fetched correctly.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Free</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>No payment is required for this option.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>You are about to open PayPal to pay &lt;b&gt;$%1 USD&lt;/b&gt; to &lt;b&gt;%2&lt;/b&gt;.&lt;br&gt;&lt;br&gt;Product: %3&lt;br&gt;Reference: %4&lt;br&gt;&lt;br&gt;Please confirm to proceed to PayPal.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Confirm Payment</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Failed to open web browser. Please visit PayPal manually.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Order content copied to clipboard.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Copied</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Order content successfully copied to clipboard.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Email client opened.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Failed to open email client.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Failed to open your default email client.</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>

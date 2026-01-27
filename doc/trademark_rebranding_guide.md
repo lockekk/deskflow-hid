@@ -120,6 +120,29 @@ When interacting with the upstream `deskflow/deskflow` repository, use the follo
     2.  Manually apply the *new* translations to your `dshare-hid_fr.ts`.
     3.  Discard the re-introduction of `deskflow_fr.ts`.
 
+### B. Peer-to-Peer Merge Mappings (The "Link" Table)
+Use this table to identify which rebranded file corresponds to an upstream file during a "Modify vs. Delete" conflict.
+
+| Upstream Path (Deskflow)                          | Rebranded Path (DShare-HID)                              |
+| :------------------------------------------------ | :------------------------------------------------------- |
+| **Linux Deployment**                              |                                                          |
+| `deploy/linux/org.deskflow.deskflow.metainfo.xml` | `deploy/linux/io.github.lockekk.dshare-hid.metainfo.xml` |
+| `deploy/linux/org.deskflow.deskflow.desktop`      | `deploy/linux/io.github.lockekk.dshare-hid.desktop`      |
+| `deploy/linux/org.deskflow.deskflow.png`          | `deploy/linux/io.github.lockekk.dshare-hid.png`          |
+| `deploy/linux/flatpak/org.deskflow.deskflow.yml`  | `deploy/linux/flatpak/io.github.lockekk.dshare-hid.yml`  |
+| **macOS Deployment**                              |                                                          |
+| `deploy/mac/Deskflow-HID.entitlements`            | `deploy/mac/DShare-HID.entitlements`                     |
+| **Translations**                                  |                                                          |
+| `translations/deskflow_<lang>.ts`                 | `translations/dshare-hid_<lang>.ts`                      |
+| **Icons & Assets**                                |                                                          |
+| `src/apps/res/icons/deskflow-light/`              | `src/apps/res/icons/dshare-hid-light/`                   |
+| `src/apps/res/deskflow.ico`                       | `src/apps/res/dshare.ico`                                |
+| `src/apps/res/deskflow.qrc`                       | `src/apps/res/dshare-hid.qrc`                            |
+
+---
+
+### C. Meticulous Porting Workflow (Detailed)
+
 ### Scenario B: Upstream Adds New Icons
 *   **Issue**: Upstream adds `src/apps/res/icons/deskflow-light/new-icon.svg`.
 *   **Resolution**:
