@@ -23,7 +23,6 @@
 #include <QMetaObject>
 
 using enum ScreenConfig::SwitchCorner;
-using enum NetworkProtocol;
 
 ServerConfigDialog::ServerConfigDialog(QWidget *parent, ServerConfig &config)
     : QDialog(parent, Qt::WindowTitleHint | Qt::WindowSystemMenuHint),

@@ -363,7 +363,7 @@ int ClientApp::mainLoop()
 #endif
 
   // close down
-  LOG_DEBUG1("stopping client");
+  LOG_DEBUG("stopping client");
   stopClient();
   LOG_NOTE("stopped client");
 

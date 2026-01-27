@@ -22,8 +22,5 @@ enum class LogLevel
   Info,       //!< For informational messages
   Debug,      //!< For important debugging messages
   Debug1,     //!< For verbosity +1 debugging messages
-  Debug2,     //!< For verbosity +2 debugging messages
-  Debug3,     //!< For verbosity +3 debugging messages
-  Debug4,     //!< For verbosity +4 debugging messages
-  Debug5      //!< For verbosity +5 debugging messages
+  Debug2      //!< For verbosity +2 debugging messages
 };

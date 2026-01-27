@@ -10,8 +10,6 @@ add_library(client STATIC
   BridgeSocketFactory.h
   Client.cpp
   Client.h
-  HelloBack.cpp
-  HelloBack.h
   ServerProxy.cpp
   ServerProxy.h
 )
